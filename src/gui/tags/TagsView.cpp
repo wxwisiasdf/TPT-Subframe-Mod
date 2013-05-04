@@ -73,7 +73,7 @@ void TagsView::NotifyTagsChanged(TagsModel * sender)
 	for(int i = 0; i < tags.size(); i++)
 	{
 		RemoveComponent(tags[i]);
-		delete tags[i];
+		//delete tags[i];
 	}
 	tags.clear();
 

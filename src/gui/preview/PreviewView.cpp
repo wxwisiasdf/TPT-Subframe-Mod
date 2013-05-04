@@ -488,13 +488,13 @@ void PreviewView::NotifyCommentBoxEnabledChanged(PreviewModel * sender)
 	if(addCommentBox)
 	{
 		RemoveComponent(addCommentBox);
-		delete addCommentBox;
+		//delete addCommentBox;
 		addCommentBox = NULL;
 	}
 	if(submitCommentButton)
 	{
 		RemoveComponent(submitCommentButton);
-		delete submitCommentButton;
+		//delete submitCommentButton;
 		submitCommentButton = NULL;
 	}
 	if(sender->GetCommentBoxEnabled())
@@ -618,12 +618,12 @@ PreviewView::~PreviewView()
 	if(addCommentBox)
 	{
 		RemoveComponent(addCommentBox);
-		delete addCommentBox;
+		//delete addCommentBox;
 	}
 	if(submitCommentButton)
 	{
 		RemoveComponent(submitCommentButton);
-		delete submitCommentButton;
+		//delete submitCommentButton;
 	}
 	if(savePreview)
 		delete savePreview;

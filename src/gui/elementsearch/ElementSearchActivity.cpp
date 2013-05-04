@@ -87,8 +87,8 @@ void ElementSearchActivity::searchTools(std::string query)
 {
 	firstResult = NULL;
 	for(std::vector<ToolButton*>::iterator iter = toolButtons.begin(), end = toolButtons.end(); iter != end; ++iter) {
-		delete *iter;
 		RemoveComponent(*iter);
+		//delete *iter;
 	}
 	toolButtons.clear();
 

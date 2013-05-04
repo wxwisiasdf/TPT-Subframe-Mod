@@ -208,6 +208,7 @@ void FileBrowserActivity::loadDirectory(std::string directory, std::string searc
 		RemoveComponent(components[i]);
 		itemList->RemoveChild(components[i]);
 	}
+	components.clear();
 
 	for(std::vector<ui::Component*>::iterator iter = componentsQueue.begin(), end = componentsQueue.end(); iter != end; ++iter)
 	{
@@ -243,11 +244,11 @@ void FileBrowserActivity::NotifyDone(Task * task)
 		progressBar->Visible = false;
 		infoText->Visible = true;
 	}
-	for(int i = 0; i < components.size(); i++)
+	/*for(int i = 0; i < components.size(); i++)
 	{
 		delete components[i];
 	}
-	components.clear();
+	components.clear();*/
 }
 
 void FileBrowserActivity::OnMouseDown(int x, int y, unsigned button)

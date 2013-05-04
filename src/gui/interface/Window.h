@@ -2,6 +2,7 @@
 #define WINDOW_H
 
 #include <vector>
+#include <deque>
 #include "gui/interface/Point.h"
 #include "Engine.h"
 
@@ -44,11 +45,11 @@ enum ChromeStyle
 		// Get component by index. (See GetComponentCount())
 		Component* GetComponent(unsigned idx);
 
-		// Remove a component from state. NOTE: This DOES NOT free component from memory.
-		void RemoveComponent(Component* c);
+		// Remove a component from state. NOTE: This will, by default free component from memory after it is safe to do so.
+		void RemoveComponent(Component* c, bool freeOnRemove = false);
 
 		// Remove a component from state. NOTE: This WILL free component from memory.
-		void RemoveComponent(unsigned idx);
+		//void RemoveComponent(unsigned idx);
 
 		virtual void ToolTip(Component * sender, ui::Point mousePosition, std::string toolTip) {}
 
@@ -101,6 +102,9 @@ enum ChromeStyle
 		std::vector<Component*> Components;
 		Component* focusedComponent_;
 		ChromeStyle chrome;
+
+		std::deque<Component*> addQueue;
+		std::deque<std::pair<Component*, bool> > removeQueue;
 
 		//These controls allow a component to call the destruction of the Window inside an event (called by the Window)
 		void finalise();

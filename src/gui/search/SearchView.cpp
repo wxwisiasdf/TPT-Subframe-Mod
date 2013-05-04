@@ -256,13 +256,13 @@ SearchView::~SearchView()
 	for(int i = 0; i < saveButtons.size(); i++)
 	{
 		RemoveComponent(saveButtons[i]);
-		delete saveButtons[i];
+		//delete saveButtons[i];
 	}
 	saveButtons.clear();
 
-	delete nextButton;
-	delete previousButton;
-	delete infoLabel;
+	//delete nextButton;
+	//delete previousButton;
+	//delete infoLabel;
 }
 
 void SearchView::Search(std::string query)
@@ -413,16 +413,16 @@ void SearchView::NotifyTagListChanged(SearchModel * sender)
 
 	vector<pair<string, int> > tags = sender->GetTagList();
 
-	RemoveComponent(motdLabel);
+	RemoveComponent(motdLabel, false);
 	motdLabel->SetParentWindow(NULL);
 
-	RemoveComponent(tagsLabel);
+	RemoveComponent(tagsLabel, false);
 	tagsLabel->SetParentWindow(NULL);
 
 	for(i = 0; i < tagButtons.size(); i++)
 	{
 		RemoveComponent(tagButtons[i]);
-		delete tagButtons[i];
+		//delete tagButtons[i];
 	}
 	tagButtons.clear();
 
@@ -529,6 +529,7 @@ void SearchView::NotifySaveListChanged(SearchModel * sender)
 	{
 		RemoveComponent(saveButtons[i]);
 	}
+	saveButtons.clear();
 	if(!sender->GetSavesLoaded())
 	{
 		nextButton->Enabled = false;
@@ -580,14 +581,14 @@ void SearchView::NotifySaveListChanged(SearchModel * sender)
 		if(errorLabel)
 		{
 			RemoveComponent(errorLabel);
-			delete errorLabel;
+			//delete errorLabel;
 			errorLabel = NULL;
 		}
-		for(i = 0; i < saveButtons.size(); i++)
+		/*for(i = 0; i < saveButtons.size(); i++)
 		{
 			delete saveButtons[i];
 		}
-		saveButtons.clear();
+		saveButtons.clear();*/
 
 		buttonYOffset = 28;
 		buttonXOffset = buttonPadding;

@@ -121,7 +121,7 @@ void LocalBrowserView::NotifySavesListChanged(LocalBrowserModel * sender)
 	for(i = 0; i < stampButtons.size(); i++)
 	{
 		RemoveComponent(stampButtons[i]);
-		delete stampButtons[i];
+		//delete stampButtons[i];
 	}
 	stampButtons.clear();
 	buttonXOffset = 0;

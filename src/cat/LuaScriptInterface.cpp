@@ -392,7 +392,7 @@ int LuaScriptInterface::interface_removeComponent(lua_State * l)
 	else
 		luaL_typerror(l, 1, "Component");
 	if(luacon_ci->Window && component)
-		luacon_ci->Window->RemoveComponent(component);
+		luacon_ci->Window->RemoveComponent(component, false);
 	return 0;
 }
 

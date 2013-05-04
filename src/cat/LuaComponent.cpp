@@ -78,5 +78,5 @@ LuaComponent::~LuaComponent()
 {
 	if(component->GetParentWindow())
 		component->GetParentWindow()->RemoveComponent(component);
-	delete component;
+	//delete component;
 }

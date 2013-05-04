@@ -527,8 +527,9 @@ void GameView::NotifyQuickOptionsChanged(GameModel * sender)
 	for(int i = 0; i < quickOptionButtons.size(); i++)
 	{
 		RemoveComponent(quickOptionButtons[i]);
-		delete quickOptionButtons[i];
+		//delete quickOptionButtons[i];
 	}
+	quickOptionButtons.clear();
 
 	int currentY = 1;
 	vector<QuickOption*> optionList = sender->GetQuickOptions();
@@ -553,13 +554,13 @@ void GameView::NotifyMenuListChanged(GameModel * sender)
 	for(int i = 0; i < menuButtons.size(); i++)
 	{
 		RemoveComponent(menuButtons[i]);
-		delete menuButtons[i];
+		//delete menuButtons[i];
 	}
 	menuButtons.clear();
 	for(int i = 0; i < toolButtons.size(); i++)
 	{
 		RemoveComponent(toolButtons[i]);
-		delete toolButtons[i];
+		//delete toolButtons[i];
 	}
 	toolButtons.clear();
 	vector<Menu*> menuList = sender->GetMenuList();
@@ -652,7 +653,7 @@ void GameView::NotifyToolListChanged(GameModel * sender)
 	for(int i = 0; i < toolButtons.size(); i++)
 	{
 		RemoveComponent(toolButtons[i]);
-		delete toolButtons[i];
+		//delete toolButtons[i];
 	}
 	toolButtons.clear();
 	vector<Tool*> toolList = sender->GetToolList();
@@ -704,11 +705,11 @@ void GameView::NotifyColourSelectorVisibilityChanged(GameModel * sender)
 	for(std::vector<ToolButton*>::iterator iter = colourPresets.begin(), end = colourPresets.end(); iter != end; ++iter)
 	{
 		ToolButton * button = *iter;
-		RemoveComponent(button);
+		RemoveComponent(button, false);
 		button->SetParentWindow(NULL);
 	}
 
-	RemoveComponent(colourPicker);
+	RemoveComponent(colourPicker, false);
 	colourPicker->SetParentWindow(NULL);
 
 	if(sender->GetColourSelectorVisibility())
@@ -748,7 +749,7 @@ void GameView::NotifyColourPresetsChanged(GameModel * sender)
 	{
 		ToolButton * button = *iter;
 		RemoveComponent(button);
-		delete button;
+		//delete button;
 	}
 	colourPresets.clear();
 
@@ -1648,7 +1649,7 @@ void GameView::NotifyNotificationsChanged(GameModel * sender)
 	for(std::vector<ui::Component*>::const_iterator iter = notificationComponents.begin(), end = notificationComponents.end(); iter != end; ++iter) {
 		ui::Component * cNotification = *iter;
 		RemoveComponent(cNotification);
-		delete cNotification;
+		//delete cNotification;
 	}
 	notificationComponents.clear();
 

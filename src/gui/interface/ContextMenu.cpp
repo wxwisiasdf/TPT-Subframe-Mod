@@ -26,7 +26,7 @@ void ContextMenu::Show(ui::Point position)
 	for(int i = 0; i < buttons.size(); i++)
 	{
 		RemoveComponent(buttons[i]);
-		delete buttons[i];
+		//delete buttons[i];
 	}
 	buttons.clear();
 

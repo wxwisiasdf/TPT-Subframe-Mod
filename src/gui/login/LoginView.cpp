@@ -138,11 +138,11 @@ LoginView::~LoginView() {
 	RemoveComponent(usernameField);
 	RemoveComponent(passwordField);
 	RemoveComponent(infoLabel);
-	delete cancelButton;
+	/*delete cancelButton;
 	delete loginButton;
 	delete titleLabel;
 	delete usernameField;
 	delete passwordField;
-	delete infoLabel;
+	delete infoLabel;*/
 }
 

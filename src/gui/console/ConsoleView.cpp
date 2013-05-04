@@ -58,7 +58,7 @@ void ConsoleView::NotifyPreviousCommandsChanged(ConsoleModel * sender)
 	for(int i = 0; i < commandList.size(); i++)
 	{
 		RemoveComponent(commandList[i]);
-		delete commandList[i];
+		//delete commandList[i];
 	}
 	commandList.clear();
 	std::deque<ConsoleCommand> commands = sender->GetPreviousCommands();

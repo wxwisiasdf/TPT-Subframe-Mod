@@ -142,7 +142,7 @@ int LuaWindow::removeComponent(lua_State * l)
 	else
 		luaL_typerror(l, 1, "Component");
 	if(component)
-		window->RemoveComponent(component);
+		window->RemoveComponent(component, false);
 	return 0;
 }
 

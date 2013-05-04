@@ -37,6 +37,24 @@ Window::~Window()
 
 void Window::AddComponent(Component* c)
 {
+	//If it is on the remove queue, remove it
+	bool added = false;
+	for (std::deque<std::pair<Component*, bool> >::iterator i = removeQueue.begin(); i != removeQueue.end(); )
+	{
+		if((*i).first == c)
+		{
+			added = true;
+			i = removeQueue.erase(i);
+		} else {
+			++i;
+		}
+	}
+
+	//otherwise add to remove queue
+	//if(!added)
+		addQueue.push_back(c);
+	
+	return;
 	// TODO: do a check if component was already added?
 	if(c->GetParentWindow()==NULL)
 	{
@@ -63,8 +81,29 @@ Component* Window::GetComponent(unsigned idx)
 	return Components[idx];
 }
 
-void Window::RemoveComponent(Component* c)
+void Window::RemoveComponent(Component* c, bool freeOnRemove)
 {
+	//If it is on the add queue, remove it
+	bool removed = false;
+	for (std::deque<Component*>::iterator i = addQueue.begin(); i != addQueue.end(); )
+	{
+		if(*i == c)
+		{
+			removed = true;
+			i = addQueue.erase(i);
+		} else {
+			++i;
+		}
+	}
+	//otherwise add to remove queue
+	if(!removed)
+	{
+		c->Locked = true;
+		removeQueue.push_back(std::pair<Component*, bool>(c, freeOnRemove));
+	}
+
+	return;
+
 	// remove component WITHOUT freeing it.
 	for(unsigned i = 0; i < Components.size(); ++i)
 	{
@@ -96,7 +135,7 @@ void Window::OnTryOkay(OkayMethod method)
 		okayButton->DoAction();
 }
 
-void Window::RemoveComponent(unsigned idx)
+/*void Window::RemoveComponent(unsigned idx)
 {
 	halt = true;
 	// free component and remove it.
@@ -104,7 +143,7 @@ void Window::RemoveComponent(unsigned idx)
 		focusedComponent_ = NULL;
 	delete Components[idx];
 	Components.erase(Components.begin() + idx);
-}
+}*/
 
 bool Window::IsFocused(const Component* c) const
 {
@@ -212,6 +251,48 @@ void Window::DoTick(float dt)
 	if(debugMode)
 		return;
 #endif
+
+	//Add any components on the queue
+	while(addQueue.size())
+	{
+		Component * c = addQueue.front();
+		addQueue.pop_front();
+
+		if(c->GetParentWindow()==NULL)
+		{
+			c->SetParentWindow(this);
+			Components.push_back(c);
+			c->Locked = false;
+
+			if(Engine::Ref().GetMouseX() > Position.X + c->Position.X && Engine::Ref().GetMouseX() < Position.X + c->Position.X + c->Size.X &&
+				Engine::Ref().GetMouseY() > Position.Y + c->Position.Y && Engine::Ref().GetMouseY() < Position.Y + c->Position.Y + c->Size.Y)
+				c->OnMouseEnter(Engine::Ref().GetMouseX() - (Position.X + c->Position.X), Engine::Ref().GetMouseY() - (Position.Y + c->Position.Y));
+		}
+	}
+
+	//Remove any components on the queue
+	while(removeQueue.size())
+	{
+		std::pair<Component *, bool> p = removeQueue.front();
+		Component * c = p.first;
+		bool deleteOnRemove = p.second;
+		removeQueue.pop_front();
+
+		if(focusedComponent_ == c)
+			focusedComponent_ = NULL;
+
+		for (std::vector<Component*>::iterator i = Components.begin(); i != Components.end(); )
+		{
+			if(*i == c)
+				i = Components.erase(i);
+			else
+				++i;
+		}
+
+		if(deleteOnRemove)
+			delete c;
+	}
+
 	//on mouse hover
 	for(int i = Components.size() - 1; i >= 0 && !halt; --i)
 	{
@@ -229,7 +310,8 @@ void Window::DoTick(float dt)
 	//tick
 	for(int i = 0, sz = Components.size(); i < sz && !halt; ++i)
 	{
-		Components[i]->Tick(dt);
+		if(!Components[i]->Locked)
+			Components[i]->Tick(dt);
 	}
 
 	halt = false;
