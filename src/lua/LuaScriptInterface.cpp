@@ -1718,24 +1718,32 @@ int LuaScriptInterface::simulation_stateNewindex(lua_State *l)
 		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
 		if(t)
 			c->SetActiveTool(0, t);
+		else
+			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
 	else if(!key.compare("selectedRight"))
 	{
 		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
 		if(t)
 			c->SetActiveTool(1, t);
+		else
+			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
 	else if(!key.compare("selectedMiddle"))
 	{
 		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
 		if(t)
 			c->SetActiveTool(2, t);
+		else
+			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
 	else if(!key.compare("selectedReplace"))
 	{
 		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
 		if(t)
 			c->SetActiveTool(3, t);
+		else
+			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
 	else if(!key.compare("paused"))
 		m->SetPaused(lua_toboolean(l, 3));
