@@ -443,6 +443,18 @@ int LuaScriptInterface::interface_closeWindow(lua_State * l)
 StructProperty * LuaScriptInterface::particleProperties;
 int LuaScriptInterface::particlePropertiesCount;
 
+int StateIndexClosure(lua_State *l)
+{
+	LuaScriptInterface *lsi = (LuaScriptInterface *)lua_touserdata(l, lua_upvalueindex(1));
+	return lsi->simulation_stateIndex(l);
+}
+
+int StateNewindexClosure(lua_State *l)
+{
+	LuaScriptInterface *lsi = (LuaScriptInterface *)lua_touserdata(l, lua_upvalueindex(1));
+	return lsi->simulation_stateNewindex(l);
+}
+
 void LuaScriptInterface::initSimulationAPI()
 {
 	//Methods
@@ -544,6 +556,17 @@ void LuaScriptInterface::initSimulationAPI()
 		lua_setfield(l, -2, ("FIELD_"+propertyName).c_str());
 		particleProperties[particlePropertiesCount++] = *iter;
 	}
+	//sim.state
+	lua_newtable(l);
+	lua_newtable(l);
+	lua_pushlightuserdata(l, this);
+	lua_pushcclosure(l, StateIndexClosure, 1);
+	lua_setfield(l, -2, "__index");
+	lua_pushlightuserdata(l, this);
+	lua_pushcclosure(l, StateNewindexClosure, 1);
+	lua_setfield(l, -2, "__newindex");
+	lua_setmetatable(l, -2);
+	lua_setfield(l, -2, "state");
 }
 
 void LuaScriptInterface::set_map(int x, int y, int width, int height, float value, int map) // A function so this won't need to be repeated many times later
@@ -1669,6 +1692,54 @@ int LuaScriptInterface::simulation_neighbours(lua_State * l)
 	lua_pushnumber(l, -ry);
 	lua_pushcclosure(l, NeighboursClosure, 6);
 	return 1;
+}
+
+int LuaScriptInterface::simulation_stateIndex(lua_State *l)
+{
+	std::string key = luaL_checkstring(l, 2);
+	if(!key.compare("selectedLeft"))
+		return lua_pushstring(l, luacon_selectedl.c_str()), 1;
+	if(!key.compare("selectedRight"))
+		return lua_pushstring(l, luacon_selectedr.c_str()), 1;
+	if(!key.compare("selectedMiddle"))
+		return lua_pushstring(l, luacon_selectedalt.c_str()), 1;
+	if(!key.compare("selectedReplace"))
+		return lua_pushstring(l, luacon_selectedreplace.c_str()), 1;
+	if(!key.compare("paused"))
+		return lua_pushboolean(l, m->GetPaused()), 1;
+	return 0;
+}
+
+int LuaScriptInterface::simulation_stateNewindex(lua_State *l)
+{
+	std::string key = luaL_checkstring(l, 2);
+	if(!key.compare("selectedLeft"))
+	{
+		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
+		if(t)
+			c->SetActiveTool(0, t);
+	}
+	else if(!key.compare("selectedRight"))
+	{
+		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
+		if(t)
+			c->SetActiveTool(1, t);
+	}
+	else if(!key.compare("selectedMiddle"))
+	{
+		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
+		if(t)
+			c->SetActiveTool(2, t);
+	}
+	else if(!key.compare("selectedReplace"))
+	{
+		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
+		if(t)
+			c->SetActiveTool(3, t);
+	}
+	else if(!key.compare("paused"))
+		m->SetPaused(lua_toboolean(l, 3));
+	return 0;
 }
 
 //// Begin Renderer API

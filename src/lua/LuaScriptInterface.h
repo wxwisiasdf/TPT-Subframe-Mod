@@ -149,6 +149,9 @@ class LuaScriptInterface: public CommandInterface
 	static int fileSystem_copy(lua_State * l);
 
 public:
+	int simulation_stateIndex(lua_State *l);
+	int simulation_stateNewindex(lua_State *l);
+
 	ui::Window * Window;
 	lua_State *l;
 	LuaScriptInterface(GameController * c, GameModel * m);
