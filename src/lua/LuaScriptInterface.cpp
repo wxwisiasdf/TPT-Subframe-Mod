@@ -1697,56 +1697,80 @@ int LuaScriptInterface::simulation_neighbours(lua_State * l)
 int LuaScriptInterface::simulation_stateIndex(lua_State *l)
 {
 	std::string key = luaL_checkstring(l, 2);
-	if(!key.compare("selectedLeft"))
+	if (!key.compare("selectedLeft"))
 		return lua_pushstring(l, luacon_selectedl.c_str()), 1;
-	if(!key.compare("selectedRight"))
+	if (!key.compare("selectedRight"))
 		return lua_pushstring(l, luacon_selectedr.c_str()), 1;
-	if(!key.compare("selectedMiddle"))
+	if (!key.compare("selectedMiddle"))
 		return lua_pushstring(l, luacon_selectedalt.c_str()), 1;
-	if(!key.compare("selectedReplace"))
+	if (!key.compare("selectedReplace"))
 		return lua_pushstring(l, luacon_selectedreplace.c_str()), 1;
-	if(!key.compare("paused"))
+	if (!key.compare("brushX"))
+		return lua_pushnumber(l, luacon_brushx), 1;
+	if (!key.compare("brushY"))
+		return lua_pushnumber(l, luacon_brushy), 1;
+	if (!key.compare("brushID"))
+		return lua_pushnumber(l, m->GetBrushID()), 1;
+
+	if (!key.compare("paused"))
 		return lua_pushboolean(l, m->GetPaused()), 1;
+	if (!key.compare("fps"))
+		return lua_pushnumber(l, ui::Engine::Ref().GetFps()), 1;
+	if (!key.compare("fpscap"))
+		return lua_pushnumber(l, ui::Engine::Ref().FpsLimit), 1;
 	return 0;
 }
 
 int LuaScriptInterface::simulation_stateNewindex(lua_State *l)
 {
 	std::string key = luaL_checkstring(l, 2);
-	if(!key.compare("selectedLeft"))
+	if( !key.compare("selectedLeft"))
 	{
 		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
-		if(t)
+		if (t)
 			c->SetActiveTool(0, t);
 		else
 			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
-	else if(!key.compare("selectedRight"))
+	else if (!key.compare("selectedRight"))
 	{
 		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
-		if(t)
+		if (t)
 			c->SetActiveTool(1, t);
 		else
 			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
-	else if(!key.compare("selectedMiddle"))
+	else if (!key.compare("selectedMiddle"))
 	{
 		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
-		if(t)
+		if (t)
 			c->SetActiveTool(2, t);
 		else
 			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
-	else if(!key.compare("selectedReplace"))
+	else if (!key.compare("selectedReplace"))
 	{
 		Tool *t = m->GetToolFromIdentifier(luaL_checkstring(l, 3));
-		if(t)
+		if (t)
 			c->SetActiveTool(3, t);
 		else
 			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
-	else if(!key.compare("paused"))
+	else if (!key.compare("brushX"))
+		c->SetBrushSize(ui::Point(luaL_checkinteger(l, 3), luacon_brushy));
+	else if (!key.compare("brushY"))
+		c->SetBrushSize(ui::Point(luacon_brushx, luaL_checkinteger(l, 3)));
+	else if (!key.compare("brushID"))
+		m->SetBrushID(luaL_checkinteger(l, 3));
+	else if (!key.compare("paused"))
 		m->SetPaused(lua_toboolean(l, 3));
+	else if (!key.compare("fpscap"))
+	{
+		int fpscap = luaL_checkinteger(l, 3);
+		if (fpscap < 2)
+			return luaL_error(l, "Fps cap too small");
+		ui::Engine::Ref().FpsLimit = fpscap;
+	}
 	return 0;
 }
 
