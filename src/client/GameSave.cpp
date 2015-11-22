@@ -1098,6 +1098,11 @@ void GameSave::readOPS(char * data, int dataLength)
 						}
 						break;
 					}
+					if (savedVersion < 91)
+					{
+						if (particles[newIndex].type == PT_WIFI)
+							particles[newIndex].flags |= FLAG_COMPAT;
+					}
 					//note: PSv was used in version 77.0 and every version before, add something in PSv too if the element is that old
 					newIndex++;
 				}
@@ -1757,6 +1762,9 @@ void GameSave::readPSv(char * data, int dataLength)
 						particles[i-1].tmp = 0;
 					}
 				}
+
+				if (particles[i-1].type == PT_WIFI)
+					particles[i-1].flags |= FLAG_COMPAT;
 			}
 		}
 	}
