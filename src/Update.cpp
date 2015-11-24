@@ -104,7 +104,7 @@ int update_finish(void)
 {
 #ifdef WIN
 	char *temp, *self = Platform::ExecutableName(), *p;
-	int timeout = 60, err;
+	int timeout = 5, err;
 
 #ifdef DEBUG
 	printf("Update: Current EXE name: %s\n", self);
