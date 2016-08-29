@@ -3405,6 +3405,8 @@ void Simulation::UpdateParticles(int start, int end)
 	float pGravX, pGravY, pGravD;
 	bool transitionOccurred;
 
+    debug_interestingChangeOccurred = false;
+    
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
 		if (parts[i].type)
@@ -4027,6 +4029,12 @@ void Simulation::UpdateParticles(int start, int end)
 			if (elements[t].Update)
 #endif
 			{
+                if(t != PT_LCRY)
+                {
+                    debug_interestingChangeOccurred = true;
+                    //std::cout << "Updated t=" << t << " at (" << x << ", " << y << ")" << std::endl;
+                }
+
 				if ((*(elements[t].Update))(this, i, x, y, surround_space, nt, parts, pmap))
 					continue;
 				else if (t==PT_WARP)

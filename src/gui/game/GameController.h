@@ -100,6 +100,7 @@ public:
 	bool GetHudEnable();
 	void SetDebugHUD(bool hudState);
 	bool GetDebugHUD();
+    unsigned int GetDebugFlags() { return debugFlags; }
 	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
 	void SetActiveMenu(int menuID);
 	std::vector<Menu*> GetMenuList();
