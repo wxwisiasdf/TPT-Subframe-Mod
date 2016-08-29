@@ -155,6 +155,7 @@ public:
 	void SetSave(SaveInfo * newSave);
 	void SetSaveFile(SaveFile * newSave);
 	void AddObserver(GameView * observer);
+	void ReloadParticleOrder();
 
 	bool GetPaused();
 	void SetPaused(bool pauseState);

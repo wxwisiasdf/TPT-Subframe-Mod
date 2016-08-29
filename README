@@ -2,9 +2,9 @@ The Powder Toy (Subframe Chipmaker Mod) - August 2016
 
 This is a mod of The Powder Toy for subframe chipmakers. Subframe technology refers to electronic components that depend on the order in which particles are evaluated in a single frame. This mod adds the following features:
 
-- Shift-F5 reloads the particle order.
+- Particle order reloading: if you use the brush, then advance the simulation, the frame will be completed and the particle order will be reloaded automatically. You can reload the particle order manually with Shift-F5.
 - Shift-Space runs the simulation particle-by-particle rather than frame-by-frame.
 - Shift-R starts a recording of the particle-by-particle simulation and automatically stops recording at the end of the frame. Recording can still be stopped with R but particle-by-particle simulation will still continue.
-- Alt-F skips over a number of particle updates deemed "uninteresting", and does not display any log messages.
+- Alt-F only stops at particle updates deemed "interesting" (create_part, delete_part or part_change_type called), and does not display any log messages until the frame is completed.
 
-Note that all these have to be enabled with the Lua command "tpt.setdebug(0x8)". You can put that in autorun.lua.
+Note that none of these features would be enabled unless you enter the Lua command "tpt.setdebug(0x8)" into the console. You can put that in autorun.lua.

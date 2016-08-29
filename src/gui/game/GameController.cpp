@@ -889,6 +889,12 @@ void GameController::Update()
 		gameView->SetSample(gameModel->GetSimulation()->GetSample(pos.X, pos.Y));
 
 	Simulation * sim = gameModel->GetSimulation();
+
+	if(GetSubframeEnabled() && sim->brush_was_used)
+	{
+		gameModel->ReloadParticleOrder();
+	}
+	
 	sim->BeforeSim();
 	if (!sim->sys_pause || sim->framerender)
 	{
@@ -992,12 +998,21 @@ void GameController::SetZoomPosition(ui::Point position)
 
 void GameController::SetPaused(bool pauseState)
 {
+	if(!pauseState)
+	{
+		gameModel->GetSimulation()->CompleteDebugUpdateParticles();
+		gameModel->SetSubframeMode(false);
+	}
+
 	gameModel->SetPaused(pauseState);
 }
 
 void GameController::SetPaused()
 {
-	gameModel->SetPaused(!gameModel->GetPaused());
+	if(gameModel->GetSubframeMode())
+		gameModel->SetSubframeMode(false);
+	else
+		SetPaused(!gameModel->GetPaused());
 }
 
 void GameController::SetSubframeMode(bool subframeModeState)
@@ -1482,19 +1497,7 @@ void GameController::ReloadSim()
 
 void GameController::ReloadParticleOrder()
 {
-	Simulation * sim = gameModel->GetSimulation();
-	GameSave * gameSave = sim->Save();
-	sim->SaveSimOptions(gameSave);
-	gameSave->paused = gameModel->GetPaused();
-
-	SaveFile tempSave("");
-	if (gameModel->GetSaveFile())
-	{
-		tempSave.SetFileName(gameModel->GetSaveFile()->GetName());
-		tempSave.SetDisplayName(gameModel->GetSaveFile()->GetDisplayName());
-	}
-	tempSave.SetGameSave(new GameSave(gameSave->Serialise()));
-	gameModel->SetSaveFile(&tempSave);
+	gameModel->ReloadParticleOrder();
 }
 
 std::string GameController::ElementResolve(int type, int ctype)

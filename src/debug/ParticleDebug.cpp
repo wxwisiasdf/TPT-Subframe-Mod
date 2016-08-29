@@ -14,6 +14,11 @@ ParticleDebug::ParticleDebug(unsigned int id, Simulation * sim, GameModel * mode
 
 void ParticleDebug::Debug(int mode, int x, int y)
 {
+	if(sim->brush_was_used)
+	{
+		model->ReloadParticleOrder();
+	}
+
 	int debug_currentParticle = sim->debug_currentParticle;
 	int i;
 	std::stringstream logmessage;
@@ -41,12 +46,14 @@ void ParticleDebug::Debug(int mode, int x, int y)
         }
         while(i < NPART && !sim->debug_interestingChangeOccurred);
 
-        //if (i == NPART)
-        //    logmessage << "End of particles reached, updated sim";
+        if (i == NPART)
+		{
+            logmessage << "End of particles reached, updated sim";
+			model->Log(logmessage.str(), false);
+		}
+
         //else
         //    logmessage << "Updated particles #" << debug_currentParticle << " through #" << i;
-        //
-        //model->Log(logmessage.str(), false);
 	}
     else{
         if (mode == 1)
@@ -106,12 +113,11 @@ bool ParticleDebug::KeyPress(int key, Uint16 character, bool shift, bool ctrl, b
 		{
 			if (sim->debug_currentParticle > 0)
 			{
-				sim->UpdateParticles(sim->debug_currentParticle, NPART);
-				sim->AfterSim();
+				sim->CompleteDebugUpdateParticles();
+
 				std::stringstream logmessage;
 				logmessage << "Updated particles from #" << sim->debug_currentParticle << " to end, updated sim";
 				model->Log(logmessage.str(), false);
-				sim->debug_currentParticle = 0;
 			}
 			else
 			{

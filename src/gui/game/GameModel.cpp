@@ -656,6 +656,25 @@ void GameModel::SetSaveFile(SaveFile * newSave)
 	UpdateQuickOptions();
 }
 
+void GameModel::ReloadParticleOrder()
+{
+	sim->CompleteDebugUpdateParticles();
+
+	GameSave * gameSave = sim->Save();
+	sim->SaveSimOptions(gameSave);
+	gameSave->paused = GetPaused();
+
+	GameSave * newSave = new GameSave(gameSave->Serialise());
+	//SetSaveFile(&tempSave);
+	sim->clear_sim();
+	ren->ClearAccumulation();
+	sim->Load(newSave);
+	delete gameSave;
+	delete newSave;
+
+	std::cout << "Particle order reloaded." << std::endl;
+}
+
 Simulation * GameModel::GetSimulation()
 {
 	return sim;
@@ -843,16 +862,6 @@ void GameModel::SetUser(User user)
 
 void GameModel::SetPaused(bool pauseState)
 {
-	if(!pauseState && sim->debug_currentParticle > 0)
-	{
-		sim->UpdateParticles(sim->debug_currentParticle, NPART);
-		sim->AfterSim();
-		sim->debug_currentParticle = 0;
-	}
-
-	if(!pauseState)
-		SetSubframeMode(false);
-
 	sim->sys_pause = pauseState?1:0;
 	notifyPausedChanged();
 }

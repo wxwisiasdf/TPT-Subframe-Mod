@@ -1359,6 +1359,8 @@ int Simulation::CreateParts(int positionX, int positionY, int c, Brush * cBrush,
 		flags = replaceModeFlags;
 	if (cBrush)
 	{
+		brush_was_used = true;
+
 		int radiusX = cBrush->GetRadius().X, radiusY = cBrush->GetRadius().Y, sizeX = cBrush->GetSize().X, sizeY = cBrush->GetSize().Y;
 		unsigned char *bitmap = cBrush->GetBitmap();
 
@@ -1903,6 +1905,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
+	brush_was_used = 0;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -2698,6 +2701,8 @@ void Simulation::kill_part(int i)//kills particle number i
 
 void Simulation::part_change_type(int i, int x, int y, int t)//changes the type of particle number i, to t.  This also changes pmap at the same time.
 {
+	debug_interestingChangeOccurred = true;
+
 	if (x<0 || y<0 || x>=XRES || y>=YRES || i>=NPART || t<0 || t>=PT_NUM || !parts[i].type)
 		return;
 	if (!elements[t].Enabled)
@@ -2781,6 +2786,7 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 //tv = Type (8 bits) + Var (24 bits), var is usually 0
 int Simulation::create_part(int p, int x, int y, int t, int v)
 {
+	debug_interestingChangeOccurred = true;
 	int i;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
@@ -2858,6 +2864,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	}
 	else if (p==-2)//creating from brush
 	{
+		brush_was_used = true;
 		if (pmap[y][x])
 		{
 			//If an element has the PROP_DRAWONCTYPE property, and the element being drawn to it does not have PROP_NOCTYPEDRAW (Also some special cases), set the element's ctype
@@ -3375,6 +3382,8 @@ void Simulation::create_cherenkov_photon(int pp)//photons from NEUT going throug
 
 void Simulation::delete_part(int x, int y)//calls kill_part with the particle located at x,y
 {
+	debug_interestingChangeOccurred = true;
+
 	unsigned i;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
@@ -3388,6 +3397,16 @@ void Simulation::delete_part(int x, int y)//calls kill_part with the particle lo
 	if (!i)
 		return;
 	kill_part(i>>8);
+}
+
+void Simulation::CompleteDebugUpdateParticles()
+{
+	if(debug_currentParticle > 0)
+	{
+		UpdateParticles(debug_currentParticle, NPART);
+		AfterSim();
+		debug_currentParticle = 0;
+	}
 }
 
 void Simulation::UpdateParticles(int start, int end)
@@ -3406,6 +3425,7 @@ void Simulation::UpdateParticles(int start, int end)
 	bool transitionOccurred;
 
     debug_interestingChangeOccurred = false;
+	brush_was_used = false;
     
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
@@ -4029,12 +4049,6 @@ void Simulation::UpdateParticles(int start, int end)
 			if (elements[t].Update)
 #endif
 			{
-                if(t != PT_LCRY)
-                {
-                    debug_interestingChangeOccurred = true;
-                    //std::cout << "Updated t=" << t << " at (" << x << ", " << y << ")" << std::endl;
-                }
-
 				if ((*(elements[t].Update))(this, i, x, y, surround_space, nt, parts, pmap))
 					continue;
 				else if (t==PT_WARP)
@@ -5102,6 +5116,7 @@ Simulation::Simulation():
 	replaceModeSelected(0),
 	replaceModeFlags(0),
 	debug_currentParticle(0),
+	brush_was_used(false),
 	ISWIRE(0),
 	force_stacking_check(false),
 	emp_decor(0),
