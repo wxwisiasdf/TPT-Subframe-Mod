@@ -1464,7 +1464,10 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		SetDebugHUD(!GetDebugHUD());
 		break;
 	case SDLK_F5:
-		c->ReloadSim();
+		if (shift && c->GetSubframeEnabled())
+			c->ReloadParticleOrder();
+		else
+			c->ReloadSim();
 		break;
 	case 'r':
 		if (ctrl)

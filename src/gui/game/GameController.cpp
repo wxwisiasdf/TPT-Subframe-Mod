@@ -1480,6 +1480,23 @@ void GameController::ReloadSim()
 	}
 }
 
+void GameController::ReloadParticleOrder()
+{
+	Simulation * sim = gameModel->GetSimulation();
+	GameSave * gameSave = sim->Save();
+	sim->SaveSimOptions(gameSave);
+	gameSave->paused = gameModel->GetPaused();
+
+	SaveFile tempSave("");
+	if (gameModel->GetSaveFile())
+	{
+		tempSave.SetFileName(gameModel->GetSaveFile()->GetName());
+		tempSave.SetDisplayName(gameModel->GetSaveFile()->GetDisplayName());
+	}
+	tempSave.SetGameSave(new GameSave(gameSave->Serialise()));
+	gameModel->SetSaveFile(&tempSave);
+}
+
 std::string GameController::ElementResolve(int type, int ctype)
 {
 	if(gameModel && gameModel->GetSimulation())
