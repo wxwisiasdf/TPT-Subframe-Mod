@@ -1086,6 +1086,35 @@ void GameView::StopRecording()
 	}
 }
 
+void GameView::startSubframeRecording()
+{
+	if(recording)
+	{
+		std::cout << "Starting subframe recording." << std::endl;
+		c->SetSubframeMode(true);
+		recordingSubframe = true;
+	}
+	else
+	{
+		class RecordingConfirmation: public ConfirmDialogueCallback {
+		public:
+			GameView * v;
+			RecordingConfirmation(GameView * v): v(v) {}
+			virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
+				if (result == ConfirmPrompt::ResultOkay)
+				{
+					std::cout << "Starting subframe recording." << std::endl;
+					v->c->SetSubframeMode(true);
+					v->recordingSubframe = true;
+					v->recording = true;
+				}
+			}
+			virtual ~RecordingConfirmation() { }
+		};
+		new ConfirmPrompt("Recording", "You're about to start recording all remaining particle updates in this frame. This may use a load of hard disk space.", new RecordingConfirmation(this));
+	}
+}
+
 void GameView::setToolButtonOffset(int offset)
 {
 	int offset_ = offset;
@@ -1474,10 +1503,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			c->ReloadSim();
         else if (shift && c->GetSubframeEnabled())
         {
-            std::cout << "Starting subframe recording." << std::endl;
-			c->SetSubframeMode(true);
-            recordingSubframe = true;
-            recording = true;
+			startSubframeRecording();
         }
 		else
 			record();

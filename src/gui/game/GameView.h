@@ -120,6 +120,7 @@ private:
 
 	void screenshot();
 	void record();
+	void startSubframeRecording();
 
 	void enableShiftBehaviour();
 	void disableShiftBehaviour();
