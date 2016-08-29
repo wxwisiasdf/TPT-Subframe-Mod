@@ -188,6 +188,7 @@ GameView::GameView():
 	recording(false),
 	screenshotIndex(0),
 	recordingIndex(0),
+    recordingSubframe(false),
 	currentPoint(ui::Point(0, 0)),
 	lastPoint(ui::Point(0, 0)),
 	ren(NULL),
@@ -1076,6 +1077,12 @@ void GameView::record()
 	}
 }
 
+void GameView::StopRecordingSubframe()
+{
+    recordingSubframe = false;
+    record();
+}
+
 void GameView::setToolButtonOffset(int offset)
 {
 	int offset_ = offset;
@@ -1455,6 +1462,13 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 	case 'r':
 		if (ctrl)
 			c->ReloadSim();
+        else if (shift && (c->GetDebugFlags() & 0x8))
+        {
+            std::cout << "Starting subframe recording." << std::endl;
+            c->SetPaused(true);
+            recordingSubframe = true;
+            record();
+        }
 		else
 			record();
 		break;

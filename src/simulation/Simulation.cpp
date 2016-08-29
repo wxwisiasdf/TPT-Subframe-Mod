@@ -1902,7 +1902,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 
 void Simulation::clear_sim(void)
 {
-    debug_currentParticle = 0;
+	debug_currentParticle = 0;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -3405,6 +3405,8 @@ void Simulation::UpdateParticles(int start, int end)
 	float pGravX, pGravY, pGravD;
 	bool transitionOccurred;
 
+    debug_interestingChangeOccurred = false;
+    
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
 		if (parts[i].type)
@@ -4027,6 +4029,12 @@ void Simulation::UpdateParticles(int start, int end)
 			if (elements[t].Update)
 #endif
 			{
+                if(t != PT_LCRY)
+                {
+                    debug_interestingChangeOccurred = true;
+                    //std::cout << "Updated t=" << t << " at (" << x << ", " << y << ")" << std::endl;
+                }
+
 				if ((*(elements[t].Update))(this, i, x, y, surround_space, nt, parts, pmap))
 					continue;
 				else if (t==PT_WARP)
