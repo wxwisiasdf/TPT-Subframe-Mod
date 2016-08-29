@@ -93,6 +93,8 @@ public:
 	void Update();
 	void SetPaused(bool pauseState);
 	void SetPaused();
+	void SetSubframeMode(bool subframeModeState);
+	void SetSubframeMode();
 	void SetDecoration(bool decorationState);
 	void SetDecoration();
 	void ShowGravityGrid();
@@ -101,6 +103,7 @@ public:
 	void SetDebugHUD(bool hudState);
 	bool GetDebugHUD();
     unsigned int GetDebugFlags() { return debugFlags; }
+	bool GetSubframeEnabled() { return debugFlags & 0x8; }
 	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
 	void SetActiveMenu(int menuID);
 	std::vector<Menu*> GetMenuList();
@@ -133,7 +136,6 @@ public:
 	void OpenElementSearch();
 	void OpenColourPicker();
 	void PlaceSave(ui::Point position);
-    void CompleteDebugUpdateParticles();
 	void ClearSim();
 	void ReloadSim();
 	void Vote(int direction);

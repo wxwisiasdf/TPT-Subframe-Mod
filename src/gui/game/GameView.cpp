@@ -929,7 +929,7 @@ void GameView::NotifyUserChanged(GameModel * sender)
 
 void GameView::NotifyPausedChanged(GameModel * sender)
 {
-	pauseButton->SetToggleState(sender->GetPaused());
+	pauseButton->SetToggleState(sender->GetPaused() && !(sender->GetSubframeMode()));
 }
 
 void GameView::NotifyToolTipChanged(GameModel * sender)
@@ -1057,6 +1057,7 @@ void GameView::record()
 {
 	if(recording)
 	{
+		recordingSubframe = false;
 		recording = false;
 	}
 	else
@@ -1077,10 +1078,12 @@ void GameView::record()
 	}
 }
 
-void GameView::StopRecordingSubframe()
+void GameView::StopRecording()
 {
-    recordingSubframe = false;
-    record();
+	if(recording)
+	{
+		record();
+	}
 }
 
 void GameView::setToolButtonOffset(int offset)
@@ -1424,11 +1427,15 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		enableShiftBehaviour();
 		break;
 	case ' ': //Space
-    {
-        c->CompleteDebugUpdateParticles();
-		c->SetPaused();
+        if (shift && c->GetSubframeEnabled())
+        {
+			c->SetSubframeMode();
+        }
+		else
+		{
+			c->SetPaused();
+		}
 		break;
-    }
 	case 'z':
 		if (selectMode != SelectNone && isMouseDown)
 			break;
@@ -1462,12 +1469,12 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 	case 'r':
 		if (ctrl)
 			c->ReloadSim();
-        else if (shift && (c->GetDebugFlags() & 0x8))
+        else if (shift && c->GetSubframeEnabled())
         {
             std::cout << "Starting subframe recording." << std::endl;
-            c->SetPaused(true);
+			c->SetSubframeMode(true);
             recordingSubframe = true;
-            record();
+            recording = true;
         }
 		else
 			record();

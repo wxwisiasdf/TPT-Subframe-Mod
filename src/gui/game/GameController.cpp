@@ -895,19 +895,21 @@ void GameController::Update()
 		sim->UpdateParticles(0, NPART);
 		sim->AfterSim();
 	}
-    else if (gameView->GetRecordingSubframe())
-    {
+	else if (sim->subframe_mode)
+	{
 		for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
 		{
 			if ((*iter)->ID == 0x8)
-				(*iter)->KeyPress('f', 0, false, false, true, gameView->GetMousePosition());
+				((ParticleDebug*)*iter)->Debug(0, 0, 0);
 		}
-        if(sim->debug_currentParticle == 0)
-        {
-            std::cout << "Subframe recording completed." << std::endl;
-            gameView->StopRecordingSubframe();
-        }
-    }
+
+		if(gameView->GetRecordingSubframe() && sim->debug_currentParticle == 0)
+		{
+			std::cout << "Subframe recording completed." << std::endl;
+			gameView->StopRecording();
+			sim->subframe_mode = false;
+		}
+	}
 
 	//if either STKM or STK2 isn't out, reset it's selected element. Defaults to PT_DUST unless right selected is something else
 	//This won't run if the stickmen dies in a frame, since it respawns instantly
@@ -996,6 +998,16 @@ void GameController::SetPaused(bool pauseState)
 void GameController::SetPaused()
 {
 	gameModel->SetPaused(!gameModel->GetPaused());
+}
+
+void GameController::SetSubframeMode(bool subframeModeState)
+{
+	gameModel->SetSubframeMode(subframeModeState);
+}
+
+void GameController::SetSubframeMode()
+{
+	gameModel->SetSubframeMode(!gameModel->GetSubframeMode());
 }
 
 void GameController::SetDecoration(bool decorationState)
@@ -1448,11 +1460,6 @@ void GameController::Vote(int direction)
 void GameController::ChangeBrush()
 {
 	gameModel->SetBrushID(gameModel->GetBrushID()+1);
-}
-
-void GameController::CompleteDebugUpdateParticles()
-{
-    gameModel->CompleteDebugUpdateParticles();
 }
 
 void GameController::ClearSim()

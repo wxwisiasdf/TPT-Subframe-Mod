@@ -158,13 +158,14 @@ public:
 
 	bool GetPaused();
 	void SetPaused(bool pauseState);
+	bool GetSubframeMode();
+	void SetSubframeMode(bool subframeModeState);
 	bool GetDecoration();
 	void SetDecoration(bool decorationState);
 	bool GetAHeatEnable();
 	void SetAHeatEnable(bool aHeat);
 	bool GetGravityGrid();
 	void ShowGravityGrid(bool showGrid);
-    void CompleteDebugUpdateParticles();
 	void ClearSimulation();
 	vector<Menu*> GetMenuList();
 	vector<QuickOption*> GetQuickOptions();

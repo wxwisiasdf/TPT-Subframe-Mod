@@ -151,7 +151,7 @@ public:
 	void BeginStampSelection();
 
     bool GetRecordingSubframe(){ return recordingSubframe; }
-    void StopRecordingSubframe();
+	void StopRecording();
 
 	//all of these are only here for one debug lines
 	bool GetMouseDown() { return isMouseDown; }

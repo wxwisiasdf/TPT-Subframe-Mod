@@ -5117,6 +5117,7 @@ Simulation::Simulation():
 	legacy_enable(0),
 	aheat_enable(0),
 	water_equal_test(0),
+	subframe_mode(false),
 	sys_pause(0),
 	framerender(0),
 	pretty_powder(0),

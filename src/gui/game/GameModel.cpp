@@ -850,6 +850,9 @@ void GameModel::SetPaused(bool pauseState)
 		sim->debug_currentParticle = 0;
 	}
 
+	if(!pauseState)
+		SetSubframeMode(false);
+
 	sim->sys_pause = pauseState?1:0;
 	notifyPausedChanged();
 }
@@ -857,6 +860,19 @@ void GameModel::SetPaused(bool pauseState)
 bool GameModel::GetPaused()
 {
 	return sim->sys_pause?true:false;
+}
+
+bool GameModel::GetSubframeMode()
+{
+	return sim->subframe_mode;
+}
+
+void GameModel::SetSubframeMode(bool subframeModeState)
+{
+	if(!GetPaused())
+		SetPaused(true);
+	sim->subframe_mode = subframeModeState;
+	notifyPausedChanged();
 }
 
 void GameModel::SetDecoration(bool decorationState)
@@ -910,16 +926,6 @@ bool GameModel::GetGravityGrid()
 void GameModel::FrameStep(int frames)
 {
 	sim->framerender += frames;
-}
-
-void GameModel::CompleteDebugUpdateParticles()
-{
-    if (sim->debug_currentParticle != 0)
-    {
-        sim->UpdateParticles(sim->debug_currentParticle, NPART);
-        sim->AfterSim();
-        sim->debug_currentParticle = 0;
-    }
 }
 
 void GameModel::ClearSimulation()

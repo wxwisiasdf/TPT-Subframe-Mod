@@ -109,6 +109,7 @@ public:
 	int legacy_enable;
 	int aheat_enable;
 	int water_equal_test;
+	bool subframe_mode;
 	int sys_pause;
 	int framerender;
 	int pretty_powder;
