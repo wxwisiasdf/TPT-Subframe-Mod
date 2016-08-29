@@ -890,9 +890,13 @@ void GameController::Update()
 
 	Simulation * sim = gameModel->GetSimulation();
 
-	if(GetSubframeEnabled() && sim->brush_was_used)
+	if(!sim->sys_pause || sim->framerender || sim->subframe_mode)
 	{
-		gameModel->ReloadParticleOrder();
+		if(GetSubframeEnabled() && sim->brush_was_used)
+		{
+			gameModel->ReloadParticleOrder();
+			sim->brush_was_used = false;
+		}
 	}
 	
 	sim->BeforeSim();

@@ -1905,7 +1905,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
-	brush_was_used = 0;
+	brush_was_used = false;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -3425,7 +3425,6 @@ void Simulation::UpdateParticles(int start, int end)
 	bool transitionOccurred;
 
     debug_interestingChangeOccurred = false;
-	brush_was_used = false;
     
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
