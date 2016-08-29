@@ -1,13 +1,21 @@
 The Powder Toy (Subframe Chipmaker Mod) - August 2016
 
-This is a mod of The Powder Toy for subframe chipmakers. Subframe technology refers to electronic components that depend on the order in which particles are evaluated in a single frame. This mod adds the following features:
+This is a mod of The Powder Toy for subframe chipmakers. Subframe technology refers to electronic components that depend on the order in which particles are evaluated in a single frame.
 
-**Note that none of these features would be enabled unless you enter the Lua command "tpt.setdebug(0x8)" into the console. You can put that in autorun.lua.**
+Features
+=======
+
+These features are enabled when you enter the Lua command "tpt.setdebug(0x8)" into the console (or you can put it in autorun.lua):
 
 - Particle order reloading: if you use the brush, then advance the simulation, the frame will be completed and the particle order will be reloaded automatically. You can reload the particle order manually with Shift-F5.
 - Shift-Space runs the simulation particle-by-particle rather than frame-by-frame.
 - Shift-R starts a recording of the particle-by-particle simulation and automatically stops recording at the end of the frame. Recording can still be stopped with R but particle-by-particle simulation will still continue.
 - Alt-F continues updating particles until it encouters an "interesting" update (create_part, delete_part or part_change_type called), and does not display any log messages until the frame is completed.
+
+These features will be present without enabling:
+
+- Show FILT ctype: The ctype of FILTs will be displayed in the debug HUD. In the original game, this was only shown for non-FILT coloured particles like BRAY.
+- FILT bit format: Setting the ctype of coloured particles (e.g. FILT) with the property tool will automatically set the 30th bit. When hovering the mouse over coloured particles, the ctype displayed in the debug HUD will ignore the 30th bit and, if the 29th bit is set, be displayed as a negative number.
 
 Note that the original game already supports the following subframe debugging features:
 

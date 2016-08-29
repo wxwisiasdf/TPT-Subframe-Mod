@@ -2348,15 +2348,27 @@ void GameView::OnDraw()
 					sampleInfo << c->ElementResolve(type, ctype);
 					const char* filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering"};
 					if (sample.particle.tmp>=0 && sample.particle.tmp<=9)
-						sampleInfo << " (" << filtModes[sample.particle.tmp] << ")";
+						sampleInfo << " (" << filtModes[sample.particle.tmp];
 					else
-						sampleInfo << " (unknown mode)";
+						sampleInfo << " (unknown mode";
+
+					int displayNumber = ctype & 0x1FFFFFFF;
+					if(ctype & 0x10000000)
+						displayNumber = -(((~ctype) & 0x1FFFFFFF) + 1);
+
+					sampleInfo << ", " << displayNumber << ")";
 				}
 				else
 				{
 					sampleInfo << c->ElementResolve(type, ctype);
 					if (wavelengthGfx)
-						sampleInfo << " (" << ctype << ")";
+					{
+						int displayNumber = ctype & 0x1FFFFFFF;
+						if(ctype & 0x10000000)
+							displayNumber = -(((~ctype) & 0x1FFFFFFF) + 1);
+
+						sampleInfo << " (" << displayNumber << ")";
+					}
 					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
 						sampleInfo << " (" << c->ElementResolve(ctype&0xFF, ctype>>8) << ")";
