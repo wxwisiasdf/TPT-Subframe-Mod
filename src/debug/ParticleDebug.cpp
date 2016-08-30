@@ -17,6 +17,7 @@ void ParticleDebug::Debug(int mode, int x, int y)
 	if(sim->brush_was_used)
 	{
 		model->ReloadParticleOrder();
+		sim->brush_was_used = false;
 	}
 
 	int debug_currentParticle = sim->debug_currentParticle;
@@ -56,6 +57,13 @@ void ParticleDebug::Debug(int mode, int x, int y)
         //    logmessage << "Updated particles #" << debug_currentParticle << " through #" << i;
 	}
     else{
+        if (sim->debug_currentParticle == 0)
+        {
+            sim->framerender = 1;
+            sim->BeforeSim();
+            sim->framerender = 0;
+        }
+
         if (mode == 1)
         {
             if (x < 0 || x >= XRES || y < 0 || y >= YRES || !(i = (sim->pmap[y][x]>>8)) || i < debug_currentParticle)
@@ -65,15 +73,9 @@ void ParticleDebug::Debug(int mode, int x, int y)
             }
             else
                 logmessage << "Updated particles #" << debug_currentParticle << " through #" << i;
+			model->Log(logmessage.str(), false);
         }
-        model->Log(logmessage.str(), false);
 
-        if (sim->debug_currentParticle == 0)
-        {
-            sim->framerender = 1;
-            sim->BeforeSim();
-            sim->framerender = 0;
-        }
         sim->UpdateParticles(debug_currentParticle, i);
     }
 
