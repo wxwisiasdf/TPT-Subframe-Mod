@@ -1101,14 +1101,15 @@ int main(int argc, char * argv[])
 
 		if(arguments["open"].length())
 		{
+			std::string filename = std::string(LOCAL_SAVE_DIR) + std::string(PATH_SEP) + std::string(arguments["open"]) + ".cps";
 #ifdef DEBUG
-			std::cout << "Loading " << arguments["open"] << std::endl;
+			std::cout << "Loading " << filename << std::endl;
 #endif
-			if(Client::Ref().FileExists(arguments["open"]))
+			if(Client::Ref().FileExists(filename))
 			{
 				try
 				{
-					std::vector<unsigned char> gameSaveData = Client::Ref().ReadFile(arguments["open"]);
+					std::vector<unsigned char> gameSaveData = Client::Ref().ReadFile(filename);
 					if(!gameSaveData.size())
 					{
 						new ErrorMessage("Error", "Could not read file");
