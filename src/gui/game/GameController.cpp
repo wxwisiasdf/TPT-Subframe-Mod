@@ -1164,6 +1164,7 @@ void GameController::OpenSearch(std::string searchText)
 
 void GameController::OpenLocalSaveWindow(bool asCurrent)
 {
+	ReloadParticleOrder();
 	Simulation * sim = gameModel->GetSimulation();
 	GameSave * gameSave = sim->Save();
 	if(!gameSave)
