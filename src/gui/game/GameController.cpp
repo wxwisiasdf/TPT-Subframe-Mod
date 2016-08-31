@@ -286,9 +286,10 @@ void GameController::PlaceSave(ui::Point position)
 	if (gameModel->GetPlaceSave())
 	{
 		HistorySnapshot();
+		gameModel->SetWasModified(true);
 		gameModel->GetSimulation()->Load(position.X, position.Y, gameModel->GetPlaceSave());
 		gameModel->SetPaused(gameModel->GetPlaceSave()->paused | gameModel->GetPaused());
-		gameModel->GetSimulation()->debug_wasEdited = true;
+		gameModel->GetSimulation()->debug_needReloadParticleOrder = true;
 	}
 }
 
@@ -463,6 +464,7 @@ void GameController::DrawPoints(int toolSelection, ui::Point oldPos, ui::Point n
 	Tool * activeTool = gameModel->GetActiveTool(toolSelection);
 	gameModel->SetLastTool(activeTool);
 	Brush * cBrush = gameModel->GetBrush();
+	gameModel->SetWasModified(true);
 	if (!activeTool || !cBrush)
 	{
 		return;
@@ -893,10 +895,10 @@ void GameController::Update()
 
 	if(!sim->sys_pause || sim->framerender || sim->subframe_mode)
 	{
-		if(GetSubframeEnabled() && sim->debug_wasEdited)
+		if(GetSubframeEnabled() && sim->debug_needReloadParticleOrder)
 		{
 			gameModel->ReloadParticleOrder();
-			sim->debug_wasEdited = false;
+			sim->debug_needReloadParticleOrder = false;
 		}
 	}
 	
@@ -979,6 +981,16 @@ void GameController::SetZoomEnabled(bool zoomEnabled)
 void GameController::SetToolStrength(float value)
 {
 	gameModel->SetToolStrength(value);
+}
+
+bool GameController::GetHasUnsavedChanges()
+{
+	return gameModel->GetSaveFile() && gameModel->GetWasModified();
+}
+
+void GameController::SetWasModified(bool value)
+{
+	gameModel->SetWasModified(true);
 }
 
 void GameController::SetZoomPosition(ui::Point position)

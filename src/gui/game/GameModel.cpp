@@ -28,6 +28,7 @@ GameModel::GameModel():
 	currentFile(NULL),
 	currentUser(0, ""),
 	toolStrength(1.0f),
+	wasModified(false),
 	activeColourPreset(0),
 	colourSelector(false),
 	colour(255, 0, 0, 255),
@@ -466,6 +467,16 @@ void GameModel::SetBrushID(int i)
 	notifyBrushChanged();
 }
 
+bool GameModel::GetWasModified()
+{
+	return wasModified;
+}
+
+void GameModel::SetWasModified(bool value)
+{
+	wasModified = true;
+}
+
 void GameModel::AddObserver(GameView * observer){
 	observers.push_back(observer);
 
@@ -650,6 +661,7 @@ void GameModel::SetSaveFile(SaveFile * newSave)
 		sim->clear_sim();
 		ren->ClearAccumulation();
 		sim->Load(saveData);
+		wasModified = false;
 	}
 	
 	notifySaveChanged();

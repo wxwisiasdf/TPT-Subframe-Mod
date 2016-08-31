@@ -65,6 +65,7 @@ private:
 	User currentUser;
 	float toolStrength;
 	std::deque<Snapshot*> history;
+	bool wasModified;
 
 	size_t activeColourPreset;
 	std::vector<ui::Colour> colourPresets;
@@ -148,6 +149,9 @@ public:
 	vector<Brush*> GetBrushList();
 	int GetBrushID();
 	void SetBrushID(int i);
+
+	bool GetWasModified();
+	void SetWasModified(bool value);
 
 	void SetVote(int direction);
 	SaveInfo * GetSave();

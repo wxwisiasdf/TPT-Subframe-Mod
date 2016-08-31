@@ -215,10 +215,30 @@ GameView::GameView():
 		SearchAction(GameView * _v) { v = _v; }
 		void ActionCallback(ui::Button * sender)
 		{
-			if(v->CtrlBehaviour())
-				v->c->OpenLocalBrowse();
+			class SearchConfirmation: public ConfirmDialogueCallback {
+			public:
+				GameView * v;
+				SearchConfirmation(GameView * v) : v(v) {}
+				virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
+					if (result == ConfirmPrompt::ResultOkay)
+					{
+						if(v->CtrlBehaviour())
+							v->c->OpenLocalBrowse();
+						else
+							v->c->OpenSearch("");
+					}
+				}
+				virtual ~SearchConfirmation() { }
+			};
+			if(v->c->GetHasUnsavedChanges())
+				new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to continue?", new SearchConfirmation(v));
 			else
-				v->c->OpenSearch("");
+			{
+				if(v->CtrlBehaviour())
+					v->c->OpenLocalBrowse();
+				else
+					v->c->OpenSearch("");
+			}
 		}
 	};
 
@@ -1337,7 +1357,10 @@ void GameView::ExitPrompt()
 		}
 		virtual ~ExitConfirmation() { }
 	};
-	new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
+	if(c->GetHasUnsavedChanges())
+		new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to exit the game?", new ExitConfirmation());
+	else
+		new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
 }
 
 void GameView::ToolTip(ui::Point senderPosition, std::string toolTip)
