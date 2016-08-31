@@ -1359,7 +1359,7 @@ int Simulation::CreateParts(int positionX, int positionY, int c, Brush * cBrush,
 		flags = replaceModeFlags;
 	if (cBrush)
 	{
-		brush_was_used = true;
+		debug_wasEdited = true;
 
 		int radiusX = cBrush->GetRadius().X, radiusY = cBrush->GetRadius().Y, sizeX = cBrush->GetSize().X, sizeY = cBrush->GetSize().Y;
 		unsigned char *bitmap = cBrush->GetBitmap();
@@ -1905,7 +1905,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
-	brush_was_used = false;
+	debug_wasEdited = false;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -2864,7 +2864,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	}
 	else if (p==-2)//creating from brush
 	{
-		brush_was_used = true;
+		debug_wasEdited = true;
 		if (pmap[y][x])
 		{
 			//If an element has the PROP_DRAWONCTYPE property, and the element being drawn to it does not have PROP_NOCTYPEDRAW (Also some special cases), set the element's ctype
@@ -5115,7 +5115,7 @@ Simulation::Simulation():
 	replaceModeSelected(0),
 	replaceModeFlags(0),
 	debug_currentParticle(0),
-	brush_was_used(false),
+	debug_wasEdited(false),
 	ISWIRE(0),
 	force_stacking_check(false),
 	emp_decor(0),

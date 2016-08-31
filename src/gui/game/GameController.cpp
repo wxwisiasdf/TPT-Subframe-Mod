@@ -288,6 +288,7 @@ void GameController::PlaceSave(ui::Point position)
 		HistorySnapshot();
 		gameModel->GetSimulation()->Load(position.X, position.Y, gameModel->GetPlaceSave());
 		gameModel->SetPaused(gameModel->GetPlaceSave()->paused | gameModel->GetPaused());
+		gameModel->GetSimulation()->debug_wasEdited = true;
 	}
 }
 
@@ -892,10 +893,10 @@ void GameController::Update()
 
 	if(!sim->sys_pause || sim->framerender || sim->subframe_mode)
 	{
-		if(GetSubframeEnabled() && sim->brush_was_used)
+		if(GetSubframeEnabled() && sim->debug_wasEdited)
 		{
 			gameModel->ReloadParticleOrder();
-			sim->brush_was_used = false;
+			sim->debug_wasEdited = false;
 		}
 	}
 	

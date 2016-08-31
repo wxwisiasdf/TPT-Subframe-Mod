@@ -14,10 +14,10 @@ ParticleDebug::ParticleDebug(unsigned int id, Simulation * sim, GameModel * mode
 
 void ParticleDebug::Debug(int mode, int x, int y)
 {
-	if(sim->brush_was_used)
+	if(sim->debug_wasEdited)
 	{
 		model->ReloadParticleOrder();
-		sim->brush_was_used = false;
+		sim->debug_wasEdited = false;
 	}
 
 	int debug_currentParticle = sim->debug_currentParticle;
