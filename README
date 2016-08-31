@@ -7,7 +7,7 @@ Features
 
 These features are enabled when you enter the Lua command "tpt.setdebug(0x8)" into the console (or you can put it in autorun.lua):
 
-- Particle order reloading: if you use the brush, then advance the simulation, the frame will be completed and the particle order will be reloaded automatically. You can reload the particle order manually with Shift-F5.
+- Particle order reloading: if you use the brush or do a copy-paste, then advance the simulation, the frame will be completed and the particle order will be reloaded automatically. You can reload the particle order manually with Shift-F5.
 - Shift-Space runs the simulation particle-by-particle rather than frame-by-frame.
 - Shift-R starts a recording of the particle-by-particle simulation and automatically stops recording at the end of the frame. Recording can still be stopped with R but particle-by-particle simulation will still continue.
 - Alt-F continues updating particles until it encouters an "interesting" update (create_part, delete_part or part_change_type called), and does not display any log messages until the frame is completed.
