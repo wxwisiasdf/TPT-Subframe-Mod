@@ -1156,6 +1156,11 @@ void GameController::SetLastTool(Tool * tool)
 	gameModel->SetLastTool(tool);
 }
 
+void GameController::ActivatePropertyTool()
+{
+	SetActiveTool(0, gameModel->GetToolFromIdentifier("DEFAULT_UI_PROPERTY"));
+}
+
 int GameController::GetReplaceModeFlags()
 {
 	return gameModel->GetSimulation()->replaceModeFlags;

@@ -112,6 +112,7 @@ public:
 	Tool * GetActiveTool(int selection);
 	void SetActiveTool(int toolSelection, Tool * tool);
 	void SetLastTool(Tool * tool);
+	void ActivatePropertyTool();
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
 	void ActiveToolChanged(int toolSelection, Tool *tool);

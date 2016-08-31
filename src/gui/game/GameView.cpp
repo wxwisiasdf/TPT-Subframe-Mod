@@ -218,11 +218,12 @@ GameView::GameView():
 			class SearchConfirmation: public ConfirmDialogueCallback {
 			public:
 				GameView * v;
-				SearchConfirmation(GameView * v) : v(v) {}
+				bool ctrl;
+				SearchConfirmation(GameView * v, bool ctrl) : v(v), ctrl(ctrl) {}
 				virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
 					if (result == ConfirmPrompt::ResultOkay)
 					{
-						if(v->CtrlBehaviour())
+						if(ctrl)
 							v->c->OpenLocalBrowse();
 						else
 							v->c->OpenSearch("");
@@ -231,7 +232,7 @@ GameView::GameView():
 				virtual ~SearchConfirmation() { }
 			};
 			if(v->c->GetHasUnsavedChanges())
-				new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to continue?", new SearchConfirmation(v));
+				new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to continue?", new SearchConfirmation(v, v->CtrlBehaviour()));
 			else
 			{
 				if(v->CtrlBehaviour())
@@ -1509,6 +1510,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		c->ShowConsole();
 		break;
 	case 'p':
+		c->ActivatePropertyTool();
 	case SDLK_F2:
 		screenshot();
 		break;
