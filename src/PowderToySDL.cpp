@@ -1116,7 +1116,8 @@ int main(int argc, char * argv[])
 					}
 					else
 					{
-						SaveFile * newFile = new SaveFile(arguments["open"]);
+						SaveFile * newFile = new SaveFile(filename);
+						newFile->SetDisplayName(arguments["open"]);
 						GameSave * newSave = new GameSave(gameSaveData);
 						newFile->SetGameSave(newSave);
 						gameController->LoadSaveFile(newFile);
