@@ -1359,8 +1359,6 @@ int Simulation::CreateParts(int positionX, int positionY, int c, Brush * cBrush,
 		flags = replaceModeFlags;
 	if (cBrush)
 	{
-		debug_needReloadParticleOrder = true;
-
 		int radiusX = cBrush->GetRadius().X, radiusY = cBrush->GetRadius().Y, sizeX = cBrush->GetSize().X, sizeY = cBrush->GetSize().Y;
 		unsigned char *bitmap = cBrush->GetBitmap();
 
@@ -2864,7 +2862,6 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	}
 	else if (p==-2)//creating from brush
 	{
-		debug_needReloadParticleOrder = true;
 		if (pmap[y][x])
 		{
 			//If an element has the PROP_DRAWONCTYPE property, and the element being drawn to it does not have PROP_NOCTYPEDRAW (Also some special cases), set the element's ctype
