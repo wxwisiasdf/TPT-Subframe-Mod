@@ -1513,6 +1513,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		break;
 	case 'p':
 		c->ActivatePropertyTool();
+		break;
 	case SDLK_F2:
 		screenshot();
 		break;
