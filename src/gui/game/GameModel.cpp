@@ -684,7 +684,9 @@ void GameModel::ReloadParticleOrder()
 	delete gameSave;
 	delete newSave;
 
+#if DEBUG
 	std::cout << "Particle order reloaded." << std::endl;
+#endif
 }
 
 Simulation * GameModel::GetSimulation()
