@@ -102,6 +102,8 @@ public:
 	//Particles
 	Particle parts[NPART];
 	int pmap[YRES][XRES];
+	int spmap[YRES][XRES][4];
+	int spmap_count[YRES][XRES];
 	int photons[YRES][XRES];
 	int pmap_count[YRES][XRES];
 	//Simulation Settings
