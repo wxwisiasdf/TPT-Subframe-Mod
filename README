@@ -14,6 +14,7 @@ These features are enabled when you enter the Lua command "tpt.setdebug(0x8)" in
 
 These features will be present without enabling:
 
+- Stacked particles are shown in the debug HUD.
 - P opens the property tool window rather than takes a screenshot (you can still take screenshots with F2).
 - The property tool sets temp values in celsius rather than kelvin.
 - The ctype of FILTs will be displayed in the debug HUD. In the original game, this was only shown for non-FILT coloured particles like BRAY.
