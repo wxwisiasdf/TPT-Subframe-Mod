@@ -494,12 +494,21 @@ SimulationSample Simulation::GetSample(int x, int y)
 	sample.PositionY = y;
 	if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 	{
-		sample.sparticle_count = spmap_count[y][x];
-		if (spmap_count[y][x])
+		sample.sparticle_count = 0;
+		for (int i=0; i<=parts_lastActiveIndex; i++)
 		{
-			for (int i = 0; i < spmap_count[y][x]; i++){
-				sample.sparticles[i] = parts[spmap[y][x][i]>>8];
+			if (parts[i].type)
+			{
+				int partx = (int)(parts[i].x+0.5f);
+				int party = (int)(parts[i].y+0.5f);
+				if (partx == x && party == y)
+				{
+					sample.sparticles[sample.sparticle_count] = parts[i];
+					sample.sparticle_count++;
+				}
 			}
+			if (sample.sparticle_count >= 4)
+				break;
 		}
 
 		if (photons[y][x])
@@ -4873,8 +4882,6 @@ void Simulation::BeforeSim()
 
 	memset(pmap, 0, sizeof(pmap));
 	memset(pmap_count, 0, sizeof(pmap_count));
-	memset(spmap, 0, sizeof(spmap));
-	memset(spmap_count, 0, sizeof(spmap_count));
 	memset(photons, 0, sizeof(photons));
 	NUM_PARTS = 0;
 	for (i=0; i<=parts_lastActiveIndex; i++)//the particle loop that resets the pmap/photon maps every frame, to update them.
@@ -4897,13 +4904,6 @@ void Simulation::BeforeSim()
 					// (there are a few exceptions, including energy particles - currently no limit on stacking those)
 					if (t!=PT_THDR && t!=PT_EMBR && t!=PT_FIGH && t!=PT_PLSM)
 						pmap_count[y][x]++;
-				}
-
-				// record stacked particles
-				if (spmap_count[y][x] < 4)
-				{
-					spmap[y][x][spmap_count[y][x]] = t|(i<<8);
-					spmap_count[y][x]++;
 				}
 			}
 			lastPartUsed = i;
