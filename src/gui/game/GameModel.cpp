@@ -28,6 +28,7 @@ GameModel::GameModel():
 	currentFile(NULL),
 	currentUser(0, ""),
 	toolStrength(1.0f),
+	wasModified(false),
 	activeColourPreset(0),
 	colourSelector(false),
 	colour(255, 0, 0, 255),
@@ -466,6 +467,16 @@ void GameModel::SetBrushID(int i)
 	notifyBrushChanged();
 }
 
+bool GameModel::GetWasModified()
+{
+	return wasModified;
+}
+
+void GameModel::SetWasModified(bool value)
+{
+	wasModified = true;
+}
+
 void GameModel::AddObserver(GameView * observer){
 	observers.push_back(observer);
 
@@ -650,10 +661,30 @@ void GameModel::SetSaveFile(SaveFile * newSave)
 		sim->clear_sim();
 		ren->ClearAccumulation();
 		sim->Load(saveData);
+		wasModified = false;
 	}
 	
 	notifySaveChanged();
 	UpdateQuickOptions();
+}
+
+void GameModel::ReloadParticleOrder()
+{
+	sim->CompleteDebugUpdateParticles();
+
+	GameSave * gameSave = sim->Save();
+	sim->SaveSimOptions(gameSave);
+	gameSave->paused = GetPaused();
+
+	GameSave * newSave = new GameSave(gameSave->Serialise());
+	//SetSaveFile(&tempSave);
+	sim->clear_sim();
+	ren->ClearAccumulation();
+	sim->Load(newSave);
+	delete gameSave;
+	delete newSave;
+
+	std::cout << "Particle order reloaded." << std::endl;
 }
 
 Simulation * GameModel::GetSimulation()
@@ -843,13 +874,6 @@ void GameModel::SetUser(User user)
 
 void GameModel::SetPaused(bool pauseState)
 {
-	if(!pauseState && sim->debug_currentParticle > 0)
-	{
-		sim->UpdateParticles(sim->debug_currentParticle, NPART);
-		sim->AfterSim();
-		sim->debug_currentParticle = 0;
-	}
-
 	sim->sys_pause = pauseState?1:0;
 	notifyPausedChanged();
 }
@@ -857,6 +881,19 @@ void GameModel::SetPaused(bool pauseState)
 bool GameModel::GetPaused()
 {
 	return sim->sys_pause?true:false;
+}
+
+bool GameModel::GetSubframeMode()
+{
+	return sim->subframe_mode;
+}
+
+void GameModel::SetSubframeMode(bool subframeModeState)
+{
+	if(!GetPaused())
+		SetPaused(true);
+	sim->subframe_mode = subframeModeState;
+	notifyPausedChanged();
 }
 
 void GameModel::SetDecoration(bool decorationState)

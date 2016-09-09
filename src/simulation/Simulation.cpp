@@ -494,6 +494,14 @@ SimulationSample Simulation::GetSample(int x, int y)
 	sample.PositionY = y;
 	if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 	{
+		sample.sparticle_count = spmap_count[y][x];
+		if (spmap_count[y][x])
+		{
+			for (int i = 0; i < spmap_count[y][x]; i++){
+				sample.sparticles[i] = parts[spmap[y][x][i]>>8];
+			}
+		}
+
 		if (photons[y][x])
 		{
 			sample.particle = parts[photons[y][x]>>8];
@@ -1903,6 +1911,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
+	debug_needReloadParticleOrder = false;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -2698,6 +2707,8 @@ void Simulation::kill_part(int i)//kills particle number i
 
 void Simulation::part_change_type(int i, int x, int y, int t)//changes the type of particle number i, to t.  This also changes pmap at the same time.
 {
+	debug_interestingChangeOccurred = true;
+
 	if (x<0 || y<0 || x>=XRES || y>=YRES || i>=NPART || t<0 || t>=PT_NUM || !parts[i].type)
 		return;
 	if (!elements[t].Enabled)
@@ -2781,6 +2792,7 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 //tv = Type (8 bits) + Var (24 bits), var is usually 0
 int Simulation::create_part(int p, int x, int y, int t, int v)
 {
+	debug_interestingChangeOccurred = true;
 	int i;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
@@ -3375,6 +3387,8 @@ void Simulation::create_cherenkov_photon(int pp)//photons from NEUT going throug
 
 void Simulation::delete_part(int x, int y)//calls kill_part with the particle located at x,y
 {
+	debug_interestingChangeOccurred = true;
+
 	unsigned i;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
@@ -3388,6 +3402,16 @@ void Simulation::delete_part(int x, int y)//calls kill_part with the particle lo
 	if (!i)
 		return;
 	kill_part(i>>8);
+}
+
+void Simulation::CompleteDebugUpdateParticles()
+{
+	if(debug_currentParticle > 0)
+	{
+		UpdateParticles(debug_currentParticle, NPART);
+		AfterSim();
+		debug_currentParticle = 0;
+	}
 }
 
 void Simulation::UpdateParticles(int start, int end)
@@ -3405,6 +3429,8 @@ void Simulation::UpdateParticles(int start, int end)
 	float pGravX, pGravY, pGravD;
 	bool transitionOccurred;
 
+    debug_interestingChangeOccurred = false;
+    
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
 		if (parts[i].type)
@@ -4847,6 +4873,8 @@ void Simulation::BeforeSim()
 
 	memset(pmap, 0, sizeof(pmap));
 	memset(pmap_count, 0, sizeof(pmap_count));
+	memset(spmap, 0, sizeof(spmap));
+	memset(spmap_count, 0, sizeof(spmap_count));
 	memset(photons, 0, sizeof(photons));
 	NUM_PARTS = 0;
 	for (i=0; i<=parts_lastActiveIndex; i++)//the particle loop that resets the pmap/photon maps every frame, to update them.
@@ -4869,6 +4897,13 @@ void Simulation::BeforeSim()
 					// (there are a few exceptions, including energy particles - currently no limit on stacking those)
 					if (t!=PT_THDR && t!=PT_EMBR && t!=PT_FIGH && t!=PT_PLSM)
 						pmap_count[y][x]++;
+				}
+
+				// record stacked particles
+				if (spmap_count[y][x] < 4)
+				{
+					spmap[y][x][spmap_count[y][x]] = t|(i<<8);
+					spmap_count[y][x]++;
 				}
 			}
 			lastPartUsed = i;
@@ -5094,6 +5129,7 @@ Simulation::Simulation():
 	replaceModeSelected(0),
 	replaceModeFlags(0),
 	debug_currentParticle(0),
+	debug_needReloadParticleOrder(false),
 	ISWIRE(0),
 	force_stacking_check(false),
 	emp_decor(0),
@@ -5109,6 +5145,7 @@ Simulation::Simulation():
 	legacy_enable(0),
 	aheat_enable(0),
 	water_equal_test(0),
+	subframe_mode(false),
 	sys_pause(0),
 	framerender(0),
 	pretty_powder(0),

@@ -286,6 +286,8 @@ void GameController::PlaceSave(ui::Point position)
 	if (gameModel->GetPlaceSave())
 	{
 		HistorySnapshot();
+		gameModel->SetWasModified(true);
+		gameModel->GetSimulation()->debug_needReloadParticleOrder = true;
 		gameModel->GetSimulation()->Load(position.X, position.Y, gameModel->GetPlaceSave());
 		gameModel->SetPaused(gameModel->GetPlaceSave()->paused | gameModel->GetPaused());
 	}
@@ -889,11 +891,36 @@ void GameController::Update()
 		gameView->SetSample(gameModel->GetSimulation()->GetSample(pos.X, pos.Y));
 
 	Simulation * sim = gameModel->GetSimulation();
+
+	if(!sim->sys_pause || sim->framerender || sim->subframe_mode)
+	{
+		if(GetSubframeEnabled() && sim->debug_needReloadParticleOrder)
+		{
+			gameModel->ReloadParticleOrder();
+			sim->debug_needReloadParticleOrder = false;
+		}
+	}
+	
 	sim->BeforeSim();
 	if (!sim->sys_pause || sim->framerender)
 	{
 		sim->UpdateParticles(0, NPART);
 		sim->AfterSim();
+	}
+	else if (sim->subframe_mode)
+	{
+		for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
+		{
+			if ((*iter)->ID == 0x8)
+				((ParticleDebug*)*iter)->Debug(0, 0, 0);
+		}
+
+		if(gameView->GetRecordingSubframe() && sim->debug_currentParticle == 0)
+		{
+			std::cout << "Subframe recording completed." << std::endl;
+			gameView->StopRecording();
+			sim->subframe_mode = false;
+		}
 	}
 
 	//if either STKM or STK2 isn't out, reset it's selected element. Defaults to PT_DUST unless right selected is something else
@@ -955,6 +982,21 @@ void GameController::SetToolStrength(float value)
 	gameModel->SetToolStrength(value);
 }
 
+bool GameController::GetHasUnsavedChanges()
+{
+	return gameModel->GetSaveFile() && gameModel->GetWasModified();
+}
+
+void GameController::SetWasModified(bool value)
+{
+	gameModel->SetWasModified(true);
+}
+
+void GameController::SetNeedReloadParticleOrder(bool value)
+{
+	gameModel->GetSimulation()->debug_needReloadParticleOrder = value;
+}
+
 void GameController::SetZoomPosition(ui::Point position)
 {
 	ui::Point zoomPosition = position-(gameModel->GetZoomSize()/2);
@@ -977,12 +1019,31 @@ void GameController::SetZoomPosition(ui::Point position)
 
 void GameController::SetPaused(bool pauseState)
 {
+	if(!pauseState)
+	{
+		gameModel->GetSimulation()->CompleteDebugUpdateParticles();
+		gameModel->SetSubframeMode(false);
+	}
+
 	gameModel->SetPaused(pauseState);
 }
 
 void GameController::SetPaused()
 {
-	gameModel->SetPaused(!gameModel->GetPaused());
+	if(gameModel->GetSubframeMode())
+		gameModel->SetSubframeMode(false);
+	else
+		SetPaused(!gameModel->GetPaused());
+}
+
+void GameController::SetSubframeMode(bool subframeModeState)
+{
+	gameModel->SetSubframeMode(subframeModeState);
+}
+
+void GameController::SetSubframeMode()
+{
+	gameModel->SetSubframeMode(!gameModel->GetSubframeMode());
 }
 
 void GameController::SetDecoration(bool decorationState)
@@ -1099,6 +1160,11 @@ void GameController::SetLastTool(Tool * tool)
 	gameModel->SetLastTool(tool);
 }
 
+void GameController::ActivatePropertyTool()
+{
+	SetActiveTool(0, gameModel->GetToolFromIdentifier("DEFAULT_UI_PROPERTY"));
+}
+
 int GameController::GetReplaceModeFlags()
 {
 	return gameModel->GetSimulation()->replaceModeFlags;
@@ -1120,6 +1186,7 @@ void GameController::OpenSearch(std::string searchText)
 
 void GameController::OpenLocalSaveWindow(bool asCurrent)
 {
+	ReloadParticleOrder();
 	Simulation * sim = gameModel->GetSimulation();
 	GameSave * gameSave = sim->Save();
 	if(!gameSave)
@@ -1453,6 +1520,11 @@ void GameController::ReloadSim()
 	{
 		gameModel->SetSaveFile(gameModel->GetSaveFile());
 	}
+}
+
+void GameController::ReloadParticleOrder()
+{
+	gameModel->ReloadParticleOrder();
 }
 
 std::string GameController::ElementResolve(int type, int ctype)

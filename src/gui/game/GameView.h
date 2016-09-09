@@ -69,6 +69,7 @@ private:
 	bool recording;
 	int screenshotIndex;
 	int recordingIndex;
+    bool recordingSubframe; 
 
 	ui::Point currentPoint, lastPoint;
 	GameController * c;
@@ -119,6 +120,7 @@ private:
 
 	void screenshot();
 	void record();
+	void startSubframeRecording();
 
 	void enableShiftBehaviour();
 	void disableShiftBehaviour();
@@ -148,6 +150,9 @@ public:
 	void ExitPrompt();
 	SelectMode GetSelectMode() { return selectMode; }
 	void BeginStampSelection();
+
+    bool GetRecordingSubframe(){ return recordingSubframe; }
+	void StopRecording();
 
 	//all of these are only here for one debug lines
 	bool GetMouseDown() { return isMouseDown; }
