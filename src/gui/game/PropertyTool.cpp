@@ -267,7 +267,12 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 		case StructProperty::ParticleType:
 		case StructProperty::Integer:
 			if(propOffset == offsetof(Particle, ctype) && sim->parts[i>>8].type == PT_FILT)
-				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Integer ^ (1<<29);
+			{
+				int filtVal = propValue.Integer;
+				if (propValue.Integer >= 0)
+					filtVal ^= (1<<29);
+				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = filtVal;
+			}
 			else
 				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Integer;
 			break;
