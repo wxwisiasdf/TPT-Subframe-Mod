@@ -507,7 +507,7 @@ SimulationSample Simulation::GetSample(int x, int y)
 					sample.sparticle_count++;
 				}
 			}
-			if (sample.sparticle_count >= 4)
+			if (sample.sparticle_count >= 5)
 				break;
 		}
 
