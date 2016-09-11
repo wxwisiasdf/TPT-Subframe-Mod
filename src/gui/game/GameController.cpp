@@ -1224,9 +1224,22 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 		}
 		else if (gameModel->GetSaveFile())
 		{
+			std::string filename = gameModel->GetSaveFile()->GetName();
+			if (GetSubframeEnabled() && Client::Ref().FileExists(filename))
+			{
+				try
+				{
+					std::vector<unsigned char> data = Client::Ref().ReadFile(filename);
+					Client::Ref().WriteFile(data, filename + std::string(".backup"));
+				}
+				catch(std::exception & e)
+				{
+					// Don't make a backup.
+				}
+			}
 			gameModel->SetSaveFile(&tempSave);
 			Client::Ref().MakeDirectory(LOCAL_SAVE_DIR);
-			if (Client::Ref().WriteFile(gameSave->Serialise(), gameModel->GetSaveFile()->GetName()))
+			if (Client::Ref().WriteFile(gameSave->Serialise(), filename))
 				new ErrorMessage("Error", "Unable to write save file.");
 			else
 				gameModel->SetInfoTip("Saved Successfully");
