@@ -14,16 +14,16 @@ ParticleDebug::ParticleDebug(unsigned int id, Simulation * sim, GameModel * mode
 
 void ParticleDebug::Debug(int mode, int x, int y)
 {
-	if(sim->debug_needReloadParticleOrder)
-	{
-		model->ReloadParticleOrder();
-		sim->debug_needReloadParticleOrder = false;
-	}
-
 	int debug_currentParticle = sim->debug_currentParticle;
 	int i;
 	std::stringstream logmessage;
 
+	if (sim->debug_currentParticle == 0 && sim->debug_needReloadParticleOrder)
+	{
+		model->ReloadParticleOrder();
+		sim->debug_needReloadParticleOrder = false;
+	}
+	
 	if (mode == 0)
 	{
 		if (!sim->NUM_PARTS)
