@@ -94,6 +94,8 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 			continue;
 		if (!elements[tempPart.type].Enabled)
 			continue;
+		if (!InBounds(x, y))
+			continue;
 
 		if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
 			if (tempPart.type == PT_CLNE || tempPart.type == PT_PCLN || tempPart.type == PT_BCLN || tempPart.type == PT_PBCN || tempPart.type == PT_STOR || tempPart.type == PT_CONV || tempPart.type == PT_STKM || tempPart.type == PT_STKM2 || tempPart.type == PT_FIGH || tempPart.type == PT_LAVA || tempPart.type == PT_SPRK || tempPart.type == PT_PSTN || tempPart.type == PT_CRAY || tempPart.type == PT_DTEC || tempPart.type == PT_DRAY)
@@ -184,14 +186,15 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 			sign tempSign = save->signs[i];
 			tempSign.x += fullX;
 			tempSign.y += fullY;
-			signs.push_back(tempSign);
+			if (InBounds(tempSign.x, tempSign.y))
+				signs.push_back(tempSign);
 		}
 	}
 	for(int saveBlockX = 0; saveBlockX < save->blockWidth; saveBlockX++)
 	{
 		for(int saveBlockY = 0; saveBlockY < save->blockHeight; saveBlockY++)
 		{
-			if(save->blockMap[saveBlockY][saveBlockX])
+			if(save->blockMap[saveBlockY][saveBlockX] && InBounds((saveBlockX + blockX) * CELL, (saveBlockY + blockY) * CELL))
 			{
 				bmap[saveBlockY+blockY][saveBlockX+blockX] = save->blockMap[saveBlockY][saveBlockX];
 				fvx[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelX[saveBlockY][saveBlockX];
