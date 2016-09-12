@@ -1606,21 +1606,9 @@ void Simulation::CreateBox(int x1, int y1, int x2, int y2, int c, int flags)
 		y2 = y1;
 		y1 = j;
 	}
-	if (c == PT_NONE)
-	{
-		float fx = x1-.5f, fy = y1-.5f;
-		int w = x2-x1, h = y2-y1;
-		for (int i = 0; i <= parts_lastActiveIndex; i++)
-			if (parts[i].type)
-				if (parts[i].x >= fx && parts[i].x <= fx+w+1 && parts[i].y >= fy && parts[i].y <= fy+h+1)
-					kill_part(i);
-	}
-	else
-	{
-		for (j=y2; j>=y1; j--)
-			for (i=x1; i<=x2; i++)
-				CreateParts(i, j, 0, 0, c, flags);
-	}
+	for (j=y2; j>=y1; j--)
+		for (i=x1; i<=x2; i++)
+			CreateParts(i, j, 0, 0, c, flags);
 }
 
 int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
