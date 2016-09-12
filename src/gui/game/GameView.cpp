@@ -2249,7 +2249,8 @@ void GameView::OnDraw()
 
 					ren->draw_image(placeSaveThumb, thumbPos.X, thumbPos.Y, 128);
 
-					ren->xor_rect(thumbPos.X, thumbPos.Y, placeSaveThumb->Width, placeSaveThumb->Height);
+					// Don't show xor-rect when placing save
+					// ren->xor_rect(thumbPos.X, thumbPos.Y, placeSaveThumb->Width, placeSaveThumb->Height);
 				}
 			}
 			else
