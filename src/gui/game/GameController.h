@@ -121,7 +121,6 @@ public:
 	void SetToolStrength(float value);
 	bool GetHasUnsavedChanges();
 	void SetWasModified(bool value);
-	void SetNeedReloadParticleOrder(bool value);
 	void LoadSaveFile(SaveFile * file);
 	void LoadSave(SaveInfo * save);
 	void OpenSearch(std::string searchText);

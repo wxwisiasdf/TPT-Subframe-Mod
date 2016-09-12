@@ -1089,6 +1089,7 @@ int Simulation::Tool(int x, int y, int tool, float strength)
 			cpart = &(parts[r>>8]);
 		else if ((r = photons[y][x]))
 			cpart = &(parts[r>>8]);
+		debug_needReloadParticleOrder = true;
 		return tools[tool]->Perform(this, cpart, x, y, strength);
 	}
 	return 0;
@@ -1449,6 +1450,7 @@ int Simulation::CreateParts(int x, int y, int rx, int ry, int c, int flags)
 
 int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 {
+	debug_needReloadParticleOrder = true;
 	//delete
 	if (c == 0 && !(flags&REPLACE_MODE))
 		delete_part(x, y);

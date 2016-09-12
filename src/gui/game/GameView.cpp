@@ -1231,7 +1231,6 @@ void GameView::OnMouseDown(int x, int y, unsigned button)
 
 			isMouseDown = true;
 			c->HistorySnapshot();
-			c->SetNeedReloadParticleOrder(true);
 			c->SetWasModified(true);
 			if (drawMode == DrawRect || drawMode == DrawLine)
 			{

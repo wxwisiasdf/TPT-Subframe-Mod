@@ -992,11 +992,6 @@ void GameController::SetWasModified(bool value)
 	gameModel->SetWasModified(true);
 }
 
-void GameController::SetNeedReloadParticleOrder(bool value)
-{
-	gameModel->GetSimulation()->debug_needReloadParticleOrder = value;
-}
-
 void GameController::SetZoomPosition(ui::Point position)
 {
 	ui::Point zoomPosition = position-(gameModel->GetZoomSize()/2);
