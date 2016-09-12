@@ -23,6 +23,7 @@ These features will be present without enabling:
 - 30th bit handling: Setting the ctype of coloured particles (e.g. FILT) with the property tool will XOR the input value with 0x20000000 first (so it will set the 30th bit automatically, unless you set it). When hovering the mouse over coloured particles, the ctype displayed in the debug HUD will ignore the 30th bit and, if the 29th bit is set, be displayed as a negative number.
 - When pasting (or placing a stamp), the white dotted paste boundary will not be shown.
 - If you attempt to open a save or close the window with the ESC button (the case for closing with the 'X' button has not been implemented) when there are unsaved changes, a confirmation warning will be displayed.
+- The position in frame is saved into undo history during subframe debugging, so you can undo into the middle of a frame without destroying everything.
 
 Note that the original game already supports the following subframe debugging features:
 
