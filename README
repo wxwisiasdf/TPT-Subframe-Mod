@@ -12,6 +12,7 @@ These features are enabled when you enter the Lua command "tpt.setdebug(0x8)" in
 - Shift-R starts a recording of the particle-by-particle simulation and automatically stops recording at the end of the frame. Recording can still be stopped with R but particle-by-particle simulation will still continue.
 - Alt-F continues updating particles until it encouters an "interesting" update (create_part, delete_part or part_change_type called), and does not display any log messages until the frame is completed.
 - Overwriting a local save "<save>.cps" will create a backup of the file you're overwriting at "<save>.cps.backup". Subframe development is dangerous.
+- The undo history limit is been increased to 2, so you can undo twice in case of emergency.
 
 These features will be present without enabling:
 
@@ -19,6 +20,7 @@ These features will be present without enabling:
 - Using the particle erase tool will erase all stacked particles, not just the topmost ones.
 - P opens the property tool window rather than takes a screenshot (you can still take screenshots with F2).
 - The property tool sets temp values in celsius rather than kelvin.
+- Ctrl-Y reverses an undo.
 - The ctype of FILTs will be displayed in the debug HUD. In the original game, this was only shown for non-FILT coloured particles like BRAY.
 - 30th bit handling: Setting the ctype of coloured particles (e.g. FILT) with the property tool will XOR the input value with 0x20000000 first (so it will set the 30th bit automatically, unless you set it). When hovering the mouse over coloured particles, the ctype displayed in the debug HUD will ignore the 30th bit and, if the 29th bit is set, be displayed as a negative number.
 - When pasting (or placing a stamp), the white dotted paste boundary will not be shown.

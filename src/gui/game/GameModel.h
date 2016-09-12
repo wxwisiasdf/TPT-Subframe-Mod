@@ -65,6 +65,7 @@ private:
 	User currentUser;
 	float toolStrength;
 	std::deque<Snapshot*> history;
+	int historyPosition;
 	bool wasModified;
 
 	size_t activeColourPreset;
@@ -130,7 +131,8 @@ public:
 	void BuildQuickOptionMenu(GameController * controller);
 
 	std::deque<Snapshot*> GetHistory();
-	void SetHistory(std::deque<Snapshot*> newHistory);
+	int GetHistoryPosition();
+	void SetHistory(std::deque<Snapshot*> newHistory, int newHistoryPosition);
 
 	void UpdateQuickOptions();
 

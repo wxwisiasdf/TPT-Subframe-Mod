@@ -232,34 +232,58 @@ GameController::~GameController()
 void GameController::HistoryRestore()
 {
 	std::deque<Snapshot*> history = gameModel->GetHistory();
-	if(history.size())
+	int historyPosition = gameModel->GetHistoryPosition();
+	if(historyPosition > 0 && historyPosition <= (int)history.size())
 	{
-		Snapshot * snap = history.back();
-		gameModel->GetSimulation()->Restore(*snap);
-		if(history.size()>1)
+		if (historyPosition == (int)history.size())
 		{
-			history.pop_back();
-			delete snap;
-			gameModel->SetHistory(history);
+			Snapshot * newSnap = gameModel->GetSimulation()->CreateSnapshot();
+			history.push_back(newSnap);
 		}
+		Snapshot * snap = history[historyPosition - 1];
+		gameModel->GetSimulation()->Restore(*snap);
+		gameModel->SetHistory(history, historyPosition - 1);
 	}
 }
 
 void GameController::HistorySnapshot()
 {
 	std::deque<Snapshot*> history = gameModel->GetHistory();
+	int historyPosition = gameModel->GetHistoryPosition();
 	Snapshot * newSnap = gameModel->GetSimulation()->CreateSnapshot();
 	if(newSnap)
 	{
-		if(history.size() >= 1) //History limit is current 1
+		while (historyPosition < (int)history.size())
+		{
+			Snapshot * snap = history.back();
+			history.pop_back();
+			delete snap;
+		}
+		if (history.size() >= (GetSubframeEnabled() ? 2 : 1)) //History limit is current 2
 		{
 			Snapshot * snap = history.front();
 			history.pop_front();
 			//snap->Particles.clear();
 			delete snap;
+			if (historyPosition > (int)history.size())
+			{
+				historyPosition--;
+			}
 		}
 		history.push_back(newSnap);
-		gameModel->SetHistory(history);
+		gameModel->SetHistory(history, historyPosition + 1);
+	}
+}
+
+void GameController::HistoryForward()
+{
+	std::deque<Snapshot*> history = gameModel->GetHistory();
+	int historyPosition = gameModel->GetHistoryPosition();
+	if (historyPosition < (int)history.size() - 1)
+	{
+		Snapshot * snap = history[historyPosition + 1];
+		gameModel->GetSimulation()->Restore(*snap);
+		gameModel->SetHistory(history, historyPosition + 1);
 	}
 }
 
