@@ -349,6 +349,7 @@ void Simulation::Restore(const Snapshot & snap)
 	force_stacking_check = true;
 
 	debug_currentParticle = snap.debug_currentParticle;
+	debug_needReloadParticleOrder = true;
 
 	std::copy(snap.AirPressure.begin(), snap.AirPressure.end(), &pv[0][0]);
 	std::copy(snap.AirVelocityX.begin(), snap.AirVelocityX.end(), &vx[0][0]);
