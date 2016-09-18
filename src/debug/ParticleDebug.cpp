@@ -92,6 +92,7 @@ bool ParticleDebug::KeyPress(int key, Uint16 character, bool shift, bool ctrl, b
 {
 	if (key == 'f')
 	{
+		model->SetPaused(1);
 		if (alt)
 		{
 			Debug(0, 0, 0);
@@ -125,7 +126,6 @@ bool ParticleDebug::KeyPress(int key, Uint16 character, bool shift, bool ctrl, b
 			{
 				model->FrameStep(1);
 			}
-			model->SetPaused(1);
 		}
 		return false;
 	}
