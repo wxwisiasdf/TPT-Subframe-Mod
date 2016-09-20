@@ -271,7 +271,7 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 				int filtVal = propValue.Integer;
 				if (propValue.Integer >= 0)
 					filtVal ^= (1<<29);
-				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = filtVal;
+				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = filtVal & 0x3FFFFFFF;
 			}
 			else
 				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Integer;
