@@ -146,8 +146,10 @@ void Client::Initialise(std::string proxyString)
 	}
 	stampsLib.close();
 
+#if MOD_ID == 0
 	//Begin version check
 	versionCheckRequest = http_async_req_start(NULL, "http://" SERVER "/Startup.json", NULL, 0, 0);
+#endif
 
 	if (authUser.ID)
 	{
