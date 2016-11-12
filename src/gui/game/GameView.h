@@ -113,8 +113,7 @@ private:
 
 	SimulationSample sample;
 
-	int lastOffset;
-	void setToolButtonOffset(int offset);
+	void updateToolButtonScroll();
 
 	void SetSaveButtonTooltips();
 
