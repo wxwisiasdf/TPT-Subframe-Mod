@@ -28,8 +28,9 @@ GameModel::GameModel():
 	currentFile(NULL),
 	currentUser(0, ""),
 	toolStrength(1.0f),
-	historyPosition(0),
 	wasModified(false),
+	redoHistory(NULL),
+	historyPosition(0),
 	activeColourPreset(0),
 	colourSelector(false),
 	colour(255, 0, 0, 255),
@@ -134,6 +135,11 @@ GameModel::GameModel():
 	colourPresets.push_back(ui::Colour(0, 255, 0));
 	colourPresets.push_back(ui::Colour(0, 0, 255));
 	colourPresets.push_back(ui::Colour(0, 0, 0));
+
+	undoHistoryLimit = Client::Ref().GetPrefInteger("UndoHistoryLimit", 1);
+	// cap due to memory usage (this is about 3.4GB of RAM)
+	if (undoHistoryLimit > 200)
+		undoHistoryLimit = 200;
 }
 
 GameModel::~GameModel()
@@ -160,6 +166,8 @@ GameModel::~GameModel()
 	Client::Ref().SetPref("Decoration.Green", (int)colour.Green);
 	Client::Ref().SetPref("Decoration.Blue", (int)colour.Blue);
 	Client::Ref().SetPref("Decoration.Alpha", (int)colour.Alpha);
+
+	Client::Ref().SetPref("UndoHistoryLimit", undoHistoryLimit);
 
 	Favorite::Ref().SaveFavoritesToPrefs();
 
@@ -426,15 +434,39 @@ std::deque<Snapshot*> GameModel::GetHistory()
 	return history;
 }
 
-int GameModel::GetHistoryPosition()
+unsigned int GameModel::GetHistoryPosition()
 {
 	return historyPosition;
 }
 
-void GameModel::SetHistory(std::deque<Snapshot*> newHistory, int newHistoryPosition)
+void GameModel::SetHistory(std::deque<Snapshot*> newHistory)
 {
 	history = newHistory;
+}
+
+void GameModel::SetHistoryPosition(unsigned int newHistoryPosition)
+{
 	historyPosition = newHistoryPosition;
+}
+
+Snapshot * GameModel::GetRedoHistory()
+{
+	return redoHistory;
+}
+
+void GameModel::SetRedoHistory(Snapshot * redo)
+{
+	redoHistory = redo;
+}
+
+unsigned int GameModel::GetUndoHistoryLimit()
+{
+	return undoHistoryLimit;
+}
+
+void GameModel::SetUndoHistoryLimit(unsigned int undoHistoryLimit_)
+{
+	undoHistoryLimit = undoHistoryLimit_;
 }
 
 void GameModel::SetVote(int direction)
