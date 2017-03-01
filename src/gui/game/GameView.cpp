@@ -100,9 +100,9 @@ public:
 			return;
 		SetToolTip(x, y);
 	}
-	virtual void TextPosition()
+	virtual void TextPosition(std::string ButtonText)
 	{
-		ui::Button::TextPosition();
+		ui::Button::TextPosition(ButtonText);
 		textPosition.X += 3;
 	}
 	void SetToolTips(std::string newToolTip1, std::string newToolTip2)
@@ -1520,7 +1520,10 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			break;
 		if (ctrl && !isMouseDown)
 		{
-			c->HistoryRestore();
+			if (shift)
+				c->HistoryForward();
+			else
+				c->HistoryRestore();
 		}
 		else
 		{

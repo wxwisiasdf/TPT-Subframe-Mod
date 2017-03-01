@@ -164,6 +164,7 @@ public:
 	void CompleteDebugUpdateParticles();
 	void UpdateParticles(int start, int end);
 	void SimulateGoL();
+	void RecalcFreeParticles();
 	void CheckStacking();
 	void BeforeSim();
 	void AfterSim();
