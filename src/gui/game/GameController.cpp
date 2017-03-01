@@ -740,7 +740,10 @@ bool GameController::KeyPress(int key, Uint16 character, bool shift, bool ctrl, 
 				gameView->SetDebugHUD(!gameView->GetDebugHUD());
 				break;
 			case 's':
-				gameView->BeginStampSelection();
+				if (shift)
+					SetActiveTool(0, gameModel->GetToolFromIdentifier("DEFAULT_UI_STACK"));
+				else
+					gameView->BeginStampSelection();
 				break;
 			}
 		}

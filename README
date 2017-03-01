@@ -26,7 +26,7 @@ These features will be present without enabling:
 - When pasting (or placing a stamp), the pasted particles can be moved out of the initial paste boundary without getting deleted. Additionally, the white dotted paste boundary will not be shown.
 - If you attempt to open a save or close the window with the ESC button (the case for closing with the 'X' button has not been implemented) when there are unsaved changes, a confirmation warning will be displayed.
 - The position in frame is saved into undo history during subframe debugging, so you can undo into the middle of a frame without destroying everything.
-- New stack tool: Clicking on a stack of particles will unstack them, provided there's enough space; Selecting multiple particles in different positions will stack them.
+- New stack tool (Shortcut: Shift + S): Clicking on a stack of particles will unstack them, provided there's enough space; Selecting multiple particles in different positions will stack them (without reloading particle order).
 
 Note that the original game already supports the following subframe debugging features:
 
