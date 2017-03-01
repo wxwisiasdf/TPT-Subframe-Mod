@@ -29,7 +29,6 @@ GameModel::GameModel():
 	currentUser(0, ""),
 	toolStrength(1.0f),
 	wasModified(false),
-	allowHistory(false),
 	redoHistory(NULL),
 	historyPosition(0),
 	activeColourPreset(0),
