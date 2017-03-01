@@ -92,7 +92,7 @@ public:
 	{
 	}
 	virtual ~StackTool() {}
-	virtual void DrawPoints(Simulation * sim, std::vector<ui::Point> &points);
+	virtual void ProcessParts(Simulation * sim, std::vector<int> &parts, ui::Point stackPos);
 	virtual void Click(Simulation * sim, Brush * brush, ui::Point position) { }
 	virtual void Draw(Simulation * sim, Brush * brush, ui::Point position);
 	virtual void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false);

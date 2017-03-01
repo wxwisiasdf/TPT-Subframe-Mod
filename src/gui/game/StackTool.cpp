@@ -1,33 +1,84 @@
 #include <iostream>
+#include <sstream>
 #include <vector>
+#include <algorithm>
 #include "GameModel.h"
 #include "Tool.h"
 
-void StackTool::DrawPoints(Simulation *sim, std::vector<ui::Point> &points)
+void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts, ui::Point stackPos)
 {
-	for (int i=0; i<=sim->parts_lastActiveIndex; i++)
+	if (parts.empty()) return;
+	bool samePos = true;
+	int partx = sim->parts[parts[0]].x;
+	int party = sim->parts[parts[0]].y;
+	for (size_t i = 1; i < parts.size(); i++)
 	{
-		if (sim->parts[i].type)
+		Particle part = sim->parts[parts[i]];
+		if (part.x != partx || part.y != party)
 		{
-			int partx = (int)(sim->parts[i].x+0.5f);
-			int party = (int)(sim->parts[i].y+0.5f);
+			samePos = false;
+			break;
+		}
+	}
+	if (samePos)
+	{
+		if (party + parts.size() - 1 >= YRES)
+		{
+			gameModel->Log(std::string("Not enough space to unstack."), false);
+			return;
+		}
+		for (size_t i = 1; i < parts.size(); i++){
+			if (sim->pmap[party + i][partx])
+			{
+				gameModel->Log(std::string("Not enough space to unstack."), false);
+				return;
+			}
+		}
+		for (size_t i = 1; i < parts.size(); i++){
+			sim->parts[parts[i]].y += i;
+		}
+	}
+	else
+	{
+		if (parts.size() > 5)
+		{
+			gameModel->Log(std::string("Too many particles to stack."), false);
+			return;
+		}
+		for (size_t i = 0; i < parts.size(); i++){
+			sim->parts[parts[i]].x = stackPos.X;
+			sim->parts[parts[i]].y = stackPos.Y;
 		}
 	}
 }
 
 void StackTool::Draw(Simulation *sim, Brush *cBrush, ui::Point position)
 {
-	if(cBrush)
+	if (cBrush)
 	{
-		std::vector<ui::Point> points;
+		std::vector<int> parts;
 		int radiusX = cBrush->GetRadius().X, radiusY = cBrush->GetRadius().Y, sizeX = cBrush->GetSize().X, sizeY = cBrush->GetSize().Y;
 		unsigned char *bitmap = cBrush->GetBitmap();
-		for(int y = 0; y < sizeY; y++)
-			for(int x = 0; x < sizeX; x++)
-				if(bitmap[(y*sizeX)+x] && (position.X+(x-radiusX) >= 0 && position.Y+(y-radiusY) >= 0 && position.X+(x-radiusX) < XRES && position.Y+(y-radiusY) < YRES))
-					points.push_back(ui::Point(x, y));
-		DrawPoints(sim, points);
+		for (int i=0; i<=sim->parts_lastActiveIndex; i++)
+		{
+			if (sim->parts[i].type)
+			{
+				int partx = (int)(sim->parts[i].x+0.5f);
+				int party = (int)(sim->parts[i].y+0.5f);
+				int partbmpx = partx - position.X + radiusX;
+				int partbmpy = party - position.Y + radiusY;
+				if (partbmpx >= 0 && partbmpx < sizeX && partbmpy >= 0 && partbmpy < sizeY && bitmap[partbmpy * sizeX + partbmpx])
+					parts.push_back(i);
+			}
+		}
+		ProcessParts(sim, parts, position);
 	}
+}
+
+bool comparePoints(ui::Point a, ui::Point b)
+{
+	if (a.Y == b.Y) return a.X < b.X;
+	else return a.Y < b.Y;
 }
 
 void StackTool::DrawLine(Simulation *sim, Brush *cBrush, ui::Point position, ui::Point position2, bool dragging)
@@ -83,12 +134,25 @@ void StackTool::DrawLine(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 			e -= 1.0f;
 		}
 	}
-	DrawPoints(sim, points);
+	std::sort(points.begin(), points.end(), comparePoints);
+	std::vector<int> parts;
+	for (int i=0; i<=sim->parts_lastActiveIndex; i++)
+	{
+		if (sim->parts[i].type)
+		{
+			int partx = (int)(sim->parts[i].x+0.5f);
+			int party = (int)(sim->parts[i].y+0.5f);
+			ui::Point partpos(partx, party);
+			std::vector<ui::Point>::iterator it = std::lower_bound(points.begin(), points.end(), partpos, comparePoints);
+			if (it != points.end() && *it == partpos)
+				parts.push_back(i);
+		}
+	}
+	ProcessParts(sim, parts, ui::Point(x1, y1));
 }
 
 void StackTool::DrawRect(Simulation *sim, Brush *cBrush, ui::Point position, ui::Point position2)
 {
-	std::vector<ui::Point> points;
 	int x1 = position.X, y1 = position.Y, x2 = position2.X, y2 = position2.Y;
 	int i, j;
 	if (x1>x2)
@@ -103,8 +167,16 @@ void StackTool::DrawRect(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 		y2 = y1;
 		y1 = j;
 	}
-	for (j=y1; j<=y2; j++)
-		for (i=x1; i<=x2; i++)
-			points.push_back(ui::Point(i, j));
-	DrawPoints(sim, points);
+	std::vector<int> parts;
+	for (int i=0; i<=sim->parts_lastActiveIndex; i++)
+	{
+		if (sim->parts[i].type)
+		{
+			int partx = (int)(sim->parts[i].x+0.5f);
+			int party = (int)(sim->parts[i].y+0.5f);
+			if (partx >= x1 && partx <= x2 && party >= y1 && party <= y2)
+				parts.push_back(i);
+		}
+	}
+	ProcessParts(sim, parts, ui::Point(x1, y1));
 }
