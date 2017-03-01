@@ -17,7 +17,6 @@ These features are enabled when you enter the Lua command "tpt.setdebug(0x8)" in
 These features will be present without enabling:
 
 - Stacked particles are shown in the debug HUD.
-- Using the particle erase tool will erase all stacked particles, not just the topmost ones.
 - P opens the property tool window rather than takes a screenshot (you can still take screenshots with F2).
 - The property tool sets temp values in celsius rather than kelvin.
 - Ctrl-Y reverses an undo.
@@ -27,9 +26,19 @@ These features will be present without enabling:
 - When pasting (or placing a stamp), the pasted particles can be moved out of the initial paste boundary without getting deleted. Additionally, the white dotted paste boundary will not be shown.
 - If you attempt to open a save or close the window with the ESC button (the case for closing with the 'X' button has not been implemented) when there are unsaved changes, a confirmation warning will be displayed.
 - The position in frame is saved into undo history during subframe debugging, so you can undo into the middle of a frame without destroying everything.
+- New stack tool: Clicking on a stack of particles will unstack them, provided there's enough space; Selecting multiple particles in different positions will stack them.
 
 Note that the original game already supports the following subframe debugging features:
 
 - Shift-F updates all particles up to the particle where your mouse is at.
 - Alt-F updates a single particle. This behaviour has been modified in this mod to continue updating particles until an "interesting" update occurs.
 
+
+Changelog
+=========
+
+v1.0.0:
+Original release.
+
+v1.0.1 (in development):
+Added stack tool.
