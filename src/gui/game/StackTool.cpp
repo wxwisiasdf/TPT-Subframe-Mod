@@ -5,20 +5,23 @@
 #include "GameModel.h"
 #include "Tool.h"
 
-void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts, ui::Point stackPos)
+void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 {
 	if (parts.empty()) return;
 	bool samePos = true;
 	int partx = sim->parts[parts[0]].x;
 	int party = sim->parts[parts[0]].y;
+	int topleftx = partx;
+	int toplefty = party;
 	for (size_t i = 1; i < parts.size(); i++)
 	{
 		Particle part = sim->parts[parts[i]];
 		if (part.x != partx || part.y != party)
-		{
 			samePos = false;
-			break;
-		}
+		if (part.x < topleftx)
+			topleftx = part.x;
+		if (part.y < toplefty)
+			toplefty = part.y;
 	}
 	if (samePos)
 	{
@@ -46,8 +49,8 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts, ui::Point
 			return;
 		}
 		for (size_t i = 0; i < parts.size(); i++){
-			sim->parts[parts[i]].x = stackPos.X;
-			sim->parts[parts[i]].y = stackPos.Y;
+			sim->parts[parts[i]].x = topleftx;
+			sim->parts[parts[i]].y = toplefty;
 		}
 	}
 }
@@ -71,7 +74,7 @@ void StackTool::Draw(Simulation *sim, Brush *cBrush, ui::Point position)
 					parts.push_back(i);
 			}
 		}
-		ProcessParts(sim, parts, position);
+		ProcessParts(sim, parts);
 	}
 }
 
@@ -148,7 +151,7 @@ void StackTool::DrawLine(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 				parts.push_back(i);
 		}
 	}
-	ProcessParts(sim, parts, ui::Point(x1, y1));
+	ProcessParts(sim, parts);
 }
 
 void StackTool::DrawRect(Simulation *sim, Brush *cBrush, ui::Point position, ui::Point position2)
@@ -178,5 +181,5 @@ void StackTool::DrawRect(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 				parts.push_back(i);
 		}
 	}
-	ProcessParts(sim, parts, ui::Point(x1, y1));
+	ProcessParts(sim, parts);
 }
