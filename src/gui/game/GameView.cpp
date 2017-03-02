@@ -1712,6 +1712,11 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^SPECIFIC_DELETE);
 			break;
 		}
+		if (shift)
+		{
+			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^STACK_MODE);
+			break;
+		}
 		//fancy case switch without break
 	case SDLK_INSERT:
 		c->SetReplaceModeFlags(c->GetReplaceModeFlags()^REPLACE_MODE);
@@ -2534,6 +2539,8 @@ void GameView::OnDraw()
 			fpsInfo << " [REPLACE MODE]";
 		if (c->GetReplaceModeFlags()&SPECIFIC_DELETE)
 			fpsInfo << " [SPECIFIC DELETE]";
+		if (c->GetReplaceModeFlags()&STACK_MODE)
+			fpsInfo << " [STACK MODE]";
 		if (ren->GetGridSize())
 			fpsInfo << " [GRID: " << ren->GetGridSize() << "]";
 		if (ren->findingElement)

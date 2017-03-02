@@ -25,8 +25,9 @@ These features will be present without enabling:
 - When pasting (or placing a stamp), the pasted particles can be moved out of the initial paste boundary without getting deleted. Additionally, the white dotted paste boundary will not be shown.
 - If you attempt to open a save or close the window with the ESC button (the case for closing with the 'X' button has not been implemented) when there are unsaved changes, a confirmation warning will be displayed.
 - The position in frame is saved into undo history during subframe debugging, so you can undo into the middle of a frame without destroying everything.
-- New stack tool (Shortcut: Shift + S): Clicking on a stack of particles will unstack them, provided there's enough space; Selecting multiple particles in different positions will stack them in order of their positions.
+- New stack tool (Shortcut: Shift-S): Clicking on a stack of particles will unstack them, provided there's enough space; Selecting multiple particles in different positions will stack them in order of their positions.
 - Creating CRAY with the brush gives it a ctype of SPRK automatically. If you want to create a ctype-less CRAY, use the property tool.
+- Shift-; (semicolon) toggles stack mode. It allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC. For performance reasons, it does not automatically reset particle order.
 
 Note that the original game already supports the following subframe debugging features:
 
@@ -34,6 +35,7 @@ Note that the original game already supports the following subframe debugging fe
 - Alt-F updates a single particle. This behaviour has been modified in this mod to continue updating particles until an "interesting" update occurs.
 
 The following simulation features are from the vanilla TPT snapshot, so don't publish anything that depends on these:
+
 - Two new FILT modes, variable red shift and variable blue shift, allows ctype-based bitshifting that can be set by DTEC.
 - CRAY copies its own life to particles it creates.
 

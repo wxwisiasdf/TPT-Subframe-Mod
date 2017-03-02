@@ -502,11 +502,16 @@ void GameController::DrawPoints(int toolSelection, ui::Point oldPos, ui::Point n
 	gameModel->SetLastTool(activeTool);
 	Brush * cBrush = gameModel->GetBrush();
 	if (!activeTool || !cBrush)
+		return;
+
+	activeTool->SetStrength(gameModel->GetToolStrength());
+	if ((GetReplaceModeFlags()&STACK_MODE) && held)
 	{
+		if (oldPos != newPos)
+			activeTool->Draw(sim, cBrush, newPos);
 		return;
 	}
 
-	activeTool->SetStrength(gameModel->GetToolStrength());
 	if (!held)
 		activeTool->Draw(sim, cBrush, newPos);
 	else

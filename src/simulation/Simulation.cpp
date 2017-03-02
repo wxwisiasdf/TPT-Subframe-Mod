@@ -1485,6 +1485,12 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 				create_part(-2, x, y, c&0xFF, c>>8);
 		}
 	}
+	//stack mode
+	else if (flags&STACK_MODE)
+	{
+		if (create_part(-3, x, y, c&0xFF, c>>8) == -1)
+			return 1;
+	}
 	//normal draw
 	else
 		if (create_part(-2, x, y, c&0xFF, c>>8) == -1)
@@ -2810,7 +2816,7 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 	}
 }
 
-//the function for creating a particle, use p=-1 for creating a new particle, -2 is from a brush, or a particle number to replace a particle.
+//the function for creating a particle, use p=-1 for creating a new particle, -2 is from a brush, -3 to skip pmap check, or a particle number to replace a particle.
 //tv = Type (8 bits) + Var (24 bits), var is usually 0
 int Simulation::create_part(int p, int x, int y, int t, int v)
 {
