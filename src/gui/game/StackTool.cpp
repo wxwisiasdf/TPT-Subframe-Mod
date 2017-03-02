@@ -5,6 +5,19 @@
 #include "GameModel.h"
 #include "Tool.h"
 
+bool comparePoints(ui::Point a, ui::Point b)
+{
+	if (a.Y == b.Y) return a.X < b.X;
+	else return a.Y < b.Y;
+}
+
+bool compareParts(Particle a, Particle b)
+{
+	if (a.y == b.y) return a.x < b.x;
+	else return a.y < b.y;
+}
+
+// parts must be sorted!
 void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 {
 	if (parts.empty()) return;
@@ -48,10 +61,18 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 			gameModel->Log(std::string("Too many particles to stack."), false);
 			return;
 		}
-		for (size_t i = 0; i < parts.size(); i++){
+		Particle *partobjs = new Particle[parts.size()];
+		for (size_t i = 0; i < parts.size(); i++)
+			partobjs[i] = sim->parts[parts[i]];
+		std::sort(partobjs, partobjs + parts.size(), compareParts);
+		for (size_t i = 0; i < parts.size(); i++)
+			sim->parts[parts[i]] = partobjs[i];
+		for (size_t i = 0; i < parts.size(); i++)
+		{
 			sim->parts[parts[i]].x = topleftx;
 			sim->parts[parts[i]].y = toplefty;
 		}
+		delete partobjs;
 	}
 }
 
@@ -76,12 +97,6 @@ void StackTool::Draw(Simulation *sim, Brush *cBrush, ui::Point position)
 		}
 		ProcessParts(sim, parts);
 	}
-}
-
-bool comparePoints(ui::Point a, ui::Point b)
-{
-	if (a.Y == b.Y) return a.X < b.X;
-	else return a.Y < b.Y;
 }
 
 void StackTool::DrawLine(Simulation *sim, Brush *cBrush, ui::Point position, ui::Point position2, bool dragging)
