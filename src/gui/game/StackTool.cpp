@@ -53,6 +53,7 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 		for (size_t i = 1; i < parts.size(); i++){
 			sim->parts[parts[i]].y += i;
 		}
+		sim->debug_needReloadParticleOrder = true;
 	}
 	else
 	{
@@ -73,6 +74,7 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 			sim->parts[parts[i]].y = toplefty;
 		}
 		delete partobjs;
+		sim->debug_needReloadParticleOrder = true;
 	}
 }
 
