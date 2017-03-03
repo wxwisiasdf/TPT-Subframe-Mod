@@ -1714,6 +1714,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		}
 		if (shift)
 		{
+			c->ReloadParticleOrder();
 			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^STACK_MODE);
 			break;
 		}
