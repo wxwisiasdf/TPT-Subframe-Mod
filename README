@@ -47,6 +47,6 @@ Original release.
 
 v1.1:
 Merge changes in snapshot.
-Added stack tool.
-Added stack mode.
+Add stack tool.
+Add stack mode.
 Give drawn CRAY a ctype of SPRK.
