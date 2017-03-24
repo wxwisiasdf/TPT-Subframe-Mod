@@ -28,7 +28,7 @@ These features will be present without enabling:
 - (v1.1) Stack tool (Shortcut: Shift-S): Clicking on a stack of particles will unstack them, provided there's enough space; selecting multiple particles in different positions will stack them in order of their positions.
 - (v1.1) Creating CRAY with the brush gives it a ctype of SPRK automatically. If you want to create a ctype-less CRAY, use the property tool.
 - (v1.1, experimental) Shift-; (semicolon) toggles stack mode. It allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC.
-- (v1.1) DTEC is coloured a darker red to distinguish it from ARAY.
+- (v1.2) DTEC is coloured a darker red to distinguish it from ARAY.
 
 Note that the original game already supports the following subframe debugging features:
 
@@ -51,3 +51,6 @@ Merge changes in snapshot.
 Add stack tool.
 Add stack mode.
 Give drawn CRAY a ctype of SPRK.
+
+v1.2 (not released):
+Change DTEC colour.
