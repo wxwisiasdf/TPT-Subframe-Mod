@@ -13,7 +13,7 @@
 #define TYPE_PART			0x00001  //1 Powders
 #define TYPE_LIQUID			0x00002  //2 Liquids
 #define TYPE_SOLID			0x00004  //4 Solids
-#define TYPE_GAS			0x00008  //8 Gasses (Includes plasma)
+#define TYPE_GAS			0x00008  //8 Gases (Includes plasma)
 #define TYPE_ENERGY			0x00010  //16 Energy (Thunder, Light, Neutrons etc.)
 #define STATE_FLAGS			0x0001F
 #define PROP_CONDUCTS		0x00020  //32 Conducts electricity
@@ -47,8 +47,6 @@
 #define GRAPHICS_FUNC_SUBCALL_ARGS ren, cpart, nx, ny, pixel_mode, cola, colr, colg, colb, firea, firer, fireg, fireb
 
 #define BOUNDS_CHECK true
-
-#define REAL_BOUNDS_CHECK(x, y) (x >= 0 && x < XRES && y >= 0 && x < YRES)
 
 #define OLD_PT_WIND 147
 

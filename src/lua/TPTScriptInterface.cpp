@@ -20,7 +20,7 @@ int TPTScriptInterface::Command(std::string command)
 	lastError = "";
 	std::deque<std::string> words;
 	std::deque<AnyType> commandWords;
-	int retCode;
+	int retCode = -1;
 
 	//Split command into words, put them on the stack
 	char * rawCommand;
@@ -272,8 +272,8 @@ AnyType TPTScriptInterface::tptS_set(std::deque<std::string> * words)
 		throw GeneralException("Invalid property");
 
 	//Selector
-	int newValue;
-	float newValuef;
+	int newValue = 0;
+	float newValuef = 0.0f;
 	if (value.GetType() == TypeNumber)
 	{
 		newValuef = newValue = ((NumberType)value).Value();
@@ -296,7 +296,7 @@ AnyType TPTScriptInterface::tptS_set(std::deque<std::string> * words)
 		}
 		else
 		{
-			newValue = GetParticleType(((StringType)value).Value());
+			newValue = m->GetSimulation()->GetParticleType(((StringType)value).Value());
 			if (newValue < 0 || newValue >= PT_NUM)
 			{
 				// TODO: add element CAKE to invalidate this
@@ -382,11 +382,11 @@ AnyType TPTScriptInterface::tptS_set(std::deque<std::string> * words)
 	}
 	else if(selector.GetType() == TypeString || selector.GetType() == TypeNumber)
 	{
-		int type;
+		int type = 0;
 		if (selector.GetType() == TypeNumber)
 			type = ((NumberType)selector).Value();
 		else if (selector.GetType() == TypeString)
-			type = GetParticleType(((StringType)selector).Value());
+			type = m->GetSimulation()->GetParticleType(((StringType)selector).Value());
 
 		if (type<0 || type>=PT_NUM)
 			throw GeneralException("Invalid particle type");
@@ -446,7 +446,7 @@ AnyType TPTScriptInterface::tptS_create(std::deque<std::string> * words)
 	if(createType.GetType() == TypeNumber)
 		type = ((NumberType)createType).Value();
 	else if(createType.GetType() == TypeString)
-		type = GetParticleType(((StringType)createType).Value());
+		type = m->GetSimulation()->GetParticleType(((StringType)createType).Value());
 	else
 		throw GeneralException("Invalid type");
 

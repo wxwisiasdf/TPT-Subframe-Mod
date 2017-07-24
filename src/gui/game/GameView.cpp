@@ -15,6 +15,7 @@
 #include "gui/search/Thumbnail.h"
 #include "simulation/SaveRenderer.h"
 #include "simulation/SimulationData.h"
+#include "gui/dialogues/InformationMessage.h"
 #include "gui/dialogues/ConfirmPrompt.h"
 #include "client/SaveFile.h"
 #include "Format.h"
@@ -137,7 +138,7 @@ public:
 	void Draw(const ui::Point& screenPos)
 	{
 		ui::Button::Draw(screenPos);
-		Graphics * g = ui::Engine::Ref().g;
+		Graphics * g = GetGraphics();
 		drawn = true;
 
 		if(showSplit)
@@ -354,7 +355,7 @@ GameView::GameView():
 	tagSimulationButton = new ui::Button(ui::Point(currentX, Size.Y-16), ui::Point(227, 15), "[no tags set]", "Add simulation tags");
 	tagSimulationButton->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
 	tagSimulationButton->SetIcon(IconTag);
-	currentX+=252;
+	//currentX+=252;
 	tagSimulationButton->SetActionCallback(new TagSimulationAction(this));
 	AddComponent(tagSimulationButton);
 
@@ -1034,7 +1035,7 @@ void GameView::NotifySaveChanged(GameModel * sender)
 		upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 		upVoteButton->Appearance.BorderDisabled = ui::Colour(100, 100, 100);
 		downVoteButton->Enabled = false;
-		upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
+		downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 		downVoteButton->Appearance.BorderDisabled = ui::Colour(100, 100, 100);
 		tagSimulationButton->Enabled = false;
 		tagSimulationButton->SetText("[no tags set]");
@@ -1553,6 +1554,15 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		else
 			c->ReloadSim();
 		break;
+	case 'a':
+		if ((Client::Ref().GetAuthUser().UserElevation == User::ElevationModerator
+		     || Client::Ref().GetAuthUser().UserElevation == User::ElevationAdmin
+		     || Client::Ref().GetAuthUser().Username == "Mrprocom") && ctrl)
+		{
+			std::string authorString = Client::Ref().GetAuthorInfo().toStyledString();
+			new InformationMessage("Save authorship info", authorString, true);
+		}
+		break;
 	case 'r':
 		if (ctrl)
 			c->ReloadSim();
@@ -1937,10 +1947,9 @@ void GameView::NotifyNotificationsChanged(GameModel * sender)
 {
 	class NotificationButtonAction : public ui::ButtonAction
 	{
-		GameView * v;
 		Notification * notification;
 	public:
-		NotificationButtonAction(GameView * v, Notification * notification) : v(v), notification(notification) { }
+		NotificationButtonAction(Notification * notification) : notification(notification) { }
 		void ActionCallback(ui::Button * sender)
 		{
 			notification->Action();
@@ -1977,7 +1986,7 @@ void GameView::NotifyNotificationsChanged(GameModel * sender)
 	{
 		int width = (Graphics::textwidth((*iter)->Message.c_str()))+8;
 		ui::Button * tempButton = new ui::Button(ui::Point(XRES-width-22, currentY), ui::Point(width, 15), (*iter)->Message);
-		tempButton->SetActionCallback(new NotificationButtonAction(this, *iter));
+		tempButton->SetActionCallback(new NotificationButtonAction(*iter));
 		tempButton->Appearance.BorderInactive = style::Colour::WarningTitle;
 		tempButton->Appearance.TextInactive = style::Colour::WarningTitle;
 		tempButton->Appearance.BorderHover = ui::Colour(255, 175, 0);
@@ -2159,7 +2168,7 @@ void GameView::SetSaveButtonTooltips()
 
 void GameView::OnDraw()
 {
-	Graphics * g = ui::Engine::Ref().g;
+	Graphics * g = GetGraphics();
 	if (ren)
 	{
 		ren->clearScreen(1.0f);
@@ -2361,7 +2370,7 @@ void GameView::OnDraw()
 					if (type == PT_PIPE || type == PT_PPIP)
 						ctype = sparticle.tmp&0xFF;
 
-					if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY)
+					if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
 						wavelengthGfx = (ctype&0x3FFFFFFF);
 
 					if (showDebug)
@@ -2411,7 +2420,7 @@ void GameView::OnDraw()
 						sampleInfo << ", Tmp: " << sparticle.tmp;
 
 						// only elements that use .tmp2 show it in the debug HUD
-						if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_PSTN)
+						if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_LSNS || type == PT_PSTN)
 							sampleInfo << ", Tmp2: " << sparticle.tmp2;
 
 						sampleInfo << ", Pressure: " << std::fixed << sample.AirPressure;
@@ -2542,9 +2551,9 @@ void GameView::OnDraw()
 			fpsInfo << " [SPECIFIC DELETE]";
 		if (c->GetReplaceModeFlags()&STACK_MODE)
 			fpsInfo << " [STACK MODE]";
-		if (ren->GetGridSize())
+		if (ren && ren->GetGridSize())
 			fpsInfo << " [GRID: " << ren->GetGridSize() << "]";
-		if (ren->findingElement)
+		if (ren && ren->findingElement)
 			fpsInfo << " [FIND]";
 
 		int textWidth = Graphics::textwidth((char*)fpsInfo.str().c_str());
@@ -2579,6 +2588,10 @@ void GameView::OnDraw()
 		g->fillrect(0, 0, WINDOWW, WINDOWH, 0, 0, 0, introText>51?102:introText*2);
 		g->drawtext(16, 20, (char*)introTextMessage.c_str(), 255, 255, 255, introText>51?255:introText*5);
 	}
+
+	// Clear menu areas, to ensure particle graphics don't overlap
+	memset(g->vid+((XRES+BARSIZE)*YRES), 0, (PIXELSIZE*(XRES+BARSIZE))*MENUSIZE);
+	g->clearrect(XRES, 1, BARSIZE, YRES-1);
 }
 
 ui::Point GameView::lineSnapCoords(ui::Point point1, ui::Point point2)
