@@ -121,6 +121,14 @@ void PropertyWindow::SetProperty()
 						buffer << std::hex << value.substr(1);
 						buffer >> v;
 					}
+					else if(value.length() > 5 && value.substr(0, 5) == "filt:")
+					{
+						std::stringstream buffer;
+						buffer.exceptions(std::stringstream::failbit | std::stringstream::badbit);
+						buffer << std::hex << value.substr(5);
+						buffer >> v;
+						v = (v << 8) + PT_FILT;
+					}
 					else
 					{
 						int type;

@@ -29,6 +29,7 @@ These features will be present without enabling:
 - (v1.1) Creating CRAY with the brush gives it a ctype of SPRK automatically. If you want to create a ctype-less CRAY, use the property tool.
 - (v1.1, experimental) Shift-; (semicolon) toggles stack mode. It allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC.
 - (v1.2) DTEC is coloured a darker red to distinguish it from ARAY.
+- (v1.3) "filt:v" in property tool translates into (v<<8) + 125, to aid the configuration of CRAY that creates FILT with a preset tmp.
 
 Note that the original game already supports the following subframe debugging features:
 
@@ -55,3 +56,6 @@ Give drawn CRAY a ctype of SPRK.
 v1.2:
 Merge changes in 92.0.
 Change DTEC colour.
+
+v1.3 (unreleased):
+Add "filt:v" property tool syntax.
