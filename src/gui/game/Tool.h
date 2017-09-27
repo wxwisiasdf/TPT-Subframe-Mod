@@ -21,7 +21,7 @@ protected:
 	string toolName;
 	string toolDescription;
 	float strength;
-	int resolution;
+	bool blocky;
 	std::string identifier;
 public:
 	int colRed, colGreen, colBlue;
@@ -31,7 +31,7 @@ public:
 	string GetName();
 	string GetDescription();
 	std::string GetIdentifier();
-	int GetResolution() { return resolution; }
+	int GetBlocky() { return blocky; }
 	void SetStrength(float value) { strength = value; }
 	float  GetStrength() { return strength; }
 	VideoBuffer * GetTexture(int width, int height);

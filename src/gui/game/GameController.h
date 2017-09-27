@@ -30,7 +30,7 @@ class GameController: public ClientListener
 {
 private:
 	bool firstTick;
-	sign * foundSign;
+	int foundSignID;
 
 	PreviewController * activePreview;
 	GameView * gameView;
@@ -57,7 +57,8 @@ public:
 	GameController();
 	~GameController();
 	GameView * GetView();
-	sign * GetSignAt(int x, int y);
+	int GetSignAt(int x, int y);
+	std::string GetSignText(int signID);
 
 	bool MouseMove(int x, int y, int dx, int dy);
 	bool MouseDown(int x, int y, unsigned button);
@@ -88,9 +89,9 @@ public:
 	void DrawRect(int toolSelection, ui::Point point1, ui::Point point2);
 	void DrawLine(int toolSelection, ui::Point point1, ui::Point point2);
 	void DrawFill(int toolSelection, ui::Point point);
-	std::string StampRegion(ui::Point point1, ui::Point point2);
-	void CopyRegion(ui::Point point1, ui::Point point2);
-	void CutRegion(ui::Point point1, ui::Point point2);
+	std::string StampRegion(ui::Point point1, ui::Point point2, bool includePressure);
+	void CopyRegion(ui::Point point1, ui::Point point2, bool includePressure);
+	void CutRegion(ui::Point point1, ui::Point point2, bool includePressure);
 	void Update();
 	void SetPaused(bool pauseState);
 	void SetPaused();
@@ -139,7 +140,7 @@ public:
 	void OpenStamps();
 	void OpenElementSearch();
 	void OpenColourPicker();
-	void PlaceSave(ui::Point position);
+	void PlaceSave(ui::Point position, bool includePressure);
 	void ClearSim();
 	void ReloadSim();
 	void ReloadParticleOrder();
@@ -156,6 +157,7 @@ public:
 	std::string ElementResolve(int type, int ctype);
 	bool IsValidElement(int type);
 	std::string WallName(int type);
+	int Record(bool record, bool subframe);
 
 	void ResetAir();
 	void ResetSpark();

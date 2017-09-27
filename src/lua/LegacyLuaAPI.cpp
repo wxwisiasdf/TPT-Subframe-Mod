@@ -446,6 +446,7 @@ int luacon_elementwrite(lua_State* l)
 bool shortcuts = true;
 int luacon_keyevent(int key, Uint16 character, int modifier, int event)
 {
+	ui::Engine::Ref().LastTick(Platform::GetTime());
 	int kycontinue = 1;
 	lua_State* l=luacon_ci->l;
 	lua_pushstring(l, "keyfunctions");
@@ -501,6 +502,7 @@ int luacon_keyevent(int key, Uint16 character, int modifier, int event)
 
 int luacon_mouseevent(int mx, int my, int mb, int event, int mouse_wheel)
 {
+	ui::Engine::Ref().LastTick(Platform::GetTime());
 	int mpcontinue = 1;
 	lua_State* l=luacon_ci->l;
 	lua_pushstring(l, "mousefunctions");
@@ -554,6 +556,7 @@ int luacon_mouseevent(int mx, int my, int mb, int event, int mouse_wheel)
 
 int luacon_step(int mx, int my)
 {
+	ui::Engine::Ref().LastTick(Platform::GetTime());
 	lua_State* l = luacon_ci->l;
 	lua_pushinteger(l, my);
 	lua_pushinteger(l, mx);
@@ -2026,6 +2029,16 @@ int luatpt_screenshot(lua_State* l)
 	}
 	Client::Ref().WriteFile(data, filename.str());
 	lua_pushstring(l, filename.str().c_str());
+	return 1;
+}
+
+int luatpt_record(lua_State* l)
+{
+	if (!lua_isboolean(l, -1))
+		return luaL_typerror(l, 1, lua_typename(l, LUA_TBOOLEAN));
+	bool record = lua_toboolean(l, -1);
+	int recordingFolder = luacon_controller->Record(record, false);
+	lua_pushinteger(l, recordingFolder);
 	return 1;
 }
 

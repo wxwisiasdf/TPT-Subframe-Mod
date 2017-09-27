@@ -16,11 +16,11 @@
 #endif
 
 #ifndef MINOR_VERSION
-#define MINOR_VERSION 0
+#define MINOR_VERSION 5
 #endif
 
 #ifndef BUILD_NUM
-#define BUILD_NUM 331
+#define BUILD_NUM 336
 #endif
 
 #ifndef SNAPSHOT_ID
@@ -36,7 +36,7 @@
 
 #ifdef SNAPSHOT
 #define FUTURE_SAVE_VERSION 92
-#define FUTURE_MINOR_VERSION 0
+#define FUTURE_MINOR_VERSION 1
 #endif
 //VersionInfoEnd
 
@@ -118,8 +118,8 @@
 #define YRES	384
 #define NPART XRES*YRES
 
-#define XCNTR   306
-#define YCNTR   192
+#define XCNTR   XRES/2
+#define YCNTR   YRES/2
 
 #define WINDOWW (XRES+BARSIZE)
 #define WINDOWH (YRES+MENUSIZE)

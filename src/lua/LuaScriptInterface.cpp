@@ -202,6 +202,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"setwindowsize",&luatpt_setwindowsize},
 		{"watertest",&luatpt_togglewater},
 		{"screenshot",&luatpt_screenshot},
+		{"record",&luatpt_record},
 		{"element",&luatpt_getelement},
 		{"element_func",&luatpt_element_func},
 		{"graphics_func",&luatpt_graphics_func},
@@ -765,6 +766,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"neighbors", simulation_neighbours},
 		{"framerender", simulation_framerender},
 		{"gspeed", simulation_gspeed},
+		{"takeSnapshot", simulation_takeSnapshot},
 		{NULL, NULL}
 	};
 	luaL_register(l, "simulation", simulationAPIMethods);
@@ -1680,17 +1682,19 @@ int LuaScriptInterface::simulation_saveStamp(lua_State * l)
 	int y = luaL_optint(l,2,0);
 	int w = luaL_optint(l,3,XRES-1);
 	int h = luaL_optint(l,4,YRES-1);
-	std::string name = luacon_controller->StampRegion(ui::Point(x, y), ui::Point(x+w, y+h));
+	int includePressure = luaL_optint(l,5,1);
+	std::string name = luacon_controller->StampRegion(ui::Point(x, y), ui::Point(x+w, y+h), includePressure);
 	lua_pushstring(l, name.c_str());
 	return 1;
 }
 
 int LuaScriptInterface::simulation_loadStamp(lua_State * l)
 {
-	int i = -1, x, y;
+	int i = -1;
 	SaveFile * tempfile = NULL;
-	x = luaL_optint(l,2,0);
-	y = luaL_optint(l,3,0);
+	int x = luaL_optint(l,2,0);
+	int y = luaL_optint(l,3,0);
+	int includePressure = luaL_optint(l,4,1);
 	if (lua_isstring(l, 1)) //Load from 10 char name, or full filename
 	{
 		const char * filename = luaL_optstring(l, 1, "");
@@ -1707,7 +1711,7 @@ int LuaScriptInterface::simulation_loadStamp(lua_State * l)
 
 	if (tempfile)
 	{
-		if (!luacon_sim->Load(x, y, tempfile->GetGameSave()))
+		if (!luacon_sim->Load(x, y, tempfile->GetGameSave(), includePressure))
 		{
 			//luacon_sim->sys_pause = (tempfile->GetGameSave()->paused | luacon_model->GetPaused())?1:0;
 			lua_pushinteger(l, 1);
@@ -2138,6 +2142,12 @@ int LuaScriptInterface::simulation_gspeed(lua_State * l)
 	if (gspeed < 1)
 		return luaL_error(l, "GSPEED must be at least 1");
 	luacon_sim->GSPEED = gspeed;
+	return 0;
+}
+
+int LuaScriptInterface::simulation_takeSnapshot(lua_State * l)
+{
+	luacon_controller->HistorySnapshot();
 	return 0;
 }
 
@@ -3473,7 +3483,6 @@ bool LuaScriptInterface::OnKeyRelease(int key, Uint16 character, bool shift, boo
 
 bool LuaScriptInterface::OnMouseTick()
 {
-	ui::Engine::Ref().LastTick(Platform::GetTime());
 	if (luacon_mousedown)
 		return luacon_mouseevent(luacon_mousex, luacon_mousey, luacon_mousebutton, LUACON_MPRESS, 0);
 	return true;
@@ -3488,7 +3497,6 @@ void LuaScriptInterface::OnTick()
 		lua_setfield(l, -2, "NUM_PARTS");
 	}
 	lua_pop(l, 1);
-	ui::Engine::Ref().LastTick(Platform::GetTime());
 	luacon_step(luacon_mousex, luacon_mousey);
 }
 

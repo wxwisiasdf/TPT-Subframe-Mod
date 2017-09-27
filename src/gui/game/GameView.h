@@ -66,10 +66,11 @@ private:
 	std::string introTextMessage;
 
 	bool doScreenshot;
-	bool recording;
 	int screenshotIndex;
+	bool recording;
+	int recordingFolder;
 	int recordingIndex;
-    bool recordingSubframe; 
+	bool recordingSubframe; 
 
 	ui::Point currentPoint, lastPoint;
 	GameController * c;
@@ -118,8 +119,6 @@ private:
 	void SetSaveButtonTooltips();
 
 	void screenshot();
-	void record();
-	void startSubframeRecording();
 
 	void enableShiftBehaviour();
 	void disableShiftBehaviour();
@@ -149,9 +148,9 @@ public:
 	void ExitPrompt();
 	SelectMode GetSelectMode() { return selectMode; }
 	void BeginStampSelection();
+	int Record(bool record, bool subframe);
 
-    bool GetRecordingSubframe(){ return recordingSubframe; }
-	void StopRecording();
+	bool GetRecordingSubframe(){ return recordingSubframe; }
 
 	//all of these are only here for one debug lines
 	bool GetMouseDown() { return isMouseDown; }

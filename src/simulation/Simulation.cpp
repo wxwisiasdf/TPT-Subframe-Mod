@@ -26,12 +26,12 @@
 #include "lua/LuaScriptHelper.h"
 #endif
 
-int Simulation::Load(GameSave * save)
+int Simulation::Load(GameSave * save, bool includePressure)
 {
-	return Load(0, 0, save);
+	return Load(0, 0, save, includePressure);
 }
 
-int Simulation::Load(int fullX, int fullY, GameSave * save)
+int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure)
 {
 	int blockX, blockY, x, y, r;
 
@@ -210,25 +210,29 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 				fvx[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelX[saveBlockY][saveBlockX];
 				fvy[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelY[saveBlockY][saveBlockX];
 			}
-			pv[saveBlockY+blockY][saveBlockX+blockX] = save->pressure[saveBlockY][saveBlockX];
-			vx[saveBlockY+blockY][saveBlockX+blockX] = save->velocityX[saveBlockY][saveBlockX];
-			vy[saveBlockY+blockY][saveBlockX+blockX] = save->velocityY[saveBlockY][saveBlockX];
-			if (save->hasAmbientHeat)
-				hv[saveBlockY+blockY][saveBlockX+blockX] = save->ambientHeat[saveBlockY][saveBlockX];
+			if (includePressure)
+			{
+				pv[saveBlockY+blockY][saveBlockX+blockX] = save->pressure[saveBlockY][saveBlockX];
+				vx[saveBlockY+blockY][saveBlockX+blockX] = save->velocityX[saveBlockY][saveBlockX];
+				vy[saveBlockY+blockY][saveBlockX+blockX] = save->velocityY[saveBlockY][saveBlockX];
+				if (save->hasAmbientHeat)
+					hv[saveBlockY+blockY][saveBlockX+blockX] = save->ambientHeat[saveBlockY][saveBlockX];
+			}
 		}
 	}
 
 	gravWallChanged = true;
+	air->RecalculateBlockAirMaps();
 
 	return 0;
 }
 
-GameSave * Simulation::Save()
+GameSave * Simulation::Save(bool includePressure)
 {
-	return Save(0, 0, XRES-1, YRES-1);
+	return Save(0, 0, XRES-1, YRES-1, includePressure);
 }
 
-GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2)
+GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool includePressure)
 {
 	int blockX, blockY, blockX2, blockY2, blockW, blockH;
 	//Normalise incoming coords
@@ -312,11 +316,14 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2)
 				newSave->fanVelX[saveBlockY][saveBlockX] = fvx[saveBlockY+blockY][saveBlockX+blockX];
 				newSave->fanVelY[saveBlockY][saveBlockX] = fvy[saveBlockY+blockY][saveBlockX+blockX];
 			}
-			newSave->pressure[saveBlockY][saveBlockX] = pv[saveBlockY+blockY][saveBlockX+blockX];
-			newSave->velocityX[saveBlockY][saveBlockX] = vx[saveBlockY+blockY][saveBlockX+blockX];
-			newSave->velocityY[saveBlockY][saveBlockX] = vy[saveBlockY+blockY][saveBlockX+blockX];
-			newSave->ambientHeat[saveBlockY][saveBlockX] = hv[saveBlockY+blockY][saveBlockX+blockX];
-			newSave->hasAmbientHeat = true;
+			if (includePressure)
+			{
+				newSave->pressure[saveBlockY][saveBlockX] = pv[saveBlockY+blockY][saveBlockX+blockX];
+				newSave->velocityX[saveBlockY][saveBlockX] = vx[saveBlockY+blockY][saveBlockX+blockX];
+				newSave->velocityY[saveBlockY][saveBlockX] = vy[saveBlockY+blockY][saveBlockX+blockX];
+				newSave->ambientHeat[saveBlockY][saveBlockX] = hv[saveBlockY+blockY][saveBlockX+blockX];
+				newSave->hasAmbientHeat = true;
+			}
 		}
 	}
 
@@ -380,7 +387,7 @@ void Simulation::Restore(const Snapshot & snap)
 		parts[i].type = 0;
 	std::copy(snap.Particles.begin(), snap.Particles.end(), parts);
 	parts_lastActiveIndex = NPART-1;
-	RecalcFreeParticles();
+	RecalcFreeParticles(false);
 	std::copy(snap.PortalParticles.begin(), snap.PortalParticles.end(), &portalp[0][0][0]);
 	std::copy(snap.WirelessData.begin(), snap.WirelessData.end(), &wireless[0][0]);
 	if (grav->ngrav_enable)
@@ -3295,7 +3302,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	case PT_FIGH:
 	{
 		unsigned char fcount = 0;
-		while (fcount < MAX_FIGHTERS && fcount < (fighcount+1) && fighters[fcount].spwn==1) fcount++;
+		while (fcount < MAX_FIGHTERS && fighters[fcount].spwn==1) fcount++;
 		if (fcount < MAX_FIGHTERS && fighters[fcount].spwn == 0)
 		{
 			parts[i].life = 100;
@@ -4153,7 +4160,7 @@ void Simulation::UpdateParticles(int start, int end)
 					else s = 0;
 				}
 				else s = 0;
-			} else if (elements[t].LowPressureTransition>-1 && pv[y/CELL][x/CELL]<elements[t].LowPressure) {
+			} else if (elements[t].LowPressureTransition>-1 && pv[y/CELL][x/CELL]<elements[t].LowPressure && gravtot<=(elements[t].LowPressure/4.0f)) {
 				// particle type change due to low pressure
 				if (elements[t].LowPressureTransition!=PT_NUM)
 					t = elements[t].LowPressureTransition;
@@ -4927,7 +4934,7 @@ void Simulation::SimulateGoL()
 	//memset(gol2, 0, sizeof(gol2));
 }
 
-void Simulation::RecalcFreeParticles()
+void Simulation::RecalcFreeParticles(bool do_life_dec)
 {
 	int x, y, t;
 	int lastPartUsed = 0;
@@ -4965,7 +4972,7 @@ void Simulation::RecalcFreeParticles()
 			NUM_PARTS ++;
 
 			//decrease particle life
-			if (!sys_pause || framerender)
+			if (do_life_dec && (!sys_pause || framerender))
 			{
 				if (t<0 || t>=PT_NUM || !elements[t].Enabled)
 				{
@@ -5124,7 +5131,7 @@ void Simulation::BeforeSim()
 	sandcolour = (int)(20.0f*sin((float)sandcolour_frame*(M_PI/180.0f)));
 	sandcolour_frame = (sandcolour_frame+1)%360;
 
-	RecalcFreeParticles();
+	RecalcFreeParticles(true);
 
 	if (!sys_pause || framerender)
 	{

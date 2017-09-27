@@ -114,6 +114,8 @@ bool ParticleDebug::KeyPress(int key, Uint16 character, bool shift, bool ctrl, b
 		}
 		else
 		{
+			if (ctrl)
+				return true;
 			if (sim->debug_currentParticle > 0)
 			{
 				sim->CompleteDebugUpdateParticles();

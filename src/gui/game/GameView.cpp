@@ -186,10 +186,11 @@ GameView::GameView():
 	introTextMessage(introTextData),
 
 	doScreenshot(false),
-	recording(false),
 	screenshotIndex(0),
+	recording(false),
+	recordingFolder(0),
 	recordingIndex(0),
-    recordingSubframe(false),
+	recordingSubframe(false),
 	currentPoint(ui::Point(0, 0)),
 	lastPoint(ui::Point(0, 0)),
 	ren(NULL),
@@ -742,11 +743,7 @@ void GameView::NotifyLastToolChanged(GameModel * sender)
 {
 	if (sender->GetLastTool())
 	{
-		if (sender->GetLastTool()->GetResolution() == CELL)
-			wallBrush = true;
-		else
-			wallBrush = false;
-
+		wallBrush = sender->GetLastTool()->GetBlocky();
 		if (sender->GetLastTool()->GetIdentifier().find("DEFAULT_TOOL_") != sender->GetLastTool()->GetIdentifier().npos)
 			toolBrush = true;
 		else
@@ -1070,66 +1067,47 @@ void GameView::screenshot()
 	doScreenshot = true;
 }
 
-void GameView::record()
+int GameView::Record(bool record, bool subframe)
 {
-	if(recording)
+	if (!record)
 	{
 		recordingSubframe = false;
 		recording = false;
+		recordingIndex = 0;
+		recordingFolder = 0;
 	}
-	else
-	{
-		class RecordingConfirmation: public ConfirmDialogueCallback {
-		public:
-			GameView * v;
-			RecordingConfirmation(GameView * v): v(v) {}
-			virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
-				if (result == ConfirmPrompt::ResultOkay)
-				{
-					v->recording = true;
-				}
-			}
-			virtual ~RecordingConfirmation() { }
-		};
-		new ConfirmPrompt("Recording", "You're about to start recording all drawn frames. This may use a load of hard disk space.", new RecordingConfirmation(this));
-	}
-}
-
-void GameView::StopRecording()
-{
-	if(recording)
-	{
-		record();
-	}
-}
-
-void GameView::startSubframeRecording()
-{
-	if(recording)
+	else if (recording && subframe && !recordingSubframe)
 	{
 		std::cout << "Starting subframe recording." << std::endl;
 		c->SetSubframeMode(true);
 		recordingSubframe = true;
 	}
-	else
+	else if (!recording)
 	{
-		class RecordingConfirmation: public ConfirmDialogueCallback {
-		public:
-			GameView * v;
-			RecordingConfirmation(GameView * v): v(v) {}
-			virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
-				if (result == ConfirmPrompt::ResultOkay)
-				{
-					std::cout << "Starting subframe recording." << std::endl;
-					v->c->SetSubframeMode(true);
-					v->recordingSubframe = true;
-					v->recording = true;
-				}
+		// block so that the return value is correct
+		bool recordConfirm = ConfirmPrompt::Blocking("Recording", subframe ?
+			"You're about to start recording all remaining particle updates in this frame. This may use a load of hard disk space." :
+			"You're about to start recording all drawn frames. This will use a load of disk space.");
+		if (recordConfirm)
+		{
+			time_t startTime = time(NULL);
+			recordingFolder = startTime;
+			std::stringstream recordingDir;
+			recordingDir << "recordings" << PATH_SEP << recordingFolder;
+			Client::Ref().MakeDirectory("recordings");
+			Client::Ref().MakeDirectory(recordingDir.str().c_str());
+			recording = true;
+			recordingIndex = 0;
+
+			if (subframe)
+			{
+				std::cout << "Starting subframe recording." << std::endl;
+				c->SetSubframeMode(true);
+				recordingSubframe = true;
 			}
-			virtual ~RecordingConfirmation() { }
-		};
-		new ConfirmPrompt("Recording", "You're about to start recording all remaining particle updates in this frame. This may use a load of hard disk space.", new RecordingConfirmation(this));
+		}
 	}
+	return recordingFolder;
 }
 
 void GameView::updateToolButtonScroll()
@@ -1308,7 +1286,7 @@ void GameView::OnMouseUp(int x, int y, unsigned button)
 						int thumbX = selectPoint2.X - (placeSaveThumb->Width/2);
 						int thumbY = selectPoint2.Y - (placeSaveThumb->Height/2);
 
-						c->PlaceSave(ui::Point(thumbX, thumbY));
+						c->PlaceSave(ui::Point(thumbX, thumbY), !shiftBehaviour);
 					}
 				}
 				else
@@ -1318,11 +1296,11 @@ void GameView::OnMouseUp(int x, int y, unsigned button)
 					int x1 = (selectPoint2.X<selectPoint1.X) ? selectPoint2.X : selectPoint1.X;
 					int y1 = (selectPoint2.Y<selectPoint1.Y) ? selectPoint2.Y : selectPoint1.Y;
 					if (selectMode ==SelectCopy)
-						c->CopyRegion(ui::Point(x1, y1), ui::Point(x2, y2));
+						c->CopyRegion(ui::Point(x1, y1), ui::Point(x2, y2), !shiftBehaviour);
 					else if (selectMode == SelectCut)
-						c->CutRegion(ui::Point(x1, y1), ui::Point(x2, y2));
+						c->CutRegion(ui::Point(x1, y1), ui::Point(x2, y2), !shiftBehaviour);
 					else if (selectMode == SelectStamp)
-						c->StampRegion(ui::Point(x1, y1), ui::Point(x2, y2));
+						c->StampRegion(ui::Point(x1, y1), ui::Point(x2, y2), !shiftBehaviour);
 				}
 			}
 			selectMode = SelectNone;
@@ -1507,10 +1485,10 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		enableShiftBehaviour();
 		break;
 	case ' ': //Space
-        if (shift && c->GetSubframeEnabled())
-        {
+		if (shift && c->GetSubframeEnabled())
+		{
 			c->SetSubframeMode();
-        }
+		}
 		else
 		{
 			c->SetPaused();
@@ -1556,8 +1534,8 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		break;
 	case 'a':
 		if ((Client::Ref().GetAuthUser().UserElevation == User::ElevationModerator
-		     || Client::Ref().GetAuthUser().UserElevation == User::ElevationAdmin
-		     || Client::Ref().GetAuthUser().Username == "Mrprocom") && ctrl)
+			 || Client::Ref().GetAuthUser().UserElevation == User::ElevationAdmin
+			 || Client::Ref().GetAuthUser().Username == "Mrprocom") && ctrl)
 		{
 			std::string authorString = Client::Ref().GetAuthorInfo().toStyledString();
 			new InformationMessage("Save authorship info", authorString, true);
@@ -1566,12 +1544,10 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 	case 'r':
 		if (ctrl)
 			c->ReloadSim();
-        else if (shift && c->GetSubframeEnabled())
-        {
-			startSubframeRecording();
-        }
-		else
-			record();
+		else if (shift && c->GetSubframeEnabled())
+		{
+			Record(!recording, true);
+		}
 		break;
 	case 'e':
 		c->OpenElementSearch();
@@ -1811,11 +1787,11 @@ void GameView::OnTick(float dt)
 		}
 	}
 
-	sign * foundSign = c->GetSignAt(mousePosition.X, mousePosition.Y);
-	if (foundSign)
+	int foundSignID = c->GetSignAt(mousePosition.X, mousePosition.Y);
+	if (foundSignID != -1)
 	{
-		const char* str = foundSign->text.c_str();
-		char type;
+		const char* str = c->GetSignText(foundSignID).c_str();;
+		char type = '\0';
 		int pos = sign::splitsign(str, &type);
 		if (type == 'c' || type == 't' || type == 's')
 		{
@@ -2304,6 +2280,7 @@ void GameView::OnDraw()
 			std::vector<char> data = format::VideoBufferToPPM(screenshot);
 
 			std::stringstream filename;
+			filename << "recordings" << PATH_SEP << recordingFolder << PATH_SEP;
 			filename << "frame_";
 			filename << std::setfill('0') << std::setw(6) << (recordingIndex++);
 			filename << ".ppm";
@@ -2417,7 +2394,8 @@ void GameView::OnDraw()
 						}
 						sampleInfo << ", Temp: " << std::fixed << sparticle.temp -273.15f << " C";
 						sampleInfo << ", Life: " << sparticle.life;
-						sampleInfo << ", Tmp: " << sparticle.tmp;
+						if (sample.particle.type != PT_RFRG && sample.particle.type != PT_RFGL)
+							sampleInfo << ", Tmp: " << sparticle.tmp;
 
 						// only elements that use .tmp2 show it in the debug HUD
 						if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_LSNS || type == PT_PSTN)
