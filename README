@@ -57,6 +57,6 @@ v1.2:
 Merge changes in 92.0.
 Change DTEC colour.
 
-v1.3 (unreleased):
+v1.3:
 Merge changes in 92.5.
 Add "filt:v" property tool syntax.
