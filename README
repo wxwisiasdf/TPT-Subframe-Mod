@@ -60,3 +60,6 @@ Change DTEC colour.
 v1.3:
 Merge changes in 92.5.
 Add "filt:v" property tool syntax.
+
+v1.4:
+Fix crash when pasting walls outside window boundaries.
