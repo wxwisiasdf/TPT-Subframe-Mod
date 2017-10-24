@@ -38,20 +38,21 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 	}
 	if (samePos)
 	{
-		if (party + parts.size() - 1 >= YRES)
-		{
-			gameModel->Log(std::string("Not enough space to unstack."), false);
-			return;
-		}
+      int unstackLimit = parts.size();
 		for (size_t i = 1; i < parts.size(); i++){
-			if (sim->pmap[party + i][partx])
+			if (party + i >= YRES || sim->pmap[party + i][partx])
 			{
-				gameModel->Log(std::string("Not enough space to unstack."), false);
-				return;
+            unstackLimit = i;
+				gameModel->Log(std::string("Warning: Not enough space to unstack fully."), false);
+            break;
 			}
 		}
-		for (size_t i = 1; i < parts.size(); i++){
-			sim->parts[parts[i]].y += i;
+		for (size_t i = 0; i < unstackLimit; i++){
+         int partID = parts[parts.size() - unstackLimit + i];
+         Particle *part = &sim->parts[partID];
+			part->y += i;
+         int partX = (int)(part->x + 0.5f), partY = (int)(part->y + 0.5f);
+         sim->pmap[partY][partX] = part->type|(partID<<8);
 		}
 		sim->debug_needReloadParticleOrder = true;
 	}
@@ -59,8 +60,7 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 	{
 		if (parts.size() > 5)
 		{
-			gameModel->Log(std::string("Too many particles to stack."), false);
-			return;
+			gameModel->Log(std::string("Warning: More than 5 stacked particles."), false);
 		}
 		Particle *partobjs = new Particle[parts.size()];
 		for (size_t i = 0; i < parts.size(); i++)

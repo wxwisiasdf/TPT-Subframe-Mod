@@ -2329,7 +2329,7 @@ void GameView::OnDraw()
 		if (alpha < 50)
 			alpha = 50;
 		int yoffset = 0;
-		
+
 		if (sample.sparticle_count)
 		{
 			for (int i = 0; i < sample.sparticle_count; i++)
@@ -2418,9 +2418,12 @@ void GameView::OnDraw()
 					}
 				}
 
-				int textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
+				const string sampleInfoStr = sampleInfo.str();
+				const char *sampleInfoCStr = (i == 5) ? "... additional stacked particles omitted ..." : sampleInfoStr.c_str();
+
+				int textWidth = Graphics::textwidth(sampleInfoCStr);
 				g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
-				g->drawtext(XRES-16-textWidth, 16 + yoffset, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
+				g->drawtext(XRES-16-textWidth, 16 + yoffset, sampleInfoCStr, 255, 255, 255, alpha*0.75f);
 
 #ifndef OGLI
 				if (wavelengthGfx)
