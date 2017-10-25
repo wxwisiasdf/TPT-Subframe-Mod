@@ -10,7 +10,7 @@ class SimulationSample
 public:
 	Particle particle;
 	int sparticle_count;
-	Particle sparticles[6];
+	Particle sparticles[5];
 	int ParticleID;
 	int PositionX, PositionY;
 	float AirPressure;

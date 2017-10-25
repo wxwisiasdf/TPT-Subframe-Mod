@@ -2334,6 +2334,8 @@ void GameView::OnDraw()
 		{
 			for (int i = 0; i < sample.sparticle_count; i++)
 			{
+				if (i >= 5) break;
+
 				int wavelengthGfx = 0;
 				std::stringstream sampleInfo;
 				sampleInfo.precision(2);
@@ -2419,7 +2421,7 @@ void GameView::OnDraw()
 				}
 
 				const string sampleInfoStr = sampleInfo.str();
-				const char *sampleInfoCStr = (i == 5) ? "... additional stacked particles omitted ..." : sampleInfoStr.c_str();
+				const char *sampleInfoCStr = sampleInfoStr.c_str();
 
 				int textWidth = Graphics::textwidth(sampleInfoCStr);
 				g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
@@ -2462,6 +2464,17 @@ void GameView::OnDraw()
 				}
 #endif
 
+				yoffset += 16;
+			}
+
+			if (sample.sparticle_count > 5)
+			{
+				std::stringstream infoStr;
+				int excessParts = sample.sparticle_count - 5;
+				infoStr << "... " << excessParts << " particle" << ((excessParts == 1) ? "" : "s") << " omitted ...";
+				int textWidth = Graphics::textwidth(infoStr.str().c_str());
+				g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
+				g->drawtext(XRES-16-textWidth, 16 + yoffset, infoStr.str().c_str(), 255, 255, 255, alpha*0.75f);
 				yoffset += 16;
 			}
 		}

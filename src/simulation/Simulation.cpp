@@ -542,12 +542,11 @@ SimulationSample Simulation::GetSample(int x, int y)
 				int party = (int)(parts[i].y+0.5f);
 				if (partx == x && party == y)
 				{
-					sample.sparticles[sample.sparticle_count] = parts[i];
+               if (sample.sparticle_count < 5)
+                  sample.sparticles[sample.sparticle_count] = parts[i];
 					sample.sparticle_count++;
 				}
 			}
-			if (sample.sparticle_count >= 6)
-				break;
 		}
 
 		if (photons[y][x])
