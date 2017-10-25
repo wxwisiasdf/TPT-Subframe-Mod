@@ -38,21 +38,26 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 	}
 	if (samePos)
 	{
-      int unstackLimit = parts.size();
+		int unstackLimit = parts.size();
 		for (size_t i = 1; i < parts.size(); i++){
-			if (party + i >= YRES || sim->pmap[party + i][partx])
+			if (party + i >= YRES || sim->pmap[party + i][partx] ||
+				sim->photons[party + i][partx])
 			{
-            unstackLimit = i;
+				unstackLimit = i;
 				gameModel->Log(std::string("Warning: Not enough space to unstack fully."), false);
-            break;
+				break;
 			}
 		}
 		for (size_t i = 0; i < unstackLimit; i++){
-         int partID = parts[parts.size() - unstackLimit + i];
-         Particle *part = &sim->parts[partID];
+			int partID = parts[parts.size() - unstackLimit + i];
+			Particle *part = &sim->parts[partID];
 			part->y += i;
-         int partX = (int)(part->x + 0.5f), partY = (int)(part->y + 0.5f);
-         sim->pmap[partY][partX] = part->type|(partID<<8);
+			int nx = (int)(part->x + 0.5f), ny = (int)(part->y + 0.5f);
+			int t = part->type;
+			if (sim->elements[t].Properties & TYPE_ENERGY)
+				sim->photons[ny][nx] = t|(partID<<8);
+			else
+				sim->pmap[ny][nx] = t|(partID<<8);
 		}
 		sim->debug_needReloadParticleOrder = true;
 	}

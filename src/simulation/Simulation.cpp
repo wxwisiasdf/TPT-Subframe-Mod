@@ -542,8 +542,8 @@ SimulationSample Simulation::GetSample(int x, int y)
 				int party = (int)(parts[i].y+0.5f);
 				if (partx == x && party == y)
 				{
-               if (sample.sparticle_count < 5)
-                  sample.sparticles[sample.sparticle_count] = parts[i];
+					if (sample.sparticle_count < 5)
+						sample.sparticles[sample.sparticle_count] = parts[i];
 					sample.sparticle_count++;
 				}
 			}
@@ -3585,8 +3585,8 @@ void Simulation::UpdateParticles(int start, int end)
 	float pGravX, pGravY, pGravD;
 	bool transitionOccurred;
 
-    debug_interestingChangeOccurred = false;
-    
+	debug_interestingChangeOccurred = false;
+
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
 		if (parts[i].type)
