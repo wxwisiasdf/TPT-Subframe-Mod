@@ -18,11 +18,10 @@ These features will be present without enabling:
 - Stacked particles are shown in the debug HUD.
 - P opens the property tool window rather than takes a screenshot (you can still take screenshots with F2).
 - The property tool sets temp values in celsius rather than kelvin.
-- Ctrl-Y reverses an undo (merged in vanilla snapshot).
 - The ctype of FILTs will be displayed in the debug HUD. In the original game, this was only shown for non-FILT coloured particles like BRAY.
 - 30th bit handling: Setting the ctype of coloured particles (e.g. FILT) with the property tool will XOR the input value with 0x20000000 first (so it will set the 30th bit automatically, unless you set it). When hovering the mouse over coloured particles, the ctype displayed in the debug HUD will ignore the 30th bit and, if the 29th bit is set, be displayed as a negative number.
 - DRAY is coloured bright yellow to distinguish it from ARAY and DTEC.
-- When pasting (or placing a stamp), the pasted particles can be moved out of the initial paste boundary without getting deleted. Additionally, the white dotted paste boundary will not be shown.
+- When pasting (or placing a stamp), the paste boundary can cross outside the window boundary. Particles can also be moved out of the initial paste boundary (with the arrow keys) without getting deleted (merged in vanilla snapshot). Additionally, the white dotted paste boundary will not be shown.
 - If you attempt to open a save or close the window with the ESC button (the case for closing with the 'X' button has not been implemented) when there are unsaved changes, a confirmation warning will be displayed.
 - The position in frame is saved into undo history during subframe debugging, so you can undo into the middle of a frame without destroying everything.
 - (v1.1) Stack tool (Shortcut: Shift-S): Clicking on a stack of particles will unstack them; selecting multiple particles in different positions will stack them in order of their positions.
@@ -35,11 +34,6 @@ Note that the original game already supports the following subframe debugging fe
 
 - Shift-F updates all particles up to the particle where your mouse is at.
 - Alt-F updates a single particle. This behaviour has been modified in this mod to continue updating particles until an "interesting" update occurs.
-
-The following simulation features are from the vanilla TPT snapshot, so don't publish anything that depends on these:
-
-- Two new FILT modes, variable red shift and variable blue shift, allows ctype-based bitshifting that can be set by DTEC.
-- CRAY copies its own life to particles it creates.
 
 Changelog
 =========
