@@ -162,6 +162,7 @@ void GameSave::InitVars()
 	gravityMode = 0;
 	airMode = 0;
 	edgeMode = 0;
+	translated.x = translated.y = 0;
 }
 
 bool GameSave::Collapsed()
@@ -260,13 +261,15 @@ char * GameSave::Serialise(unsigned int & dataSize)
 	return serialiseOPS(dataSize);
 }
 
-void GameSave::Translate(vector2d translate)
+vector2d GameSave::Translate(vector2d translate)
 {
-	if(Collapsed())
+	if (Collapsed())
 		Expand();
 	int nx, ny;
 	vector2d pos;
+	vector2d translateReal = translate;
 	float minx = 0, miny = 0, maxx = 0, maxy = 0;
+	// determine minimum and maximum position of all particles / signs
 	for (size_t i = 0; i < signs.size(); i++)
 	{
 		pos = v2d_new(signs[i].x, signs[i].y);
@@ -298,23 +301,18 @@ void GameSave::Translate(vector2d translate)
 		if (ny > maxy)
 			maxy = ny;
 	}
+	// determine whether corrections are needed. If moving in this direction would delete stuff, expand the save
 	vector2d backCorrection = v2d_new(
-		(minx < 0) ? (-floor(minx / 4)) : 0,
-		(miny < 0) ? (-floor(miny / 4)) : 0
+		(minx < 0) ? (-floor(minx / CELL)) : 0,
+		(miny < 0) ? (-floor(miny / CELL)) : 0
 	);
 	int blockBoundsX = int(maxx / CELL) + 1, blockBoundsY = int(maxy / CELL) + 1;
 	vector2d frontCorrection = v2d_new(
 		(blockBoundsX > blockWidth) ? (blockBoundsX - blockWidth) : 0,
 		(blockBoundsY > blockHeight) ? (blockBoundsY - blockHeight) : 0
 	);
-	if (frontCorrection.x < backCorrection.x)
-		frontCorrection.x = backCorrection.x;
-	else
-		backCorrection.x = frontCorrection.x;
-	if (frontCorrection.y < backCorrection.y)
-		frontCorrection.y = backCorrection.y;
-	else
-		backCorrection.y = frontCorrection.y;
+
+	// get new width based on corrections
 	int newWidth = (blockWidth + backCorrection.x + frontCorrection.x) * CELL;
 	int newHeight = (blockHeight + backCorrection.y + frontCorrection.y) * CELL;
 	if (newWidth > XRES)
@@ -322,21 +320,27 @@ void GameSave::Translate(vector2d translate)
 	if (newHeight > YRES)
 		frontCorrection.y = backCorrection.y = 0;
 
+	// call Transform to do the transformation we wanted when calling this function
 	translate = v2d_add(translate, v2d_multiply_float(backCorrection, CELL));
-	Transform(m2d_identity, translate,
-		(blockWidth + backCorrection.x + frontCorrection.x) * CELL,
-		(blockHeight + backCorrection.y + frontCorrection.y) * CELL
+	Transform(m2d_identity, translate, translateReal,
+	    (blockWidth + backCorrection.x + frontCorrection.x) * CELL,
+	    (blockHeight + backCorrection.y + frontCorrection.y) * CELL
 	);
+
+	// return how much we corrected. This is used to offset the position of the current stamp
+	// otherwise it would attempt to recenter it with the current size
+	return v2d_add(v2d_multiply_float(backCorrection, -CELL), v2d_multiply_float(frontCorrection, CELL));
 }
 
 void GameSave::Transform(matrix2d transform, vector2d translate)
 {
-	if(Collapsed())
+	if (Collapsed())
 		Expand();
 
 	int width = blockWidth*CELL, height = blockHeight*CELL, newWidth, newHeight;
 	vector2d tmp, ctl, cbr;
 	vector2d cornerso[4];
+	vector2d translateReal = translate;
 	// undo any translation caused by rotation
 	cornerso[0] = v2d_new(0,0);
 	cornerso[1] = v2d_new(width-1,0);
@@ -356,12 +360,15 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 	translate = v2d_sub(translate,tmp);
 	newWidth = floor(cbr.x+0.5f)-floor(ctl.x+0.5f)+1;
 	newHeight = floor(cbr.y+0.5f)-floor(ctl.y+0.5f)+1;
-	Transform(transform, translate, newWidth, newHeight);
+	Transform(transform, translate, translateReal, newWidth, newHeight);
 }
 
-void GameSave::Transform(matrix2d transform, vector2d translate, int newWidth, int newHeight)
+// transform is a matrix describing how we want to rotate this save
+// translate can vary depending on whether the save is bring rotated, or if a normal translate caused it to expand
+// translateReal is the original amount we tried to translate, used to calculate wall shifting
+void GameSave::Transform(matrix2d transform, vector2d translate, vector2d translateReal, int newWidth, int newHeight)
 {
-	if(Collapsed())
+	if (Collapsed())
 		Expand();
 
 	if (newWidth>XRES) newWidth = XRES;
@@ -415,14 +422,30 @@ void GameSave::Transform(matrix2d transform, vector2d translate, int newWidth, i
 		particles[i].vx = vel.x;
 		particles[i].vy = vel.y;
 	}
+
+	// translate walls and other grid items when the stamp is shifted more than 4 pixels in any direction
+	int translateX = 0, translateY = 0;
+	if (translateReal.x > 0 && ((int)translated.x%CELL == 3
+	                        || (translated.x < 0 && (int)translated.x%CELL == 0)))
+		translateX = CELL;
+	else if (translateReal.x < 0 && ((int)translated.x%CELL == -3
+	                             || (translated.x > 0 && (int)translated.x%CELL == 0)))
+		translateX = -CELL;
+	if (translateReal.y > 0 && ((int)translated.y%CELL == 3
+	                        || (translated.y < 0 && (int)translated.y%CELL == 0)))
+		translateY = CELL;
+	else if (translateReal.y < 0 && ((int)translated.y%CELL == -3
+	                             || (translated.y > 0 && (int)translated.y%CELL == 0)))
+		translateY = -CELL;
+
 	for (y=0; y<blockHeight; y++)
 		for (x=0; x<blockWidth; x++)
 		{
-			pos = v2d_new(x*CELL+CELL*0.4f, y*CELL+CELL*0.4f);
+			pos = v2d_new(x*CELL+CELL*0.4f+translateX, y*CELL+CELL*0.4f+translateY);
 			pos = v2d_add(m2d_multiply_v2d(transform,pos),translate);
 			nx = pos.x/CELL;
 			ny = pos.y/CELL;
-			if (nx<0 || nx>=newBlockWidth || ny<0 || ny>=newBlockHeight)
+			if (pos.x<0 || nx>=newBlockWidth || pos.y<0 || ny>=newBlockHeight)
 				continue;
 			if (blockMap[y][x])
 			{
@@ -440,6 +463,7 @@ void GameSave::Transform(matrix2d transform, vector2d translate, int newWidth, i
 			velocityYNew[ny][nx] = velocityY[y][x];
 			ambientHeatNew[ny][nx] = ambientHeat[y][x];
 		}
+	translated = v2d_add(m2d_multiply_v2d(transform, translated), translateReal);
 
 	for (int j = 0; j < blockHeight; j++)
 	{

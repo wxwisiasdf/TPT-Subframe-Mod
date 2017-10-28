@@ -111,6 +111,7 @@ private:
 	ui::Point mousePosition;
 
 	VideoBuffer * placeSaveThumb;
+	ui::Point placeSaveOffset;
 
 	SimulationSample sample;
 
@@ -148,6 +149,8 @@ public:
 	void ExitPrompt();
 	SelectMode GetSelectMode() { return selectMode; }
 	void BeginStampSelection();
+	ui::Point GetPlaceSaveOffset() { return placeSaveOffset; }
+	void SetPlaceSaveOffset(ui::Point offset) { placeSaveOffset = offset; }
 	int Record(bool record, bool subframe);
 
 	bool GetRecordingSubframe(){ return recordingSubframe; }

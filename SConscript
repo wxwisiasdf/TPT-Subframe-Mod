@@ -21,9 +21,9 @@ class ourSpawn:
 		data, err = proc.communicate()
 		rv = proc.wait()
 		if rv:
-			print "====="
-			print err
-			print "====="
+			print("=====")
+			print(err)
+			print("=====")
 		return rv
 def SetupSpawn(env):
 	buf = ourSpawn()
@@ -137,7 +137,7 @@ if tool:
 for var in ["CC","CXX","LD","LIBPATH","STRIP"]:
 	if var in os.environ:
 		env[var] = os.environ[var]
-		print "copying environment variable {0}={1!r}".format(var,os.environ[var])
+		print("copying environment variable {0}={1!r}".format(var,os.environ[var]))
 # variables containing several space separated things
 for var in ["CFLAGS","CCFLAGS","CXXFLAGS","LINKFLAGS","CPPDEFINES","CPPPATH"]:
 	if var in os.environ:
@@ -145,7 +145,7 @@ for var in ["CFLAGS","CCFLAGS","CXXFLAGS","LINKFLAGS","CPPDEFINES","CPPPATH"]:
 			env[var] += SCons.Util.CLVar(os.environ[var])
 		else:
 			env[var] = SCons.Util.CLVar(os.environ[var])
-		print "copying environment variable {0}={1!r}".format(var,os.environ[var])
+		print("copying environment variable {0}={1!r}".format(var,os.environ[var]))
 
 #Used for intro text / executable name, actual bit flags are only set if the --64bit/--32bit command line args are given
 def add32bitflags(env):
@@ -377,7 +377,7 @@ if GetOption('clean'):
 	try:
 		shutil.rmtree("generated/")
 	except:
-		print "couldn't remove build/generated/"
+		print("couldn't remove build/generated/")
 elif not GetOption('help'):
 	conf = Configure(env)
 	conf.AddTest('CheckFramework', CheckFramework)
@@ -405,6 +405,7 @@ if platform == "Windows":
 	if msvc:
 		env.Append(CCFLAGS=['/Gm', '/Zi', '/EHsc', '/FS', '/GS']) #enable minimal rebuild, ?, enable exceptions, allow -j to work in debug builds, enable security check
 		env.Append(LINKFLAGS=['/SUBSYSTEM:WINDOWS,"5.01"', '/OPT:REF', '/OPT:ICF'])
+		env.Append(CPPDEFINES=['_SCL_SECURE_NO_WARNINGS']) #Disable warnings about 'std::print'
 		if GetOption('static'):
 			env.Append(LINKFLAGS=['/NODEFAULTLIB:msvcrt.lib', '/LTCG'])
 		elif not GetOption('debugging'):
@@ -417,7 +418,7 @@ elif platform == "Darwin":
 	env.Append(CPPDEFINES=['MACOSX'])
 	#env.Append(LINKFLAGS=['-headerpad_max_install_names']) #needed in some cross compiles
 	if GetOption('luajit'):
-		env.Append(LINKFLAGS=['-pagezero_size=10000', '-image_base=100000000'])
+		env.Append(LINKFLAGS=['-pagezero_size', '10000', '-image_base', '100000000'])
 
 
 #Add architecture flags and defines
@@ -472,7 +473,10 @@ elif GetOption('release'):
 
 if GetOption('static'):
 	if platform == "Windows":
-		env.Append(CPPDEFINES=['PTW32_STATIC_LIB'])
+		if compilePlatform == "Windows" and not msvc:
+			env.Append(CPPDEFINES=['_PTW32_STATIC_LIB'])
+		else:
+			env.Append(CPPDEFINES=['PTW32_STATIC_LIB'])
 		if msvc:
 			env.Append(CPPDEFINES=['ZLIB_WINAPI'])
 		else:

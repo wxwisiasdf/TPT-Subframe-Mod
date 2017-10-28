@@ -552,8 +552,11 @@ void GameController::LoadStamp(GameSave *stamp)
 void GameController::TranslateSave(ui::Point point)
 {
 	vector2d translate = v2d_new(point.X, point.Y);
-	gameModel->GetPlaceSave()->Translate(translate);
+	vector2d translated = gameModel->GetPlaceSave()->Translate(translate);
+	ui::Point currentPlaceSaveOffset = gameView->GetPlaceSaveOffset();
+	// resets placeSaveOffset to 0, which is why we back it up first
 	gameModel->SetPlaceSave(gameModel->GetPlaceSave());
+	gameView->SetPlaceSaveOffset(ui::Point(translated.x, translated.y) + currentPlaceSaveOffset);
 }
 
 void GameController::TransformSave(matrix2d transform)
@@ -945,13 +948,8 @@ bool GameController::GetAHeatEnable()
 
 void GameController::ToggleNewtonianGravity()
 {
-	if (gameModel->GetSimulation()->grav->ngrav_enable)
-		gameModel->GetSimulation()->grav->stop_grav_async();
-	else
-		gameModel->GetSimulation()->grav->start_grav_async();
-	gameModel->UpdateQuickOptions();
+	gameModel->SetNewtonianGravity(!gameModel->GetNewtonianGrvity());
 }
-
 
 void GameController::LoadRenderPreset(int presetNum)
 {
