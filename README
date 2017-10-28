@@ -67,3 +67,4 @@ Notify in HUD when more than 5 particles are below the cursor.
 Warn instead of block when stacking more than 5 particles with stack tool.
 Unstack as many particles as possible when unstacking with stack tool.
 Merge changes in snapshot, including fix for Mac.
+Extend 30th-bit handling to PHOT.
