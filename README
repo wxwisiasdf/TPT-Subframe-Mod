@@ -62,3 +62,6 @@ Warn instead of block when stacking more than 5 particles with stack tool.
 Unstack as many particles as possible when unstacking with stack tool.
 Merge changes in snapshot, including fix for Mac.
 Extend 30th-bit handling to PHOT.
+
+v1.5:
+Don't trigger particle order reloading when SPRKing with brush.

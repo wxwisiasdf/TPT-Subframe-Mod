@@ -1490,7 +1490,8 @@ int Simulation::CreateParts(int x, int y, int rx, int ry, int c, int flags)
 
 int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 {
-	debug_needReloadParticleOrder = true;
+	if ((c&0xFF) != PT_SPRK)
+		debug_needReloadParticleOrder = true;
 	//delete
 	if (c == 0 && !(flags&REPLACE_MODE))
 		delete_part(x, y);
