@@ -1,11 +1,12 @@
-The Powder Toy (Subframe Chipmaker Mod) - August 2016
+The Powder Toy (Subframe Chipmaker Mod)
+=======================================
 
 This is a mod of The Powder Toy for subframe chipmakers. Subframe technology refers to a collection of tricks used to reduce computation cycles in electronic components to a single frame.
 
 Features
 ========
 
-These features are enabled when you enter the Lua command "tpt.setdebug(0x8)" into the console (or you can put it in autorun.lua):
+These features are enabled when you enter the Lua command `tpt.setdebug(0x8)` into the console (or you can put it in autorun.lua):
 
 - Particle order reloading: if you use the brush or do a copy-paste, then advance the simulation, the frame will be completed and the particle order will be reloaded automatically. You can reload the particle order manually with Shift-F5.
 - Shift-Space runs the simulation particle-by-particle rather than frame-by-frame.
@@ -39,29 +40,29 @@ Changelog
 =========
 
 v1.0:
-Original release.
+- Original release.
 
 v1.1:
-Merge changes in snapshot.
-Add stack tool.
-Add stack mode.
-Give drawn CRAY a ctype of SPRK.
+- Merge changes in snapshot.
+- Add stack tool.
+- Add stack mode.
+- Give drawn CRAY a ctype of SPRK.
 
 v1.2:
-Merge changes in 92.0.
-Change DTEC colour.
+- Merge changes in 92.0.
+- Change DTEC colour.
 
 v1.3:
-Merge changes in 92.5.
-Add "filt:v" property tool syntax.
+- Merge changes in 92.5.
+- Add "filt:v" property tool syntax.
 
 v1.4:
-Fix crash when pasting walls outside window boundaries.
-Notify in HUD when more than 5 particles are below the cursor.
-Warn instead of block when stacking more than 5 particles with stack tool.
-Unstack as many particles as possible when unstacking with stack tool.
-Merge changes in snapshot, including fix for Mac.
-Extend 30th-bit handling to PHOT.
+- Fix crash when pasting walls outside window boundaries.
+- Notify in HUD when more than 5 particles are below the cursor.
+- Warn instead of block when stacking more than 5 particles with stack tool.
+- Unstack as many particles as possible when unstacking with stack tool.
+- Merge changes in snapshot, including fix for Mac.
+- Extend 30th-bit handling to PHOT.
 
 v1.5:
-Don't trigger particle order reloading when SPRKing with brush.
+- Don't trigger particle order reloading when SPRKing with brush.
