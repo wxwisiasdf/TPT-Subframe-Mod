@@ -264,24 +264,24 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 	{
 		case StructProperty::Float:
 			if(propOffset == offsetof(Particle, temp))
-				*((float*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Float + 273.15f;
+				*((float*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Float + 273.15f;
 			else
-				*((float*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Float;
+				*((float*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Float;
 			break;
 		case StructProperty::ParticleType:
 		case StructProperty::Integer:
-			if(propOffset == offsetof(Particle, ctype) && (sim->parts[i>>8].type == PT_FILT || sim->parts[i>>8].type == PT_BRAY || sim->parts[i>>8].type == PT_PHOT))
+			if(propOffset == offsetof(Particle, ctype) && (sim->parts[ID(i)].type == PT_FILT || sim->parts[ID(i)].type == PT_BRAY || sim->parts[ID(i)].type == PT_PHOT))
 			{
 				int filtVal = propValue.Integer;
 				if (propValue.Integer >= 0)
 					filtVal ^= (1<<29);
-				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = filtVal & 0x3FFFFFFF;
+				*((int*)(((char*)&sim->parts[ID(i)])+propOffset)) = filtVal & 0x3FFFFFFF;
 			}
 			else
-				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Integer;
+				*((int*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Integer;
 			break;
 		case StructProperty::UInteger:
-			*((unsigned int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.UInteger;
+			*((unsigned int*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.UInteger;
 			break;
 		default:
 			break;

@@ -149,7 +149,7 @@ public:
 	int flood_water(int x, int y, int i, int originaly, int check);
 	int FloodINST(int x, int y, int fullc, int cm);
 	void detach(int i);
-	void part_change_type(int i, int x, int y, int t);
+	bool part_change_type(int i, int x, int y, int t);
 	//int InCurrentBrush(int i, int j, int rx, int ry);
 	//int get_brush_flags();
 	int create_part(int p, int x, int y, int t, int v = -1);
@@ -181,7 +181,7 @@ public:
 	void ApplyDecorationFill(Renderer *ren, int x, int y, int colR, int colG, int colB, int colA, int replaceR, int replaceG, int replaceB);
 
 	//Drawing Tools like HEAT, AIR, and GRAV
-	int Tool(int x, int y, int tool, float strength = 1.0f);
+	int Tool(int x, int y, int tool, int brushX, int brushY, float strength = 1.0f);
 	int ToolBrush(int x, int y, int tool, Brush * cBrush, float strength = 1.0f);
 	void ToolLine(int x1, int y1, int x2, int y2, int tool, Brush * cBrush, float strength = 1.0f);
 	void ToolBox(int x1, int y1, int x2, int y2, int tool, float strength = 1.0f);
@@ -220,7 +220,7 @@ public:
 		return (x>=0 && y>=0 && x<XRES && y<YRES);
 	}
 
-	// these don't really belong anywhere at the moment, so go here for loop edge mode
+	// These don't really belong anywhere at the moment, so go here for loop edge mode
 	static int remainder_p(int x, int y)
 	{
 		return (x % y) + (x>=0 ? 0 : y);

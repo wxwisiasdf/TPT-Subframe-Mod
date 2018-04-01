@@ -791,6 +791,7 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, TOOL_PGRV);
 	SETCONST(l, TOOL_NGRV);
 	SETCONST(l, TOOL_MIX);
+	SETCONST(l, TOOL_CYCL);
 	lua_pushinteger(l, luacon_sim->tools.size()); lua_setfield(l, -2, "TOOL_WIND");
 	SETCONST(l, DECO_DRAW);
 	SETCONST(l, DECO_CLEAR);
@@ -799,6 +800,9 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, DECO_MULTIPLY);
 	SETCONST(l, DECO_DIVIDE);
 	SETCONST(l, DECO_SMUDGE);
+
+	SETCONST(l, PMAPBITS);
+	SETCONST(l, PMAPMASK);
 
 	//Declare FIELD_BLAH constants
 	std::vector<StructProperty> particlePropertiesV = Particle::GetProperties(); 
@@ -876,11 +880,11 @@ int LuaScriptInterface::simulation_partNeighbours(lua_State * l)
 				if (x+rx >= 0 && y+ry >= 0 && x+rx < XRES && y+ry < YRES && (rx || ry))
 				{
 					n = luacon_sim->pmap[y+ry][x+rx];
-					if (!n || (n&0xFF) != t)
+					if (!n || TYP(n) != t)
 						n = luacon_sim->photons[y+ry][x+rx];
-					if (n && (n&0xFF) == t)
+					if (n && TYP(n) == t)
 					{
-						lua_pushinteger(l, n>>8);
+						lua_pushinteger(l, ID(n));
 						lua_rawseti(l, -2, id++);
 					}
 				}
@@ -897,7 +901,7 @@ int LuaScriptInterface::simulation_partNeighbours(lua_State * l)
 						n = luacon_sim->photons[y+ry][x+rx];
 					if (n)
 					{
-						lua_pushinteger(l, n>>8);
+						lua_pushinteger(l, ID(n));
 						lua_rawseti(l, -2, id++);
 					}
 				}
@@ -929,10 +933,10 @@ int LuaScriptInterface::simulation_partCreate(lua_State * l)
 	}
 	int type = lua_tointeger(l, 4);
 	int v = -1;
-	if (type>>8)
+	if (ID(type))
 	{
-		v = type>>8;
-		type = type&0xFF;
+		v = ID(type);
+		type = TYP(type);
 	}
 	lua_pushinteger(l, luacon_sim->create_part(newID, lua_tointeger(l, 2), lua_tointeger(l, 3), type, v));
 	return 1;
@@ -955,7 +959,7 @@ int LuaScriptInterface::simulation_partID(lua_State * l)
 	if (!amalgam)
 		lua_pushnil(l);
 	else
-		lua_pushinteger(l, amalgam >> 8);
+		lua_pushinteger(l, ID(amalgam));
 	return 1;
 }
 
@@ -2045,9 +2049,9 @@ int LuaScriptInterface::simulation_pmap(lua_State * l)
 	if (x < 0 || x >= XRES || y < 0 || y >= YRES)
 		return luaL_error(l, "coordinates out of range (%d,%d)", x, y);
 	int r = luacon_sim->pmap[y][x];
-	if (!(r&0xFF))
+	if (!TYP(r))
 		return 0;
-	lua_pushnumber(l, r>>8);
+	lua_pushnumber(l, ID(r));
 	return 1;
 }
 
@@ -2058,9 +2062,9 @@ int LuaScriptInterface::simulation_photons(lua_State * l)
 	if (x < 0 || x >= XRES || y < 0 || y >= YRES)
 		return luaL_error(l, "coordinates out of range (%d,%d)", x, y);
 	int r = luacon_sim->photons[y][x];
-	if (!(r&0xFF))
+	if (!TYP(r))
 		return 0;
-	lua_pushnumber(l, r>>8);
+	lua_pushnumber(l, ID(r));
 	return 1;
 }
 
@@ -2090,12 +2094,12 @@ int NeighboursClosure(lua_State * l)
 		i=luacon_sim->pmap[y+sy][x+sx];
 		if(!i)
 			i=luacon_sim->photons[y+sy][x+sx];
-	} while(!(i&0xFF));
+	} while(!TYP(i));
 	lua_pushnumber(l, x);
 	lua_replace(l, lua_upvalueindex(5));
 	lua_pushnumber(l, y);
 	lua_replace(l, lua_upvalueindex(6));
-	lua_pushnumber(l, i>>8);
+	lua_pushnumber(l, ID(i));
 	lua_pushnumber(l, x+sx);
 	lua_pushnumber(l, y+sy);
 	return 3;
@@ -2230,8 +2234,8 @@ int LuaScriptInterface::renderer_renderModes(lua_State * l)
 	{
 		int size = 0;
 		luaL_checktype(l, 1, LUA_TTABLE);
-		size = luaL_getn(l, 1);
-		
+		size = lua_objlen(l, 1);
+
 		std::vector<unsigned int> renderModes;
 		for(int i = 1; i <= size; i++)
 		{
@@ -2263,8 +2267,8 @@ int LuaScriptInterface::renderer_displayModes(lua_State * l)
 	{
 		int size = 0;
 		luaL_checktype(l, 1, LUA_TTABLE);
-		size = luaL_getn(l, 1);
-		
+		size = lua_objlen(l, 1);
+
 		std::vector<unsigned int> displayModes;
 		for(int i = 1; i <= size; i++)
 		{
@@ -2523,9 +2527,10 @@ int LuaScriptInterface::elements_allocate(lua_State * l)
 	}
 
 	int newID = -1;
-	for(int i = PT_NUM-1; i >= 0; i--)
+	// Start out at 255 so that lua element IDs are still one byte (better save compatibility)
+	for (int i = PT_NUM >= 255 ? 255 : PT_NUM; i >= 0; i--)
 	{
-		if(!luacon_sim->elements[i].Enabled)
+		if (!luacon_sim->elements[i].Enabled)
 		{
 			newID = i;
 			luacon_sim->elements[i] = Element();
@@ -2534,8 +2539,23 @@ int LuaScriptInterface::elements_allocate(lua_State * l)
 			break;
 		}
 	}
+	// If not enough space, then we start with the new maimum ID
+	if (newID == -1)
+	{
+		for (int i = PT_NUM-1; i >= 255; i--)
+		{
+			if (!luacon_sim->elements[i].Enabled)
+			{
+				newID = i;
+				luacon_sim->elements[i] = Element();
+				luacon_sim->elements[i].Enabled = true;
+				luacon_sim->elements[i].Identifier = strdup(identifier.c_str());
+				break;
+			}
+		}
+	}
 
-	if(newID != -1)
+	if (newID != -1)
 	{	
 		lua_getglobal(l, "elements");
 		lua_pushinteger(l, newID);

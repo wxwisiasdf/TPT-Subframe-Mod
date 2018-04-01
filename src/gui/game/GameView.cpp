@@ -196,6 +196,7 @@ GameView::GameView():
 	ren(NULL),
 	activeBrush(NULL),
 	saveSimulationButtonEnabled(false),
+	saveReuploadAllowed(true),
 	drawMode(DrawPoints),
 	drawPoint1(0, 0),
 	drawPoint2(0, 0),
@@ -287,14 +288,14 @@ GameView::GameView():
 		SaveSimulationAction(GameView * _v) { v = _v; }
 		void ActionCallbackRight(ui::Button * sender)
 		{
-			if(v->CtrlBehaviour() || !Client::Ref().GetAuthUser().ID)
+			if(v->CtrlBehaviour() || !Client::Ref().GetAuthUser().UserID)
 				v->c->OpenLocalSaveWindow(false);
 			else
 				v->c->OpenSaveWindow();
 		}
 		void ActionCallbackLeft(ui::Button * sender)
 		{
-			if(v->CtrlBehaviour() || !Client::Ref().GetAuthUser().ID)
+			if(v->CtrlBehaviour() || !Client::Ref().GetAuthUser().UserID)
 				v->c->OpenLocalSaveWindow(true);
 			else
 				v->c->SaveAsCurrent();
@@ -925,7 +926,7 @@ void GameView::NotifySimulationChanged(GameModel * sender)
 }
 void GameView::NotifyUserChanged(GameModel * sender)
 {
-	if(!sender->GetUser().ID)
+	if(!sender->GetUser().UserID)
 	{
 		loginButton->SetText("[sign in]");
 		((SplitButton*)loginButton)->SetShowSplit(false);
@@ -961,30 +962,31 @@ void GameView::NotifyInfoTipChanged(GameModel * sender)
 
 void GameView::NotifySaveChanged(GameModel * sender)
 {
-	if(sender->GetSave())
+	saveReuploadAllowed = true;
+	if (sender->GetSave())
 	{
-		if(introText > 50)
+		if (introText > 50)
 			introText = 50;
 
 		saveSimulationButton->SetText(sender->GetSave()->GetName());
-		if(sender->GetSave()->GetUserName() == sender->GetUser().Username)
+		if (sender->GetSave()->GetUserName() == sender->GetUser().Username)
 			((SplitButton*)saveSimulationButton)->SetShowSplit(true);
 		else
 			((SplitButton*)saveSimulationButton)->SetShowSplit(false);
 		reloadButton->Enabled = true;
-		upVoteButton->Enabled = (sender->GetSave()->GetID() && sender->GetUser().ID && sender->GetSave()->GetVote()==0);
-		if(sender->GetSave()->GetID() && sender->GetUser().ID && sender->GetSave()->GetVote()==1)
+		upVoteButton->Enabled = (sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==0);
+		if(sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==1)
 			upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 108, 10, 255));
 		else
 			upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 
 		downVoteButton->Enabled = upVoteButton->Enabled;
-		if(sender->GetSave()->GetID() && sender->GetUser().ID && sender->GetSave()->GetVote()==-1)
+		if (sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==-1)
 			downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(108, 0, 10, 255));
 		else
 			downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 
-		if (sender->GetUser().ID)
+		if (sender->GetUser().UserID)
 		{
 			upVoteButton->Appearance.BorderDisabled = upVoteButton->Appearance.BorderInactive;
 			downVoteButton->Appearance.BorderDisabled = downVoteButton->Appearance.BorderInactive;
@@ -996,15 +998,15 @@ void GameView::NotifySaveChanged(GameModel * sender)
 		}
 
 		tagSimulationButton->Enabled = sender->GetSave()->GetID();
-		if(sender->GetSave()->GetID())
+		if (sender->GetSave()->GetID())
 		{
 			std::stringstream tagsStream;
 			std::list<string> tags = sender->GetSave()->GetTags();
-			if(tags.size())
+			if (tags.size())
 			{
-				for(std::list<std::string>::const_iterator iter = tags.begin(), begin = tags.begin(), end = tags.end(); iter != end; iter++)
+				for (std::list<std::string>::const_iterator iter = tags.begin(), begin = tags.begin(), end = tags.end(); iter != end; iter++)
 				{
-					if(iter != begin)
+					if (iter != begin)
 						tagsStream << " ";
 					tagsStream << *iter;
 				}
@@ -1020,6 +1022,9 @@ void GameView::NotifySaveChanged(GameModel * sender)
 			tagSimulationButton->SetText("[no tags set]");
 		}
 		currentSaveType = 1;
+		int saveID = sender->GetSave()->GetID();
+		if (saveID == 404 || saveID == 2157797)
+			saveReuploadAllowed = false;
 	}
 	else if (sender->GetSaveFile())
 	{
@@ -1054,7 +1059,7 @@ void GameView::NotifySaveChanged(GameModel * sender)
 		tagSimulationButton->SetText("[no tags set]");
 		currentSaveType = 0;
 	}
-	saveSimulationButton->Enabled = (saveSimulationButtonEnabled || ctrlBehaviour);
+	saveSimulationButton->Enabled = (saveSimulationButtonEnabled && saveReuploadAllowed) || ctrlBehaviour;
 	SetSaveButtonTooltips();
 }
 
@@ -1522,7 +1527,15 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		c->ActivatePropertyTool();
 		break;
 	case SDLK_F2:
-		screenshot();
+		if (ctrl)
+		{
+			if (shift)
+				c->SetActiveTool(1, "DEFAULT_UI_PROPERTY");
+			else
+				c->SetActiveTool(0, "DEFAULT_UI_PROPERTY");
+		}
+		else
+			screenshot();
 		break;
 	case SDLK_F3:
 		SetDebugHUD(!GetDebugHUD());
@@ -1615,7 +1628,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		break;
 	case SDLK_ESCAPE:
 	case 'q':
-		ExitPrompt();
+		ui::Engine::Ref().ConfirmExit();
 		break;
 	case 'u':
 		c->ToggleAHeat();
@@ -1791,25 +1804,23 @@ void GameView::OnTick(float dt)
 	int foundSignID = c->GetSignAt(mousePosition.X, mousePosition.Y);
 	if (foundSignID != -1)
 	{
-		const char* str = c->GetSignText(foundSignID).c_str();;
+		std::string str = c->GetSignText(foundSignID);
 		char type = '\0';
 		int pos = sign::splitsign(str, &type);
 		if (type == 'c' || type == 't' || type == 's')
 		{
-			char buff[256];
-			strcpy(buff, str+3);
-			buff[pos-3] = 0;
+			std::string linkSign = str.substr(3, pos-3);
 			std::stringstream tooltip;
 			switch (type)
 			{
 			case 'c':
-				tooltip << "Go to save ID:" << buff;
+				tooltip << "Go to save ID:" << linkSign;
 				break;
 			case 't':
-				tooltip << "Open forum thread " << buff << " in browser";
+				tooltip << "Open forum thread " << linkSign << " in browser";
 				break;
 			case 's':
-				tooltip << "Search for " << buff;
+				tooltip << "Search for " << linkSign;
 				break;
 			}
 			ToolTip(ui::Point(0, Size.Y), tooltip.str());
@@ -2094,7 +2105,7 @@ void GameView::disableCtrlBehaviour()
 		saveSimulationButton->Appearance.BackgroundInactive = ui::Colour(0, 0, 0);
 		saveSimulationButton->Appearance.BackgroundHover = ui::Colour(20, 20, 20);
 		saveSimulationButton->Appearance.TextInactive = saveSimulationButton->Appearance.TextHover = ui::Colour(255, 255, 255);
-		saveSimulationButton->Enabled = saveSimulationButtonEnabled;
+		saveSimulationButton->Enabled = saveSimulationButtonEnabled && saveReuploadAllowed;
 		SetSaveButtonTooltips();
 		searchButton->Appearance.BackgroundInactive = ui::Colour(0, 0, 0);
 		searchButton->Appearance.BackgroundHover = ui::Colour(20, 20, 20);
@@ -2134,7 +2145,7 @@ void GameView::UpdateToolStrength()
 
 void GameView::SetSaveButtonTooltips()
 {
-	if (!Client::Ref().GetAuthUser().ID)
+	if (!Client::Ref().GetAuthUser().UserID)
 		((SplitButton*)saveSimulationButton)->SetToolTips("Overwrite the open simulation on your hard drive.", "Save the simulation to your hard drive. Login to save online.");
 	else if (ctrlBehaviour)
 		((SplitButton*)saveSimulationButton)->SetToolTips("Overwrite the open simulation on your hard drive.", "Save the simulation to your hard drive.");
@@ -2349,7 +2360,7 @@ void GameView::OnDraw()
 				{
 					int ctype = sparticle.ctype;
 					if (type == PT_PIPE || type == PT_PPIP)
-						ctype = sparticle.tmp&0xFF;
+						ctype = TYP(sparticle.tmp);
 
 					if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
 						wavelengthGfx = (ctype&0x3FFFFFFF);
@@ -2390,7 +2401,7 @@ void GameView::OnDraw()
 							}
 							// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
 							else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
-								sampleInfo << " (" << c->ElementResolve(ctype&0xFF, ctype>>8) << ")";
+								sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)) << ")";
 							else if (c->IsValidElement(ctype))
 								sampleInfo << " (" << c->ElementResolve(ctype, -1) << ")";
 							else
@@ -2540,7 +2551,12 @@ void GameView::OnDraw()
 #endif
 
 		if (showDebug)
-			fpsInfo << " Parts: " << sample.NumParts;
+		{
+			if (ren->findingElement)
+				fpsInfo << " Parts: " << ren->foundElements << "/" << sample.NumParts;
+			else
+				fpsInfo << " Parts: " << sample.NumParts;
+		}
 		if (c->GetReplaceModeFlags()&REPLACE_MODE)
 			fpsInfo << " [REPLACE MODE]";
 		if (c->GetReplaceModeFlags()&SPECIFIC_DELETE)

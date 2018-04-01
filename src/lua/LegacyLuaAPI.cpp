@@ -887,14 +887,14 @@ int luatpt_setpause(lua_State* l)
 int luatpt_togglepause(lua_State* l)
 {
 	luacon_model->SetPaused(!luacon_model->GetPaused());
-	lua_pushnumber(l, luacon_model->GetPaused()); 
+	lua_pushnumber(l, luacon_model->GetPaused());
 	return 1;
 }
 
 int luatpt_togglewater(lua_State* l)
 {
 	luacon_sim->water_equal_test=!luacon_sim->water_equal_test;
-	lua_pushnumber(l, luacon_sim->water_equal_test); 
+	lua_pushnumber(l, luacon_sim->water_equal_test);
 	return 1;
 }
 
@@ -1146,11 +1146,11 @@ int luatpt_set_property(lua_State* l)
 			if (i>=XRES || y>=YRES)
 				return luaL_error(l, "Coordinates out of range (%d,%d)", i, y);
 			r = luacon_sim->pmap[y][i];
-			if (!r || (partsel && partsel != (r&0xFF)))
+			if (!r || (partsel && partsel != TYP(r)))
 				r = luacon_sim->photons[y][i];
-			if (!r || (partsel && partsel != (r&0xFF)))
+			if (!r || (partsel && partsel != TYP(r)))
 				return 0;
-			i = r>>8;
+			i = ID(r);
 		}
 		if (i < 0 || i >= NPART)
 			return luaL_error(l, "Invalid particle ID '%d'", i);
@@ -1295,7 +1295,7 @@ int luatpt_get_property(lua_State* l)
 				return luaL_error(l, "Particle does not exist");
 			}
 		}
-		i = r>>8;
+		i = ID(r);
 	}
 	else if (y != -1)
 		return luaL_error(l, "Coordinates out of range (%d,%d)", i, y);
@@ -1463,7 +1463,7 @@ int luatpt_textwidth(lua_State* l)
 
 int luatpt_get_name(lua_State* l)
 {
-	if (luacon_model->GetUser().ID)
+	if (luacon_model->GetUser().UserID)
 	{
 		lua_pushstring(l, luacon_model->GetUser().Username.c_str());
 		return 1;
@@ -1678,7 +1678,7 @@ int luatpt_input(lua_State* l)
 	shadow = std::string(luaL_optstring(l, 4, ""));
 
 	result = TextPrompt::Blocking(title, prompt, text, shadow, false);
-	
+
 	lua_pushstring(l, result.c_str());
 	return 1;
 }
@@ -1711,7 +1711,7 @@ int luatpt_get_numOfParts(lua_State* l)
 int luatpt_start_getPartIndex(lua_State* l)
 {
 	getPartIndex_curIdx = -1;
-	return 1;
+	return 0;
 }
 
 int luatpt_next_getPartIndex(lua_State* l)
@@ -1981,7 +1981,9 @@ int luatpt_setwindowsize(lua_State* l)
 {
 	int scale = luaL_optint(l,1,1);
 	int kiosk = luaL_optint(l,2,0);
-	if (scale!=2) scale = 1;
+	// TODO: handle this the same way as it's handled in PowderToySDL.cpp
+	//   > maybe bind the maximum allowed scale to screen size somehow
+	if (scale < 1 || scale > 10) scale = 1;
 	if (kiosk!=1) kiosk = 0;
 	ui::Engine::Ref().SetScale(scale);
 	ui::Engine::Ref().SetFullscreen(kiosk);

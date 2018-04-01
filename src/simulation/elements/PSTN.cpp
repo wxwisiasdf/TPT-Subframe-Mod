@@ -1,4 +1,6 @@
+#include "common/tpt-minmax.h"
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_PSTN PT_PSTN 168
 Element_PSTN::Element_PSTN()
 {
@@ -86,8 +88,8 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF)==PT_SPRK && parts[r>>8].life==3) {
-						if(parts[r>>8].ctype == PT_PSCN)
+					if (TYP(r)==PT_SPRK && parts[ID(r)].life==3) {
+						if(parts[ID(r)].ctype == PT_PSCN)
 							state = PISTON_EXTEND;
 						else
 							state = PISTON_RETRACT;
@@ -102,7 +104,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF) == PT_PSTN)
+					if (TYP(r) == PT_PSTN)
 					{
 						bool movedPiston = false;
 						bool foundEnd = false;
@@ -117,9 +119,9 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 								break;
 							}
 							r = pmap[y+nyy][x+nxx];
-							if((r&0xFF)==PT_PSTN)
+							if(TYP(r)==PT_PSTN)
 							{
-								if(parts[r>>8].life)
+								if(parts[ID(r)].life)
 									armCount++;
 								else if (armCount)
 								{
@@ -130,7 +132,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 								}
 								else
 								{
-									pistonCount += floor((parts[r>>8].temp-268.15)/10);// How many tens of degrees above 0 C, rounded to nearest ten degrees. Can be negative.
+									pistonCount += floor((parts[ID(r)].temp-268.15)/10);// How many tens of degrees above 0 C, rounded to nearest ten degrees. Can be negative.
 								}
 							}
 							else if (nxx==0 && nyy==0)
@@ -200,7 +202,7 @@ Element_PSTN::StackData Element_PSTN::CanMoveStack(Simulation * sim, int stackX,
 			break;
 
 		r = sim->pmap[posY][posX];
-		if (sim->IsWallBlocking(posX, posY, 0) || (block && (r&0xFF) == block))
+		if (sim->IsWallBlocking(posX, posY, 0) || (block && TYP(r) == block))
 			return StackData(currentPos - spaces, spaces);
 		if (!r)
 		{
@@ -211,8 +213,8 @@ Element_PSTN::StackData Element_PSTN::CanMoveStack(Simulation * sim, int stackX,
 		}
 		else
 		{
-			if (currentPos - spaces < maxSize && (!retract || ((r&0xFF) == PT_FRME && posX == stackX && posY == stackY)))
-				tempParts[currentPos++] = r>>8;
+			if (currentPos - spaces < maxSize && (!retract || (TYP(r) == PT_FRME && posX == stackX && posY == stackY)))
+				tempParts[currentPos++] = ID(r);
 			else
 				return StackData(currentPos - spaces, spaces);
 		}
@@ -225,7 +227,7 @@ int Element_PSTN::MoveStack(Simulation * sim, int stackX, int stackY, int direct
 {
 	int posX, posY, r;
 	r = sim->pmap[stackY][stackX];
-	if(!callDepth && (r&0xFF) == PT_FRME) {
+	if(!callDepth && TYP(r) == PT_FRME) {
 		int newY = !!directionX, newX = !!directionY;
 		int realDirectionX = retract?-directionX:directionX;
 		int realDirectionY = retract?-directionY:directionY;
@@ -235,7 +237,7 @@ int Element_PSTN::MoveStack(Simulation * sim, int stackX, int stackY, int direct
 		for(int c = retract; c < MAX_FRAME; c++) {
 			posY = stackY + (c*newY);
 			posX = stackX + (c*newX);
-			if (posX < XRES && posY < YRES && posX >= 0 && posY >= 0 && (sim->pmap[posY][posX]&0xFF) == PT_FRME) {
+			if (posX < XRES && posY < YRES && posX >= 0 && posY >= 0 && TYP(sim->pmap[posY][posX]) == PT_FRME) {
 				int spaces = CanMoveStack(sim, posX, posY, realDirectionX, realDirectionY, maxSize, amount, retract, block).spaces;
 				if(spaces < amount)
 					amount = spaces;
@@ -247,7 +249,7 @@ int Element_PSTN::MoveStack(Simulation * sim, int stackX, int stackY, int direct
 		for(int c = 1; c < MAX_FRAME; c++) {
 			posY = stackY - (c*newY);
 			posX = stackX - (c*newX);
-			if (posX < XRES && posY < YRES && posX >= 0 && posY >= 0 && (sim->pmap[posY][posX]&0xFF) == PT_FRME) {
+			if (posX < XRES && posY < YRES && posX >= 0 && posY >= 0 && TYP(sim->pmap[posY][posX]) == PT_FRME) {
 				int spaces = CanMoveStack(sim, posX, posY, realDirectionX, realDirectionY, maxSize, amount, retract, block).spaces;
 				if(spaces < amount)
 					amount = spaces;
@@ -261,37 +263,37 @@ int Element_PSTN::MoveStack(Simulation * sim, int stackX, int stackY, int direct
 		for(int c = 1; c < maxRight; c++) {
 			posY = stackY + (c*newY);
 			posX = stackX + (c*newX);
-			MoveStack(sim, posX, posY, directionX, directionY, maxSize, amount, retract, block, !sim->parts[sim->pmap[posY][posX]>>8].tmp, 1);
+			MoveStack(sim, posX, posY, directionX, directionY, maxSize, amount, retract, block, !sim->parts[ID(sim->pmap[posY][posX])].tmp, 1);
 		}
 		for(int c = 1; c < maxLeft; c++) {
 			posY = stackY - (c*newY);
 			posX = stackX - (c*newX);
-			MoveStack(sim, posX, posY, directionX, directionY, maxSize, amount, retract, block, !sim->parts[sim->pmap[posY][posX]>>8].tmp, 1);
+			MoveStack(sim, posX, posY, directionX, directionY, maxSize, amount, retract, block, !sim->parts[ID(sim->pmap[posY][posX])].tmp, 1);
 		}
 
 		//Remove arm section if retracting with FRME
 		if (retract)
 			for(int j = 1; j <= amount; j++)
-				sim->kill_part(sim->pmap[stackY+(directionY*-j)][stackX+(directionX*-j)]>>8);
-		return MoveStack(sim, stackX, stackY, directionX, directionY, maxSize, amount, retract, block, !sim->parts[sim->pmap[stackY][stackX]>>8].tmp, 1);
+				sim->kill_part(ID(sim->pmap[stackY+(directionY*-j)][stackX+(directionX*-j)]));
+		return MoveStack(sim, stackX, stackY, directionX, directionY, maxSize, amount, retract, block, !sim->parts[ID(sim->pmap[stackY][stackX])].tmp, 1);
 	}
 	if(retract){
 		bool foundParts = false;
 		//Remove arm section if retracting without FRME
 		if (!callDepth)
 			for(int j = 1; j <= amount; j++)
-				sim->kill_part(sim->pmap[stackY+(directionY*-j)][stackX+(directionX*-j)]>>8);
+				sim->kill_part(ID(sim->pmap[stackY+(directionY*-j)][stackX+(directionX*-j)]));
 		int currentPos = 0;
 		for(posX = stackX, posY = stackY; currentPos < maxSize && currentPos < XRES-1; posX += directionX, posY += directionY) {
 			if (!(posX < XRES && posY < YRES && posX >= 0 && posY >= 0)) {
 				break;
 			}
 			r = sim->pmap[posY][posX];
-			if(!r || (r&0xFF) == block || (!sticky && (r&0xFF) != PT_FRME)) {
+			if(!r || TYP(r) == block || (!sticky && TYP(r) != PT_FRME)) {
 				break;
 			} else {
 				foundParts = true;
-				tempParts[currentPos++] = r>>8;
+				tempParts[currentPos++] = ID(r);
 			}
 		}
 		if(foundParts) {
@@ -303,7 +305,7 @@ int Element_PSTN::MoveStack(Simulation * sim, int stackX, int stackY, int direct
 				sim->pmap[srcY][srcX] = 0;
 				sim->parts[jP].x = destX;
 				sim->parts[jP].y = destY;
-				sim->pmap[destY][destX] = sim->parts[jP].type|(jP<<8);
+				sim->pmap[destY][destX] = PMAP(jP, sim->parts[jP].type);
 			}
 			return amount;
 		}
@@ -326,7 +328,7 @@ int Element_PSTN::MoveStack(Simulation * sim, int stackX, int stackY, int direct
 				sim->pmap[srcY][srcX] = 0;
 				sim->parts[jP].x = destX;
 				sim->parts[jP].y = destY;
-				sim->pmap[destY][destX] = sim->parts[jP].type|(jP<<8);
+				sim->pmap[destY][destX] = PMAP(jP, sim->parts[jP].type);
 			}
 			return possibleMovement;
 		}

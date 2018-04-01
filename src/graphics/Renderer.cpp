@@ -7,6 +7,7 @@
 #include "Misc.h"
 #include "Renderer.h"
 #include "Graphics.h"
+#include "common/tpt-minmax.h"
 #include "gui/game/RenderPreset.h"
 #include "simulation/Elements.h"
 #include "simulation/ElementGraphics.h"
@@ -983,7 +984,7 @@ void Renderer::DrawSigns()
 		{
 			char type = 0;
 			std::string text = signs[i].getText(sim);
-			sign::splitsign(signs[i].text.c_str(), &type);
+			sign::splitsign(signs[i].text, &type);
 			signs[i].pos(text, x, y, w, h);
 			clearrect(x, y, w+1, h);
 			drawrect(x, y, w+1, h, 192, 192, 192, 255);
@@ -1231,6 +1232,7 @@ void Renderer::render_parts()
 			}
 	}
 #endif
+	foundElements = 0;
 	for(i = 0; i<=sim->parts_lastActiveIndex; i++) {
 		if (sim->parts[i].type && sim->parts[i].type >= 0 && sim->parts[i].type < PT_NUM) {
 			t = sim->parts[i].type;
@@ -1244,7 +1246,7 @@ void Renderer::render_parts()
 
 			if(nx >= XRES || nx < 0 || ny >= YRES || ny < 0)
 				continue;
-			if((sim->photons[ny][nx]&0xFF) && !(sim->elements[t].Properties & TYPE_ENERGY) && t!=PT_STKM && t!=PT_STKM2 && t!=PT_FIGH)
+			if(TYP(sim->photons[ny][nx]) && !(sim->elements[t].Properties & TYPE_ENERGY) && t!=PT_STKM && t!=PT_STKM2 && t!=PT_FIGH)
 				continue;
 
 			//Defaults
@@ -1423,6 +1425,7 @@ void Renderer::render_parts()
 					{
 						colr = firer = 255;
 						colg = fireg = colb = fireb = 0;
+						foundElements++;
 					}
 					else
 					{
@@ -1502,20 +1505,17 @@ void Renderer::render_parts()
 					}
 					else if (colour_mode != COLOUR_HEAT)
 					{
-						if (cplayer->elem<PT_NUM && cplayer->elem > 0)
+						if (cplayer->fan)
 						{
-							if (cplayer->elem == SPC_AIR)
-							{
-								colr = PIXR(0x8080FF);
-								colg = PIXG(0x8080FF);
-								colb = PIXB(0x8080FF);
-							}
-							else
-							{
-								colr = PIXR(elements[cplayer->elem].Colour);
-								colg = PIXG(elements[cplayer->elem].Colour);
-								colb = PIXB(elements[cplayer->elem].Colour);
-							}
+							colr = PIXR(0x8080FF);
+							colg = PIXG(0x8080FF);
+							colb = PIXB(0x8080FF);
+						}
+						else if (cplayer->elem < PT_NUM && cplayer->elem > 0)
+						{
+							colr = PIXR(elements[cplayer->elem].Colour);
+							colg = PIXG(elements[cplayer->elem].Colour);
+							colb = PIXB(elements[cplayer->elem].Colour);
 						}
 						else
 						{
@@ -1993,7 +1993,7 @@ void Renderer::render_parts()
 						drad = (M_PI * ((float)orbl[r]) / 180.0f)*1.41f;
 						nxo = (int)(ddist*cos(drad));
 						nyo = (int)(ddist*sin(drad));
-						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && (sim->pmap[ny+nyo][nx+nxo]&0xFF) != PT_PRTI)
+						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_PRTI)
 							addpixel(nx+nxo, ny+nyo, colr, colg, colb, 255-orbd[r]);
 					}
 				}
@@ -2010,14 +2010,14 @@ void Renderer::render_parts()
 						drad = (M_PI * ((float)orbl[r]) / 180.0f)*1.41f;
 						nxo = (int)(ddist*cos(drad));
 						nyo = (int)(ddist*sin(drad));
-						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && (sim->pmap[ny+nyo][nx+nxo]&0xFF) != PT_PRTO)
+						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_PRTO)
 							addpixel(nx+nxo, ny+nyo, colr, colg, colb, 255-orbd[r]);
 					}
 				}
 				if (pixel_mode & EFFECT_DBGLINES && !(display_mode&DISPLAY_PERS))
 				{
 					// draw lines connecting wifi/portal channels
-					if (mousePos.X == nx && mousePos.Y == ny && (i == sim->pmap[ny][nx]>>8) && debugLines)
+					if (mousePos.X == nx && mousePos.Y == ny && i == ID(sim->pmap[ny][nx]) && debugLines)
 					{
 						int type = parts[i].type, tmp = (int)((parts[i].temp-73.15f)/100+1), othertmp;
 						if (type == PT_PRTI)
@@ -2556,6 +2556,7 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 	debugLines(false),
 	sampleColor(0xFFFFFFFF),
 	findingElement(0),
+    foundElements(0),
 	mousePos(0, 0),
 	zoomWindowPosition(0, 0),
 	zoomScopePosition(0, 0),

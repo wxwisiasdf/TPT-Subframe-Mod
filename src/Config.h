@@ -12,15 +12,15 @@
 
 //VersionInfoStart
 #ifndef SAVE_VERSION
-#define SAVE_VERSION 92
+#define SAVE_VERSION 93
 #endif
 
 #ifndef MINOR_VERSION
-#define MINOR_VERSION 5
+#define MINOR_VERSION 1
 #endif
 
 #ifndef BUILD_NUM
-#define BUILD_NUM 336
+#define BUILD_NUM 338
 #endif
 
 #ifndef SNAPSHOT_ID
@@ -34,9 +34,9 @@
 #define MOD_ID 3
 #endif
 
-#ifdef SNAPSHOT
-#define FUTURE_SAVE_VERSION 92
-#define FUTURE_MINOR_VERSION 1
+#if defined(SNAPSHOT) || defined(DEBUG)
+#define FUTURE_SAVE_VERSION 93
+#define FUTURE_MINOR_VERSION 0
 #endif
 //VersionInfoEnd
 
@@ -163,37 +163,6 @@
 #define GLASS_IOR		1.9
 #define GLASS_DISP		0.07
 
-//some compatibility stuff for non-standard compilers
-#if defined(WIN) && !defined(strcasecmp)
-#define strcasecmp stricmp
-#endif
-#if defined(_MSC_VER)
-#if _MSC_VER < 1800
-#define fmin min
-#define fminf min
-#define fmax max
-#define fmaxf max
-#else
-#include <algorithm>
-#endif
-#endif
-
-#if defined(_MSC_VER)
-#define TPT_INLINE _inline
-#else
-#define TPT_INLINE inline
-#endif
-
-// old Platform.h stuff, maybe we should have a file for these kinds of things
-typedef unsigned short Uint16;
-
-#ifndef NULL
-# define NULL 0
-#endif
-
-#include <climits>
-
 #define SDEUT
-//#define REALHEAT
 
 #endif /* CONFIG_H */

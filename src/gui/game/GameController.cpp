@@ -329,6 +329,10 @@ std::string GameController::GetSignText(int signID)
 
 void GameController::PlaceSave(ui::Point position, bool includePressure)
 {
+	bool incPressure = Client::Ref().GetPrefBool("Simulation.LoadPressure", true);
+	if (!incPressure)
+		includePressure = !includePressure;
+
 	GameSave *placeSave = gameModel->GetPlaceSave();
 	if (placeSave)
 	{
@@ -578,8 +582,11 @@ void GameController::ToolClick(int toolSelection, ui::Point point)
 
 std::string GameController::StampRegion(ui::Point point1, ui::Point point2, bool includePressure)
 {
-	GameSave * newSave;
-	newSave = gameModel->GetSimulation()->Save(point1.X, point1.Y, point2.X, point2.Y, includePressure);
+	bool incPressure = Client::Ref().GetPrefBool("Simulation.IncludePressure", true);
+	if (!incPressure)
+		includePressure = !includePressure;
+
+	GameSave * newSave = gameModel->GetSimulation()->Save(point1.X, point1.Y, point2.X, point2.Y, includePressure);
 	if(newSave)
 	{
 		newSave->paused = gameModel->GetPaused();
@@ -597,8 +604,11 @@ std::string GameController::StampRegion(ui::Point point1, ui::Point point2, bool
 
 void GameController::CopyRegion(ui::Point point1, ui::Point point2, bool includePressure)
 {
-	GameSave * newSave;
-	newSave = gameModel->GetSimulation()->Save(point1.X, point1.Y, point2.X, point2.Y, includePressure);
+	bool incPressure = Client::Ref().GetPrefBool("Simulation.IncludePressure", true);
+	if (!incPressure)
+		includePressure = !includePressure;
+
+	GameSave * newSave = gameModel->GetSimulation()->Save(point1.X, point1.Y, point2.X, point2.Y, includePressure);
 	if(newSave)
 	{
 		Json::Value clipboardInfo;
@@ -638,7 +648,7 @@ bool GameController::MouseDown(int x, int y, unsigned button)
 			if (foundSignID != -1)
 			{
 				sign foundSign = gameModel->GetSimulation()->signs[foundSignID];
-				if (sign::splitsign(foundSign.text.c_str()))
+				if (sign::splitsign(foundSign.text))
 					return false;
 			}
 		}
@@ -662,7 +672,7 @@ bool GameController::MouseUp(int x, int y, unsigned button, char type)
 			if (foundSignID != -1)
 			{
 				sign foundSign = gameModel->GetSimulation()->signs[foundSignID];
-				const char* str = foundSign.text.c_str();
+				std::string str = foundSign.text;
 				char type;
 				int pos = sign::splitsign(str, &type);
 				if (pos)
@@ -670,14 +680,12 @@ bool GameController::MouseUp(int x, int y, unsigned button, char type)
 					ret = false;
 					if (type == 'c' || type == 't' || type == 's')
 					{
-						char buff[256];
-						strcpy(buff, str+3);
-						buff[pos-3] = 0;
+						std::string link = str.substr(3, pos-3);
 						switch (type)
 						{
 						case 'c':
 						{
-							int saveID = format::StringToNumber<int>(std::string(buff));
+							int saveID = format::StringToNumber<int>(link);
 							if (saveID)
 								OpenSavePreview(saveID, 0, false);
 							break;
@@ -686,12 +694,12 @@ bool GameController::MouseUp(int x, int y, unsigned button, char type)
 						{
 							// buff is already confirmed to be a number by sign::splitsign
 							std::stringstream uri;
-							uri << "http://powdertoy.co.uk/Discussions/Thread/View.html?Thread=" << buff;
+							uri << "http://powdertoy.co.uk/Discussions/Thread/View.html?Thread=" << link;
 							Platform::OpenURI(uri.str());
 							break;
 						}
 						case 's':
-							OpenSearch(buff);
+							OpenSearch(link);
 							break;
 						}
 					}
@@ -785,7 +793,7 @@ bool GameController::KeyPress(int key, Uint16 character, bool shift, bool ctrl, 
 
 		for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
 		{
-			if ((*iter)->ID & debugFlags)
+			if ((*iter)->debugID & debugFlags)
 				if (!(*iter)->KeyPress(key, character, shift, ctrl, alt, gameView->GetMousePosition()))
 					ret = false;
 		}
@@ -852,7 +860,7 @@ void GameController::Tick()
 	}
 	for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
 	{
-		if ((*iter)->ID & debugFlags)
+		if ((*iter)->debugID & debugFlags)
 			(*iter)->Draw();
 	}
 	commandInterface->OnTick();
@@ -1230,6 +1238,14 @@ void GameController::SetActiveTool(int toolSelection, Tool * tool)
 		((PropertyTool *)tool)->OpenWindow(gameModel->GetSimulation());
 }
 
+void GameController::SetActiveTool(int toolSelection, std::string identifier)
+{
+	Tool *tool = gameModel->GetToolFromIdentifier(identifier);
+	if (!tool)
+		return;
+	SetActiveTool(toolSelection, tool);
+}
+
 void GameController::SetLastTool(Tool * tool)
 {
 	gameModel->SetLastTool(tool);
@@ -1325,7 +1341,7 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 			std::vector<char> saveData = gameSave->Serialise();
 			if (saveData.size() == 0)
 				new ErrorMessage("Error", "Unable to serialize game data.");
-			else if (Client::Ref().WriteFile(gameSave->Serialise(), filename))
+			else if (Client::Ref().WriteFile(saveData, filename))
 				new ErrorMessage("Error", "Unable to write save file.");
 			else
 				gameModel->SetInfoTip("Saved Successfully");
@@ -1385,7 +1401,7 @@ void GameController::OpenLogin()
 
 void GameController::OpenProfile()
 {
-	if(Client::Ref().GetAuthUser().ID)
+	if(Client::Ref().GetAuthUser().UserID)
 	{
 		new ProfileActivity(Client::Ref().GetAuthUser().Username);
 	}
@@ -1492,7 +1508,7 @@ void GameController::OpenSaveWindow()
 			c->LoadSave(&save);
 		}
 	};
-	if(gameModel->GetUser().ID)
+	if(gameModel->GetUser().UserID)
 	{
 		Simulation * sim = gameModel->GetSimulation();
 		GameSave * gameSave = sim->Save();
@@ -1539,7 +1555,7 @@ void GameController::SaveAsCurrent()
 		}
 	};
 
-	if(gameModel->GetSave() && gameModel->GetUser().ID && gameModel->GetUser().Username == gameModel->GetSave()->GetUserName())
+	if(gameModel->GetSave() && gameModel->GetUser().UserID && gameModel->GetUser().Username == gameModel->GetSave()->GetUserName())
 	{
 		Simulation * sim = gameModel->GetSimulation();
 		GameSave * gameSave = sim->Save();
@@ -1565,7 +1581,7 @@ void GameController::SaveAsCurrent()
 			}
 		}
 	}
-	else if(gameModel->GetUser().ID)
+	else if(gameModel->GetUser().UserID)
 	{
 		OpenSaveWindow();
 	}
@@ -1583,7 +1599,7 @@ void GameController::FrameStep()
 
 void GameController::Vote(int direction)
 {
-	if(gameModel->GetSave() && gameModel->GetUser().ID && gameModel->GetSave()->GetID() && gameModel->GetSave()->GetVote()==0)
+	if(gameModel->GetSave() && gameModel->GetUser().UserID && gameModel->GetSave()->GetID() && gameModel->GetSave()->GetVote()==0)
 	{
 		try
 		{

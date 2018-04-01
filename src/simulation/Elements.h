@@ -50,8 +50,22 @@
 
 #define OLD_PT_WIND 147
 
-//#define PT_NUM  161
-#define PT_NUM	256
+// Change this to change the amount of bits used to store type in pmap (and a few elements such as PIPE and CRAY)
+#define PMAPBITS 9
+#define PMAPMASK ((1<<PMAPBITS)-1)
+#define ID(r) ((r)>>PMAPBITS)
+#define TYP(r) ((r)&PMAPMASK)
+#define PMAP(id, typ) ((id)<<PMAPBITS | ((typ)&PMAPMASK))
+#define PMAPID(id) ((id)<<PMAPBITS)
+
+#define PT_NUM	(1<<PMAPBITS)
+
+#if PMAPBITS > 16
+#error PMAPBITS is too large
+#endif
+#if ((XRES*YRES)<<PMAPBITS) > 0x100000000L
+#error not enough space in pmap
+#endif
 
 struct playerst;
 
