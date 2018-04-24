@@ -121,8 +121,29 @@ void PropertyWindow::SetProperty()
 						buffer << std::hex << value.substr(1);
 						buffer >> v;
 					}
+					else if(value.length() > 1 && value[0] == 'c')
+					{
+						// 30th-bit handling
+						if(value.length() > 3 && value.substr(1, 2) == "0x")
+						{
+							//c0xC0FFEE
+							std::stringstream buffer;
+							buffer.exceptions(std::stringstream::failbit | std::stringstream::badbit);
+							buffer << std::hex << value.substr(3);
+							buffer >> v;
+						}
+						else
+						{
+							//c-50
+							std::stringstream buffer(value.substr(1));
+							buffer.exceptions(std::stringstream::failbit | std::stringstream::badbit);
+							buffer >> v;
+						}
+						v = (v & 0x3FFFFFFF) | (1<<29);
+					}
 					else if(value.length() > 5 && value.substr(0, 5) == "filt:")
 					{
+						//filt:5
 						std::stringstream buffer;
 						buffer.exceptions(std::stringstream::failbit | std::stringstream::badbit);
 						buffer << std::hex << value.substr(5);
@@ -203,6 +224,8 @@ void PropertyWindow::SetProperty()
 							tool->propValue.Float += 273.15;
 						else if (value.substr(value.length()-1) == "F")
 							tool->propValue.Float = (tool->propValue.Float-32.0f)*5/9+273.15f;
+						else if (value.substr(value.length()-1) != "K")
+							tool->propValue.Float += 273.15;
 					}
 #ifdef DEBUG
 					std::cout << "Got float value " << tool->propValue.Float << std::endl;
@@ -263,22 +286,14 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 	switch (propType)
 	{
 		case StructProperty::Float:
-			if(propOffset == offsetof(Particle, temp))
-				*((float*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Float + 273.15f;
-			else
-				*((float*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Float;
-			break;
+			*((float*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Float;
 		case StructProperty::ParticleType:
 		case StructProperty::Integer:
 			if(propOffset == offsetof(Particle, ctype) && (sim->parts[ID(i)].type == PT_FILT || sim->parts[ID(i)].type == PT_BRAY || sim->parts[ID(i)].type == PT_PHOT))
 			{
-				int filtVal = propValue.Integer;
-				if (propValue.Integer >= 0)
-					filtVal ^= (1<<29);
-				*((int*)(((char*)&sim->parts[ID(i)])+propOffset)) = filtVal & 0x3FFFFFFF;
+				propValue.Integer &= 0x3FFFFFFF;
 			}
-			else
-				*((int*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Integer;
+			*((int*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Integer;
 			break;
 		case StructProperty::UInteger:
 			*((unsigned int*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.UInteger;
