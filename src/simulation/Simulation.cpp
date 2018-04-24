@@ -343,8 +343,9 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 	int storedParts = 0;
 	int elementCount[PT_NUM];
 	std::fill(elementCount, elementCount+PT_NUM, 0);
-	// Map of soap particles loaded into this save, new ID -> old ID
-	std::map<unsigned int, unsigned int> soapList;
+	// Map of soap particles loaded into this save, old ID -> new ID
+	// Now stores all particles, not just SOAP (but still only used for soap)
+	std::map<unsigned int, unsigned int> particleMap;
 	std::set<int> paletteSet;
 	for (int i = 0; i < NPART; i++)
 	{
@@ -358,8 +359,7 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 			tempPart.y -= blockY*CELL;
 			if (elements[tempPart.type].Enabled)
 			{
-				if (tempPart.type == PT_SOAP)
-					soapList.insert(std::pair<unsigned int, unsigned int>(i, storedParts));
+				particleMap.insert(std::pair<unsigned int, unsigned int>(i, storedParts));
 				*newSave << tempPart;
 				storedParts++;
 				elementCount[tempPart.type]++;
@@ -375,19 +375,21 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 		}
 	}
 
-	if (storedParts)
-	{
-		for (int ID : paletteSet)
-			newSave->palette.push_back(GameSave::PaletteItem(elements[ID].Identifier, ID));
+	for (int ID : paletteSet)
+		newSave->palette.push_back(GameSave::PaletteItem(elements[ID].Identifier, ID));
 
-		// fix SOAP links using soapList, a map of new particle ID -> old particle ID
+	if (storedParts && elementCount[PT_SOAP])
+	{
+		// fix SOAP links using particleMap, a map of old particle ID -> new particle ID
 		// loop through every new particle (saved into the save), and convert .tmp / .tmp2
-		for (std::map<unsigned int, unsigned int>::iterator iter = soapList.begin(), end = soapList.end(); iter != end; ++iter)
+		for (std::map<unsigned int, unsigned int>::iterator iter = particleMap.begin(), end = particleMap.end(); iter != end; ++iter)
 		{
 			int i = (*iter).second;
+			if (newSave->particles[i].type != PT_SOAP)
+				continue;
 			if ((newSave->particles[i].ctype & 0x2) == 2)
 			{
-				std::map<unsigned int, unsigned int>::iterator n = soapList.find(newSave->particles[i].tmp);
+				std::map<unsigned int, unsigned int>::iterator n = particleMap.find(newSave->particles[i].tmp);
 				if (n != end)
 					newSave->particles[i].tmp = n->second;
 				else
@@ -398,7 +400,7 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 			}
 			if ((newSave->particles[i].ctype & 0x4) == 4)
 			{
-				std::map<unsigned int, unsigned int>::iterator n = soapList.find(newSave->particles[i].tmp2);
+				std::map<unsigned int, unsigned int>::iterator n = particleMap.find(newSave->particles[i].tmp2);
 				if (n != end)
 					newSave->particles[i].tmp2 = n->second;
 				else
@@ -2774,33 +2776,19 @@ int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
 	return result;
 }
 
-int Simulation::pn_junction_sprk(int x, int y, int pt)
-{
-	int r = pmap[y][x];
-	if (TYP(r) != pt)
-		return 0;
-	r >>= 8;
-	if (parts[r].type != pt)
-		return 0;
-	if (parts[r].life != 0)
-		return 0;
-
-	parts[r].ctype = pt;
-	part_change_type(r,x,y,PT_SPRK);
-	parts[r].life = 4;
-	return 1;
-}
-
 void Simulation::photoelectric_effect(int nx, int ny)//create sparks from PHOT when hitting PSCN and NSCN
 {
 	unsigned r = pmap[ny][nx];
 
-	if (TYP(r) == PT_PSCN) {
-		if (TYP(pmap[ny][nx-1]) == PT_NSCN ||
-		        TYP(pmap[ny][nx+1]) == PT_NSCN ||
-		        TYP(pmap[ny-1][nx]) == PT_NSCN ||
-		        TYP(pmap[ny+1][nx]) == PT_NSCN)
-			pn_junction_sprk(nx, ny, PT_PSCN);
+	if (TYP(r) == PT_PSCN)
+	{
+		if (TYP(pmap[ny][nx-1]) == PT_NSCN || TYP(pmap[ny][nx+1]) == PT_NSCN ||
+		        TYP(pmap[ny-1][nx]) == PT_NSCN ||  TYP(pmap[ny+1][nx]) == PT_NSCN)
+		{
+			parts[ID(r)].ctype = PT_PSCN;
+			part_change_type(ID(r), nx, ny, PT_SPRK);
+			parts[ID(r)].life = 4;
+		}
 	}
 }
 
