@@ -1356,25 +1356,6 @@ void GameView::OnMouseUp(int x, int y, unsigned button)
 	UpdateDrawMode();
 }
 
-void GameView::ExitPrompt()
-{
-	class ExitConfirmation: public ConfirmDialogueCallback {
-	public:
-		ExitConfirmation() {}
-		virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
-			if (result == ConfirmPrompt::ResultOkay)
-			{
-				ui::Engine::Ref().Exit();
-			}
-		}
-		virtual ~ExitConfirmation() { }
-	};
-	if(c->GetHasUnsavedChanges())
-		new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to exit the game?", new ExitConfirmation());
-	else
-		new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
-}
-
 void GameView::ToolTip(ui::Point senderPosition, std::string toolTip)
 {
 	// buttom button tooltips
@@ -1628,7 +1609,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		break;
 	case SDLK_ESCAPE:
 	case 'q':
-		ui::Engine::Ref().ConfirmExit();
+		ui::Engine::Ref().ConfirmExit(c->GetHasUnsavedChanges());
 		break;
 	case 'u':
 		c->ToggleAHeat();

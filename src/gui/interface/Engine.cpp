@@ -74,7 +74,7 @@ void Engine::Exit()
 	running_ = false;
 }
 
-void Engine::ConfirmExit()
+void Engine::ConfirmExit(bool warnUnsavedChanges)
 {
 	class ExitConfirmation: public ConfirmDialogueCallback {
 	public:
@@ -87,7 +87,10 @@ void Engine::ConfirmExit()
 		}
 		virtual ~ExitConfirmation() { }
 	};
-	new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
+	if(warnUnsavedChanges)
+		new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to exit the game?", new ExitConfirmation());
+	else
+		new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
 }
 
 void Engine::ShowWindow(Window * window)

@@ -999,7 +999,7 @@ void GameController::Update()
 	{
 		for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
 		{
-			if ((*iter)->ID == 0x8)
+			if ((*iter)->debugID == 0x8)
 				((ParticleDebug*)*iter)->Debug(0, 0, 0);
 		}
 

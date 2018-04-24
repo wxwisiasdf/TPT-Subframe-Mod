@@ -647,7 +647,7 @@ void EventProcess(SDL_Event event)
 		break;
 	case SDL_KEYDOWN:
 		if (event.key.keysym.sym == 'q' && (event.key.keysym.mod&KMOD_CTRL))
-			engine->ConfirmExit();
+			engine->ConfirmExit(false);
 		else
 			engine->onKeyPress(event.key.keysym.sym, event.key.keysym.unicode, event.key.keysym.mod&KMOD_SHIFT, event.key.keysym.mod&KMOD_CTRL, event.key.keysym.mod&KMOD_ALT);
 		break;
