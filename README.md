@@ -18,18 +18,19 @@ These features will be present without enabling:
 
 - Stacked particles are shown in the debug HUD.
 - P opens the property tool window rather than takes a screenshot (you can still take screenshots with F2).
-- The property tool sets temp values in celsius rather than kelvin.
+- The property tool sets temp values in celsius rather than kelvin by default. Add "K" to the back to set in kelvin.
 - The ctype of FILTs will be displayed in the debug HUD. In the original game, this was only shown for non-FILT coloured particles like BRAY.
-- 30th bit handling: Setting the ctype of coloured particles (e.g. FILT) with the property tool will XOR the input value with 0x20000000 first (so it will set the 30th bit automatically, unless you set it). When hovering the mouse over coloured particles, the ctype displayed in the debug HUD will ignore the 30th bit and, if the 29th bit is set, be displayed as a negative number.
 - DRAY is coloured bright yellow to distinguish it from ARAY and DTEC.
 - When pasting (or placing a stamp), the paste boundary can cross outside the window boundary. Particles can also be moved out of the initial paste boundary (with the arrow keys) without getting deleted (merged in vanilla snapshot). Additionally, the white dotted paste boundary will not be shown.
 - If you attempt to open a save or close the window with the ESC button (the case for closing with the 'X' button has not been implemented) when there are unsaved changes, a confirmation warning will be displayed.
 - The position in frame is saved into undo history during subframe debugging, so you can undo into the middle of a frame without destroying everything.
 - (v1.1) Stack tool (Shortcut: Shift-S): Clicking on a stack of particles will unstack them; selecting multiple particles in different positions will stack them in order of their positions.
 - (v1.1) Creating CRAY with the brush gives it a ctype of SPRK automatically. If you want to create a ctype-less CRAY, use the property tool.
-- (v1.1, experimental) Shift-; (semicolon) toggles stack mode. It allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC.
+- (v1.1) Shift-; (semicolon) toggles stack mode. It allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC.
 - (v1.2) DTEC is coloured a darker red to distinguish it from ARAY.
 - (v1.3) "filt:v" in property tool translates into (v<<8) + 125, to aid the configuration of CRAY that creates FILT with a preset tmp.
+- (v1.6) 30th-bit handling: Adding "c" before typing in a number into the property tool when setting ctype will set the 30th bit. For example, "c50" will set the ctype to (50 | 0x20000000). Works with hex too -- just add "0x", like in "c0xC0FFEE". Even without "c", setting the ctype of colored particles using the property tool will not set the 31st and 32nd bit.
+- (v1.6) Ctrl-J toggles the colored particle ctype display mode. This changes how the ctype of a colored particle is displayed in the debug HUD. The ctype is displayed in hex by default, but you can switch it back to decimal. For decimal, you can choose to enable 30th-bit handling. This ignores the 30th bit and, if the 29th bit is set, displays the ctype as a negative number.
 
 Note that the original game already supports the following subframe debugging features:
 
@@ -66,3 +67,9 @@ v1.4:
 
 v1.5:
 - Don't trigger particle order reloading when SPRKing with brush.
+
+v1.6:
+- Merge changes in 93.3.
+- Allow property tool to set temperature in kelvin.
+- Make property tool 30th-bit handling opt-in.
+- Allow spectral data to be displayed in hex and unmodified decimal.
