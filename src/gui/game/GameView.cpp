@@ -2390,7 +2390,7 @@ void GameView::OnDraw()
 							switch(wavelengthGfxMode)
 							{
 							case 0:
-								sampleInfo << "0x" << std::uppercase << std::hex << ctype;
+								sampleInfo << "0x" << std::uppercase << std::hex << ctype << std::nouppercase << std::dec;
 								break;
 							case 1:
 								sampleInfo << ((ctype & 0x10000000) ? -(((~ctype) & 0x1FFFFFFF) + 1) : (ctype & 0x1FFFFFFF));
