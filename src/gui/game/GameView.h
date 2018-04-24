@@ -44,6 +44,7 @@ private:
 	bool altBehaviour;
 	bool showHud;
 	bool showDebug;
+	int wavelengthGfxMode;
 	int delayedActiveMenu;
 	bool wallBrush;
 	bool toolBrush;

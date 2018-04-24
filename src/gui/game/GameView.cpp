@@ -164,6 +164,7 @@ GameView::GameView():
 	altBehaviour(false),
 	showHud(true),
 	showDebug(false),
+	wavelengthGfxMode(0),
 	delayedActiveMenu(-1),
 	wallBrush(false),
 	toolBrush(false),
@@ -473,6 +474,8 @@ GameView::GameView():
 	};
 	colourPicker = new ui::Button(ui::Point((XRES/2)-8, YRES+1), ui::Point(16, 16), "", "Pick Colour");
 	colourPicker->SetActionCallback(new ColourPickerAction(this));
+
+	wavelengthGfxMode = Client::Ref().GetPrefUInteger("Renderer.WavelengthGfxMode", 0);
 }
 
 GameView::~GameView()
@@ -1584,6 +1587,26 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		else
 			showHud = !showHud;
 		break;
+	case 'j':
+		if(ctrl)
+		{
+			wavelengthGfxMode = (wavelengthGfxMode + 1) % 3;
+			switch(wavelengthGfxMode)
+			{
+			case 0:
+				infoTip = "Wavelength Gfx Mode: Hex";
+				break;
+			case 1:
+				infoTip = "Wavelength Gfx Mode: Decimal (with 30th-bit handling)";
+				break;
+			case 2:
+				infoTip = "Wavelength Gfx Mode: Decimal (no 30th-bit handling)";
+				break;
+			}
+			infoTipPresence = 120;
+			Client::Ref().SetPref("Renderer.WavelengthGfxMode", wavelengthGfxMode);
+		}
+		break;
 	case 'b':
 		if(ctrl)
 			c->SetDecoration();
@@ -2363,11 +2386,20 @@ void GameView::OnDraw()
 							else
 								sampleInfo << " (unknown mode";
 
-							int displayNumber = ctype & 0x1FFFFFFF;
-							if(ctype & 0x10000000)
-								displayNumber = -(((~ctype) & 0x1FFFFFFF) + 1);
-
-							sampleInfo << ", " << displayNumber << ")";
+							sampleInfo << ", ";
+							switch(wavelengthGfxMode)
+							{
+							case 0:
+								sampleInfo << "0x" << std::uppercase << std::hex << ctype;
+								break;
+							case 1:
+								sampleInfo << ((ctype & 0x10000000) ? -(((~ctype) & 0x1FFFFFFF) + 1) : (ctype & 0x1FFFFFFF));
+								break;
+							case 2:
+								sampleInfo << ctype;
+								break;
+							}
+							sampleInfo << ")";
 						}
 						else
 						{
