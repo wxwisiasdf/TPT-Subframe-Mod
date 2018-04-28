@@ -52,7 +52,7 @@ struct Element_PSTN::StackData
 {
 	int pushed;
 	int spaces;
-	
+
 	StackData(int pushed, int spaces):
 		pushed(pushed),
 		spaces(spaces)
@@ -104,7 +104,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if (TYP(r) == PT_PSTN)
+					if (TYP(r) == PT_PSTN && !parts[ID(r)].life)
 					{
 						bool movedPiston = false;
 						bool foundEnd = false;

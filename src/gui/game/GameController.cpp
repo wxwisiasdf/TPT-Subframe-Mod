@@ -591,6 +591,7 @@ std::string GameController::StampRegion(ui::Point point1, ui::Point point2, bool
 	{
 		newSave->paused = gameModel->GetPaused();
 		std::string stampName = Client::Ref().AddStamp(newSave);
+		delete newSave;
 		if (stampName.length() == 0)
 			new ErrorMessage("Could not create stamp", "Error serializing save file");
 		return stampName;
@@ -1335,7 +1336,7 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 			localSaveInfo["date"] = (Json::Value::UInt64)time(NULL);
 			Client::Ref().SaveAuthorInfo(&localSaveInfo);
 			gameSave->authors = localSaveInfo;
-			
+
 			gameModel->SetSaveFile(&tempSave);
 			Client::Ref().MakeDirectory(LOCAL_SAVE_DIR);
 			std::vector<char> saveData = gameSave->Serialise();

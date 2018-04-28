@@ -45,6 +45,7 @@ RequestBroker::ProcessResponse ImageRequest::Process(RequestBroker & rb)
 				char * data;
 				int status, data_size, imgw, imgh;
 				data = http_async_req_stop(HTTPContext, &status, &data_size);
+				started = false;
 
 				if (status == 200 && data)
 				{
@@ -76,14 +77,14 @@ RequestBroker::ProcessResponse ImageRequest::Process(RequestBroker & rb)
 				{
 #ifdef DEBUG
 					std::cout << typeid(*this).name() << " Request for " << URL << " failed with status " << status << std::endl;
-#endif	
+#endif
 					free(data);
 
 					return RequestBroker::Failed;
 				}
 			}
 		}
-		else 
+		else
 		{
 			//Check for ongoing requests
 			for(std::vector<Request*>::iterator iter = rb.activeRequests.begin(), end = rb.activeRequests.end(); iter != end; ++iter)
@@ -107,10 +108,11 @@ RequestBroker::ProcessResponse ImageRequest::Process(RequestBroker & rb)
 			std::cout << typeid(*this).name() << " Creating new request for " << URL << std::endl;
 #endif*/
 			HTTPContext = http_async_req_start(NULL, (char *)URL.c_str(), NULL, 0, 0);
+			started = true;
 			RequestTime = time(NULL);
 		}
 	}
-	
+
 	if(image)
 	{
 
@@ -146,5 +148,11 @@ void ImageRequest::Cleanup()
 	{
 		delete ((VideoBuffer*)ResultObject);
 		ResultObject = NULL;
+	}
+	if (HTTPContext && started)
+	{
+		http_force_close(HTTPContext);
+		http_async_req_stop(HTTPContext, nullptr, nullptr);
+		started = false;
 	}
 }

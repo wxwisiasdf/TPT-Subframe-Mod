@@ -6,6 +6,7 @@
 //#include <powder.h>
 //#include <defines.h>
 #include "Gravity.h"
+#include "common/tpt-rand.h"
 
 /*float kernel[9];
 
@@ -240,7 +241,7 @@ void Air::update_air(void)
 				if ((dx*advDistanceMult>1.0f || dy*advDistanceMult>1.0f) && (tx>=2 && tx<XRES/CELL-2 && ty>=2 && ty<YRES/CELL-2))
 				{
 					// Trying to take velocity from far away, check whether there is an intervening wall. Step from current position to desired source location, looking for walls, with either the x or y step size being 1 cell
-					if (abs(dx)>abs(dy))
+					if (std::abs(dx)>std::abs(dy))
 					{
 						stepX = (dx<0.0f) ? 1 : -1;
 						stepY = -dy/fabsf(dx);
@@ -373,7 +374,7 @@ void Air::RecalculateBlockAirMaps()
 			}
 		}
 		// mostly accurate insulator blocking, besides checking GEL
-		else if ((type == PT_HSWC && sim.parts[i].life != 10) || sim.elements[type].HeatConduct <= (rand()%250))
+		else if ((type == PT_HSWC && sim.parts[i].life != 10) || sim.elements[type].HeatConduct <= (random_gen()%250))
 		{
 			int x = ((int)(sim.parts[i].x+0.5f))/CELL, y = ((int)(sim.parts[i].y+0.5f))/CELL;
 			if (sim.InBounds(x, y) && !(bmap_blockairh[y][x]&0x8))

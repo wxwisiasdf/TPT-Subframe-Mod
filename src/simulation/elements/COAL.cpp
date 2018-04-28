@@ -54,7 +54,7 @@ int Element_COAL::update(UPDATE_FUNC_ARGS)
 		return 1;
 	} else if (parts[i].life < 100) {
 		parts[i].life--;
-		sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, PT_FIRE);
+		sim->create_part(-1, x+random_gen()%3-1, y+random_gen()%3-1, PT_FIRE);
 	}
 	if (parts[i].type == PT_COAL)
 	{
@@ -84,7 +84,7 @@ int Element_COAL::graphics(GRAPHICS_FUNC_ARGS)
 		*colr = 170;
 	if (*colr < *colg)
 		*colr = *colg;
-		
+
 	*colg = *colb = *colr;
 
 	// ((cpart->temp-295.15f) > 300.0f-200.0f)
