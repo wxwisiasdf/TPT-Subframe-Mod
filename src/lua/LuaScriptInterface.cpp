@@ -767,6 +767,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"framerender", simulation_framerender},
 		{"gspeed", simulation_gspeed},
 		{"takeSnapshot", simulation_takeSnapshot},
+		{"reloadParticleOrder", simulation_reloadParticleOrder},
 		{NULL, NULL}
 	};
 	luaL_register(l, "simulation", simulationAPIMethods);
@@ -2152,6 +2153,12 @@ int LuaScriptInterface::simulation_gspeed(lua_State * l)
 int LuaScriptInterface::simulation_takeSnapshot(lua_State * l)
 {
 	luacon_controller->HistorySnapshot();
+	return 0;
+}
+
+int LuaScriptInterface::simulation_reloadParticleOrder(lua_State * l)
+{
+	luacon_model->ReloadParticleOrder();
 	return 0;
 }
 
