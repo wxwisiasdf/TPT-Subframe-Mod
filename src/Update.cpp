@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #ifdef WIN
+#define NOMINMAX
 #include <windows.h>
 #else
 #include <unistd.h>
@@ -26,7 +27,7 @@
 // returns 1 on failure, 0 on success
 int update_start(char *data, unsigned int len)
 {
-	std::string exeName = Platform::ExecutableName(), updName;
+	ByteString exeName = Platform::ExecutableName(), updName;
 	FILE *f;
 
 	if (!exeName.length())
@@ -34,7 +35,7 @@ int update_start(char *data, unsigned int len)
 
 #ifdef WIN
 	updName = exeName;
-	std::string extension = exeName.substr(exeName.length() - 4);
+	ByteString extension = exeName.substr(exeName.length() - 4);
 	if (extension == ".exe")
 		updName = exeName.substr(0, exeName.length() - 4);
 	updName = updName + "_upd.exe";
@@ -95,7 +96,7 @@ int update_start(char *data, unsigned int len)
 int update_finish()
 {
 #ifdef WIN
-	std::string exeName = Platform::ExecutableName(), updName;
+	ByteString exeName = Platform::ExecutableName(), updName;
 	int timeout = 5, err;
 
 #ifdef DEBUG
@@ -103,7 +104,7 @@ int update_finish()
 #endif
 
 	updName = exeName;
-	std::string extension = exeName.substr(exeName.length() - 4);
+	ByteString extension = exeName.substr(exeName.length() - 4);
 	if (extension == ".exe")
 		updName = exeName.substr(0, exeName.length() - 4);
 	updName = updName + "_upd.exe";
@@ -122,7 +123,7 @@ int update_finish()
 #endif
 			// Old versions of powder toy name their update files with _update.exe, delete that upgrade file here
 			updName = exeName;
-			std::string extension = exeName.substr(exeName.length() - 4);
+			ByteString extension = exeName.substr(exeName.length() - 4);
 			if (extension == ".exe")
 				updName = exeName.substr(0, exeName.length() - 4);
 			updName = updName + "_update.exe";

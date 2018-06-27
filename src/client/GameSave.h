@@ -2,7 +2,7 @@
 #define The_Powder_Toy_GameSave_h
 
 #include <vector>
-#include <string>
+#include "common/String.h"
 #include "Config.h"
 #include "Misc.h"
 
@@ -15,11 +15,11 @@
 
 struct ParseException: public std::exception {
 	enum ParseResult { OK = 0, Corrupt, WrongVersion, InvalidDimensions, InternalError, MissingElement };
-	std::string message;
+	ByteString message;
 	ParseResult result;
 public:
-	ParseException(ParseResult result, std::string message_): message(message_), result(result) {}
-	const char * what() const throw()
+	ParseException(ParseResult result, String message): message(message.ToUtf8()), result(result) {}
+	const char * what() const throw() override
 	{
 		return message.c_str();
 	}
@@ -27,10 +27,10 @@ public:
 };
 
 struct BuildException: public std::exception {
-	std::string message;
+	ByteString message;
 public:
-	BuildException(std::string message_): message(message_) {}
-	const char * what() const throw()
+	BuildException(String message): message(message.ToUtf8()) {}
+	const char * what() const throw() override
 	{
 		return message.c_str();
 	}
@@ -104,7 +104,7 @@ public:
 	StkmData stkm;
 
 	//Element palette
-	typedef std::pair<std::string, int> PaletteItem;
+	typedef std::pair<ByteString, int> PaletteItem;
 	std::vector<PaletteItem> palette;
 
 	// author information

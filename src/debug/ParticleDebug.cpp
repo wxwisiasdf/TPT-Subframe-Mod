@@ -1,4 +1,3 @@
-#include <sstream>
 #include "ParticleDebug.h"
 #include "gui/interface/Engine.h"
 #include "gui/game/GameView.h"
@@ -16,7 +15,7 @@ void ParticleDebug::Debug(int mode, int x, int y)
 {
 	int debug_currentParticle = sim->debug_currentParticle;
 	int i = 0;
-	std::stringstream logmessage;
+	String logmessage;
 
 	if (sim->debug_currentParticle == 0 && sim->debug_needReloadParticleOrder)
 	{
@@ -49,12 +48,12 @@ void ParticleDebug::Debug(int mode, int x, int y)
 
 		if (i == NPART)
 		{
-			logmessage << "End of particles reached, updated sim";
-			model->Log(logmessage.str(), false);
+			logmessage = "End of particles reached, updated sim";
+			model->Log(logmessage, false);
 		}
 
 		//else
-		//	logmessage << "Updated particles #" << debug_currentParticle << " through #" << i;
+		//	logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
 	}
 	else{
 		if (sim->debug_currentParticle == 0)
@@ -69,11 +68,11 @@ void ParticleDebug::Debug(int mode, int x, int y)
 			if (x < 0 || x >= XRES || y < 0 || y >= YRES || !sim->pmap[y][x] || (i = ID(sim->pmap[y][x])) < debug_currentParticle)
 			{
 				i = NPART;
-				logmessage << "Updated particles from #" << debug_currentParticle << " to end, updated sim";
+				logmessage = String::Build("Updated particles from #", debug_currentParticle, " to end, updated sim");
 			}
 			else
-				logmessage << "Updated particles #" << debug_currentParticle << " through #" << i;
-			model->Log(logmessage.str(), false);
+				logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
+			model->Log(logmessage, false);
 		}
 
 		sim->UpdateParticles(debug_currentParticle, i);
@@ -88,7 +87,7 @@ void ParticleDebug::Debug(int mode, int x, int y)
 	}
 }
 
-bool ParticleDebug::KeyPress(int key, Uint16 character, bool shift, bool ctrl, bool alt, ui::Point currentMouse)
+bool ParticleDebug::KeyPress(int key, int scan, bool shift, bool ctrl, bool alt, ui::Point currentMouse)
 {
 	if (key == 'f')
 	{
@@ -120,9 +119,8 @@ bool ParticleDebug::KeyPress(int key, Uint16 character, bool shift, bool ctrl, b
 			{
 				sim->CompleteDebugUpdateParticles();
 
-				std::stringstream logmessage;
-				logmessage << "Updated particles from #" << sim->debug_currentParticle << " to end, updated sim";
-				model->Log(logmessage.str(), false);
+				String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end, updated sim");
+				model->Log(logmessage, false);
 			}
 			else
 			{

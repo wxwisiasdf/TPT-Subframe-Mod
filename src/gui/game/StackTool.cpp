@@ -44,7 +44,7 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 				sim->photons[party + i][partx])
 			{
 				unstackLimit = i;
-				gameModel->Log(std::string("Warning: Not enough space to unstack fully."), false);
+				gameModel->Log("Warning: Not enough space to unstack fully.", false);
 				break;
 			}
 		}
@@ -65,7 +65,7 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 	{
 		if (parts.size() > 5)
 		{
-			gameModel->Log(std::string("Warning: More than 5 stacked particles."), false);
+			gameModel->Log("Warning: More than 5 stacked particles.", false);
 		}
 		Particle *partobjs = new Particle[parts.size()];
 		for (size_t i = 0; i < parts.size(); i++)
