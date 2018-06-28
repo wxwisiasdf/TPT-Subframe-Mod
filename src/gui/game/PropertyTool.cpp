@@ -190,24 +190,31 @@ void PropertyWindow::SetProperty()
 				}
 				case StructProperty::Float:
 				{
-					if(value.EndsWith("F"))
+					if(properties[property->GetOption().second].Name == "temp")
 					{
-						float v = value.SubstrFromEnd(1).ToNumber<float>();
-						tool->propValue.Float = (v-32.0f)*5/9+273.15f;
-					}
-					else if (value.EndsWith("K"))
-					{
-						tool->propValue.Float = value.SubstrFromEnd(1).ToNumber<float>();
-					}
-					else if (value.EndsWith("C"))
-					{
-						float v = value.SubstrFromEnd(1).ToNumber<float>();
-						tool->propValue.Float = v + 273.15;
+						if(value.EndsWith("F"))
+						{
+							float v = value.SubstrFromEnd(1).ToNumber<float>();
+							tool->propValue.Float = (v-32.0f)*5/9+273.15f;
+						}
+						else if (value.EndsWith("K"))
+						{
+							tool->propValue.Float = value.SubstrFromEnd(1).ToNumber<float>();
+						}
+						else if (value.EndsWith("C"))
+						{
+							float v = value.SubstrFromEnd(1).ToNumber<float>();
+							tool->propValue.Float = v + 273.15;
+						}
+						else
+						{
+							float v = value.ToNumber<float>();
+							tool->propValue.Float = v + 273.15;
+						}
 					}
 					else
 					{
-						float v = value.ToNumber<float>();
-						tool->propValue.Float = v + 273.15;
+						tool->propValue.Float = value.ToNumber<float>();
 					}
 #ifdef DEBUG
 					std::cout << "Got float value " << tool->propValue.Float << std::endl;
