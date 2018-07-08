@@ -7,6 +7,7 @@
 #include "common/String.h"
 #include "gui/interface/Point.h"
 #include "simulation/StructProperty.h"
+#include "simulation/Particle.h"
 
 class Simulation;
 class Brush;
@@ -91,12 +92,15 @@ public:
 	{
 	}
 	virtual ~StackTool() {}
-	virtual void ProcessParts(Simulation * sim, std::vector<int> &parts);
+	void ProcessParts(Simulation * sim, std::vector<int> &parts);
 	virtual void Click(Simulation * sim, Brush * brush, ui::Point position) { }
 	virtual void Draw(Simulation * sim, Brush * brush, ui::Point position);
 	virtual void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false);
 	virtual void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2);
 	virtual void DrawFill(Simulation * sim, Brush * brush, ui::Point position) { }
+private:
+	static bool comparePoints(ui::Point a, ui::Point b);
+	static bool compareParts(Particle a, Particle b);
 };
 
 class PropertyTool: public Tool

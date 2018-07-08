@@ -5,13 +5,13 @@
 #include "GameModel.h"
 #include "Tool.h"
 
-bool comparePoints(ui::Point a, ui::Point b)
+bool StackTool::comparePoints(ui::Point a, ui::Point b)
 {
 	if (a.Y == b.Y) return a.X < b.X;
 	else return a.Y < b.Y;
 }
 
-bool compareParts(Particle a, Particle b)
+bool StackTool::compareParts(Particle a, Particle b)
 {
 	if (a.y == b.y) return a.x < b.x;
 	else return a.y < b.y;
@@ -70,7 +70,7 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 		Particle *partobjs = new Particle[parts.size()];
 		for (size_t i = 0; i < parts.size(); i++)
 			partobjs[i] = sim->parts[parts[i]];
-		std::sort(partobjs, partobjs + parts.size(), compareParts);
+		std::sort(partobjs, partobjs + parts.size(), StackTool::compareParts);
 		for (size_t i = 0; i < parts.size(); i++)
 			sim->parts[parts[i]] = partobjs[i];
 		for (size_t i = 0; i < parts.size(); i++)
@@ -159,7 +159,7 @@ void StackTool::DrawLine(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 			e -= 1.0f;
 		}
 	}
-	std::sort(points.begin(), points.end(), comparePoints);
+	std::sort(points.begin(), points.end(), StackTool::comparePoints);
 	std::vector<int> parts;
 	for (int i=0; i<=sim->parts_lastActiveIndex; i++)
 	{
@@ -168,7 +168,7 @@ void StackTool::DrawLine(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 			int partx = (int)(sim->parts[i].x+0.5f);
 			int party = (int)(sim->parts[i].y+0.5f);
 			ui::Point partpos(partx, party);
-			std::vector<ui::Point>::iterator it = std::lower_bound(points.begin(), points.end(), partpos, comparePoints);
+			std::vector<ui::Point>::iterator it = std::lower_bound(points.begin(), points.end(), partpos, StackTool::comparePoints);
 			if (it != points.end() && *it == partpos)
 				parts.push_back(i);
 		}
