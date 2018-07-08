@@ -38,7 +38,7 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 	}
 	if (samePos)
 	{
-		int unstackLimit = parts.size();
+		unsigned int unstackLimit = parts.size();
 		for (size_t i = 1; i < parts.size(); i++){
 			if (party + i >= YRES || sim->pmap[party + i][partx] ||
 				sim->photons[party + i][partx])
