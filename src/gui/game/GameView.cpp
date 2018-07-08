@@ -1506,7 +1506,10 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		c->ChangeBrush();
 		break;
 	case 'p':
-		c->ActivatePropertyTool();
+		if (shift)
+			c->SetActiveTool(1, "DEFAULT_UI_PROPERTY");
+		else
+			c->SetActiveTool(0, "DEFAULT_UI_PROPERTY");
 		break;
 	case SDLK_F2:
 		if (ctrl)

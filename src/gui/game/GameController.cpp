@@ -786,7 +786,7 @@ bool GameController::KeyPress(int key, int scan, bool repeat, bool shift, bool c
 				break;
 			case 's':
 				if (shift)
-					SetActiveTool(0, gameModel->GetToolFromIdentifier("DEFAULT_UI_STACK"));
+					SetActiveTool(0, "DEFAULT_UI_STACK");
 				else
 					gameView->BeginStampSelection();
 				break;
@@ -1253,11 +1253,6 @@ void GameController::SetActiveTool(int toolSelection, ByteString identifier)
 void GameController::SetLastTool(Tool * tool)
 {
 	gameModel->SetLastTool(tool);
-}
-
-void GameController::ActivatePropertyTool()
-{
-	SetActiveTool(0, gameModel->GetToolFromIdentifier("DEFAULT_UI_PROPERTY"));
 }
 
 int GameController::GetReplaceModeFlags()
