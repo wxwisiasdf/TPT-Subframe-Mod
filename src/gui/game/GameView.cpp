@@ -2187,6 +2187,8 @@ void GameView::writeWavelength(StringBuilder *str, int wavelengthGfx)
 void GameView::OnDraw()
 {
 	ConfigTool * configTool = c->GetActiveConfigTool();
+	if(configTool)
+		configTool->CalculatePreview(sample.PositionX, sample.PositionY, c->GetSimulation());
 	Graphics * g = GetGraphics();
 	if (ren)
 	{
@@ -2248,9 +2250,9 @@ void GameView::OnDraw()
 					ren->xor_line(finalCurrentMouse.X-finalBrushRadius.X, finalCurrentMouse.Y-finalBrushRadius.Y+1, finalCurrentMouse.X-finalBrushRadius.X, finalCurrentMouse.Y+finalBrushRadius.Y+CELL-2);
 					ren->xor_line(finalCurrentMouse.X+finalBrushRadius.X+CELL-1, finalCurrentMouse.Y-finalBrushRadius.Y+1, finalCurrentMouse.X+finalBrushRadius.X+CELL-1, finalCurrentMouse.Y+finalBrushRadius.Y+CELL-2);
 				}
-				else if(configTool)
+				else if(configTool && configTool->IsConfiguring())
 				{
-					configTool->DrawHUD(ren, sample);
+					configTool->DrawHUD(ren);
 				}
 				else
 				{
@@ -2368,6 +2370,12 @@ void GameView::OnDraw()
 			alpha = 50;
 		int yoffset = 0;
 
+		if(configTool && configTool->IsConfiguring())
+		{
+			sample.sparticle_count = 1;
+			sample.sparticles[0] = configTool->GetPart();
+		}
+
 		if (sample.sparticle_count)
 		{
 			for (int i = 0; i < sample.sparticle_count; i++)
@@ -2390,49 +2398,89 @@ void GameView::OnDraw()
 
 					if (showDebug)
 					{
+						String lbrace = String::Build("["),
+							rbrace = String::Build("]"),
+							noneString = String::Build("");
 						if (type == PT_LAVA && c->IsValidElement(ctype))
 							sampleInfo << "Molten " << c->ElementResolve(ctype, -1).FromAscii();
 						else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
 							sampleInfo << c->ElementResolve(type, -1).FromAscii() << " with " << c->ElementResolve(ctype, (int)sparticle.pavg[1]).FromAscii();
 						else if (type == PT_LIFE)
 							sampleInfo << c->ElementResolve(type, ctype).FromAscii();
-						else if (type == PT_FILT)
-						{
-							sampleInfo << c->ElementResolve(type, ctype).FromAscii();
-							if (sparticle.tmp>=0 && sparticle.tmp<Element_FILT::NUM_MODES)
-								sampleInfo << " (" << Element_FILT::MODES[sparticle.tmp];
-							else
-								sampleInfo << " (unknown mode";
-
-							sampleInfo << ", ";
-							writeWavelength(&sampleInfo, wavelengthGfx);
-							sampleInfo << ")";
-						}
 						else
 						{
+							bool isConfigurable = configTool &&
+								(configTool->IsConfiguring() ||
+								ConfigTool::IsConfigurableType(type));
+							if(isConfigurable)
+								sampleInfo << lbrace;
 							sampleInfo << c->ElementResolve(type, ctype).FromAscii();
-							if (wavelengthGfx)
+							if (type == PT_FILT)
 							{
-								sampleInfo << " (";
+								if (sparticle.tmp>=0 && sparticle.tmp<Element_FILT::NUM_MODES)
+									sampleInfo << " (" << Element_FILT::MODES[sparticle.tmp];
+								else
+									sampleInfo << " (unknown mode";
+
+								sampleInfo << ", ";
 								writeWavelength(&sampleInfo, wavelengthGfx);
 								sampleInfo << ")";
 							}
-							// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
-							else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
-								sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)).FromAscii() << ")";
-							else if (c->IsValidElement(ctype))
-								sampleInfo << " (" << c->ElementResolve(ctype, -1).FromAscii() << ")";
 							else
-								sampleInfo << " ()";
+							{
+								if (wavelengthGfx)
+								{
+									sampleInfo << " (";
+									writeWavelength(&sampleInfo, wavelengthGfx);
+									sampleInfo << ")";
+								}
+								// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
+								else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
+									sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)).FromAscii() << ")";
+								else if (c->IsValidElement(ctype))
+									sampleInfo << " (" << c->ElementResolve(ctype, -1).FromAscii() << ")";
+								else
+									sampleInfo << " ()";
+							}
+							if(isConfigurable)
+								sampleInfo << rbrace;
 						}
-						sampleInfo << ", Temp: " << (sparticle.temp - 273.15f) << " C";
-						sampleInfo << ", Life: " << sparticle.life;
+						bool isConfiguringTemp = configTool &&
+							configTool->IsConfiguringTemp();
+						bool isConfiguringLife = configTool &&
+							configTool->IsConfiguringLife();
+						bool isConfiguringTmp = configTool &&
+							configTool->IsConfiguringTmp();
+						bool isConfiguringTmp2 = configTool &&
+							configTool->IsConfiguringTmp2();
+						sampleInfo << ", " <<
+							(isConfiguringTemp ? lbrace : noneString) <<
+							"Temp" <<
+							(isConfiguringTemp ? rbrace : noneString) <<
+							": " << (sparticle.temp - 273.15f) << " C";
+						sampleInfo << ", " <<
+							(isConfiguringLife ? lbrace : noneString) <<
+							"Life" <<
+							(isConfiguringLife ? rbrace : noneString) <<
+							": " << sparticle.life;
 						if (sparticle.type != PT_RFRG && sparticle.type != PT_RFGL)
-							sampleInfo << ", Tmp: " << sparticle.tmp;
+						{
+							sampleInfo << ", " <<
+							(isConfiguringTmp ? lbrace : noneString) <<
+							"Tmp" <<
+							(isConfiguringTmp ? rbrace : noneString) <<
+							": " << sparticle.tmp;
+						}
 
 						// only elements that use .tmp2 show it in the debug HUD
 						if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC)
-							sampleInfo << ", Tmp2: " << sparticle.tmp2;
+						{
+							sampleInfo << ", " <<
+							(isConfiguringTmp2 ? lbrace : noneString) <<
+							"Tmp2" <<
+							(isConfiguringTmp2 ? rbrace : noneString) <<
+							": " << sparticle.tmp2;
+						}
 
 						sampleInfo << ", Pressure: " << sample.AirPressure;
 					}
@@ -2446,7 +2494,7 @@ void GameView::OnDraw()
 							sampleInfo << c->ElementResolve(type, ctype).FromAscii();
 						else
 							sampleInfo << c->ElementResolve(type, ctype).FromAscii();
-						sampleInfo << ", Temp: " << sparticle.temp - 273.15f << " C";
+						sampleInfo << ", Temp: " << (sparticle.temp - 273.15f) << " C";
 						sampleInfo << ", Pressure: " << sample.AirPressure;
 					}
 				}
@@ -2585,14 +2633,6 @@ void GameView::OnDraw()
 		int alpha = 255-introText*5;
 		g->fillrect(12, 12, textWidth+8, 15, 0, 0, 0, alpha*0.5);
 		g->drawtext(16, 16, fpsInfo.Build(), 32, 216, 255, alpha*0.75);
-
-		if(configTool) {
-			String configToolInfo = configTool->GetInfo(c, sample);
-			textWidth = Graphics::textwidth(configToolInfo);
-			alpha = 255-introText*5;
-			g->fillrect(12, 12+15, textWidth+8, 14, 0, 0, 0, alpha*0.5);
-			g->drawtext(16, 16+14, configToolInfo, 255, 255, 255, alpha*0.75);
-		}
 	}
 
 	//Tooltips
