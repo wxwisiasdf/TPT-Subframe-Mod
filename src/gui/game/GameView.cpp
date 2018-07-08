@@ -2399,9 +2399,8 @@ void GameView::OnDraw()
 						else if (type == PT_FILT)
 						{
 							sampleInfo << c->ElementResolve(type, ctype).FromAscii();
-							String filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering", "variable red shift", "variable blue shift"};
-							if (sparticle.tmp>=0 && sparticle.tmp<=11)
-								sampleInfo << " (" << filtModes[sparticle.tmp];
+							if (sparticle.tmp>=0 && sparticle.tmp<Element_FILT::NUM_MODES)
+								sampleInfo << " (" << Element_FILT::MODES[sparticle.tmp];
 							else
 								sampleInfo << " (unknown mode";
 
