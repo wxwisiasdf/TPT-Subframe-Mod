@@ -2370,15 +2370,12 @@ void GameView::OnDraw()
 			alpha = 50;
 		int yoffset = 0;
 
-		if (configTool && configTool->IsConfiguring())
-		{
-			sample.sparticle_count = 1;
-			sample.sparticles[0] = configTool->GetPart();
-		}
+		bool isConfiguring = configTool && configTool->IsConfiguring();
+		int sparticleCount = isConfiguring ? 1 : sample.sparticle_count;
 
-		if (sample.sparticle_count)
+		if (sparticleCount)
 		{
-			for (int i = 0; i < sample.sparticle_count; i++)
+			for (int i = 0; i < sparticleCount; i++)
 			{
 				if (i >= 5) break;
 
@@ -2386,7 +2383,8 @@ void GameView::OnDraw()
 				StringBuilder sampleInfo;
 				sampleInfo << Format::Precision(2);
 
-				Particle sparticle = sample.sparticles[i];
+				Particle sparticle = isConfiguring ?
+					configTool->GetPart() : sample.sparticles[i];
 
 				int type = sparticle.type;
 				if (type)
@@ -2410,7 +2408,7 @@ void GameView::OnDraw()
 						else
 						{
 							bool isConfigurable = configTool &&
-								i == sample.sparticle_count - 1 &&
+								i == sparticleCount - 1 &&
 								(configTool->IsConfiguring() ||
 								ConfigTool::IsConfigurableType(type));
 							if (isConfigurable)
@@ -2544,10 +2542,10 @@ void GameView::OnDraw()
 				yoffset += 16;
 			}
 
-			if (sample.sparticle_count > 5)
+			if (sparticleCount > 5)
 			{
 				StringBuilder infoStr;
-				int excessParts = sample.sparticle_count - 5;
+				int excessParts = sparticleCount - 5;
 				infoStr << "... " << excessParts << " particle";
 				if (excessParts != 1)
 					infoStr << "s";
