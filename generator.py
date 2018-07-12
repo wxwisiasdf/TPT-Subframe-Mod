@@ -20,6 +20,8 @@ def generateElements(elementFiles, outputCpp, outputH):
 	directives = []
 
 	for elementFile in elementFiles:
+		if not elementFile.endswith(".cpp"):
+			continue
 		try:
 			f = open(elementFile, "r")
 		except:
