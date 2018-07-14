@@ -133,7 +133,7 @@ void PropertyWindow::SetProperty()
 					{
 						//filt:5
 						v = value.Substr(5).ToNumber<unsigned int>();
-						v = (v << 8) + PT_FILT;
+						v = PMAP(v, PT_FILT);
 					}
 					else
 					{
