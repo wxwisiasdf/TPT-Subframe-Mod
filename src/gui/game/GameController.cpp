@@ -1277,6 +1277,14 @@ void GameController::SetLastTool(Tool * tool)
 	gameModel->SetLastTool(tool);
 }
 
+void GameController::ToggleConfigTool()
+{
+	if (GetActiveConfigTool())
+		gameModel->ResetToolset();
+	else
+		SetActiveTool(0, "DEFAULT_UI_CONFIG");
+}
+
 int GameController::GetReplaceModeFlags()
 {
 	return gameModel->GetSimulation()->replaceModeFlags;
