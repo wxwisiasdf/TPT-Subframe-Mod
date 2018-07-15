@@ -73,3 +73,9 @@ v1.6:
 - Allow property tool to set temperature in kelvin.
 - Make property tool 30th-bit handling opt-in.
 - Allow spectral data to be displayed in hex and unmodified decimal.
+
+v1.7:
+- Add Lua function to reload particle order.
+- Fix bug with floats being treated as temp in the prop tool.
+- Fix "filt:" prop tool shortcut.
+- Add a config tool.
