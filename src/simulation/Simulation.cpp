@@ -965,9 +965,9 @@ void Simulation::ApplyDecoration(int x, int y, int colR_, int colG_, int colB_, 
 	int rp;
 	float tr, tg, tb, ta, colR = colR_, colG = colG_, colB = colB_, colA = colA_;
 	float strength = 0.01f;
-	rp = pmap[y][x];
+	rp = photons[y][x];
 	if (!rp)
-		rp = photons[y][x];
+		rp = pmap[y][x];
 	if (!rp)
 		return;
 
