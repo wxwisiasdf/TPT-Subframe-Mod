@@ -13,6 +13,10 @@ public:
 	Particle sparticles[5];
 	int ParticleID;
 	int sparticleIds[5];
+
+	// Config Tool Info
+	bool adjacentSparkable[3][3];
+
 	int PositionX, PositionY;
 	float AirPressure;
 	float AirTemperature;

@@ -209,6 +209,7 @@ void ConfigTool::ProcessSample(SimulationSample sample)
 			break;
 		}
 	}
+	lastSample = sample;
 }
 
 void ConfigTool::Click(Simulation *sim, Brush *brush, ui::Point position)
@@ -378,6 +379,33 @@ void ConfigTool::DrawHUD(Renderer *ren)
 		{
 		case PT_DTEC:
 			drawDtecBox(ren);
+			break;
+		case PT_DRAY:
+		case PT_CRAY:
+		case PT_LDTC:
+			for (diry = -1; diry <= 1; diry++)
+			{
+				for (dirx = -1; dirx <= 1; dirx++)
+				{
+					if (!(dirx || diry))
+						continue;
+					bool hasSpark = lastSample.adjacentSparkable[-diry+1][-dirx+1];
+					if (!hasSpark)
+						continue;
+					switch (configPart.type)
+					{
+					case PT_DRAY:
+						drawTripleLine(ren, configPart.tmp, configPart.tmp2);
+						break;
+					case PT_CRAY:
+						drawTripleLine(ren, configPart.tmp2, configPart.tmp, true, false);
+						break;
+					case PT_LDTC:
+						drawTripleLine(ren, configPart.life, configPart.tmp, true, false);
+						break;
+					}
+				}
+			}
 			break;
 		}
 		break;

@@ -140,6 +140,7 @@ class ConfigTool: public Tool
 	GameModel * gameModel;
 	int currId;
 	Particle configPart;
+	SimulationSample lastSample;
 	int dirx, diry;
 	ui::Point cursorPos;
 	ConfigState configState;

@@ -710,6 +710,20 @@ SimulationSample Simulation::GetSample(int x, int y)
 			sample.GravityVelocityX = gravx[(y/CELL)*(XRES/CELL)+(x/CELL)];
 			sample.GravityVelocityY = gravy[(y/CELL)*(XRES/CELL)+(x/CELL)];
 		}
+
+		for (int i = -1; i <= 1; i++)
+		{
+			for (int j = -1; j <= 1; j++)
+			{
+				int nx = x + j, ny = y + i;
+				int type = PT_NONE;
+				if (nx >= 0 && ny >= 0 && nx < XRES && ny < YRES)
+					type = TYP(pmap[ny][nx]);
+				sample.adjacentSparkable[i+1][j+1] =
+					type == PT_SPRK || type == PT_INST ||
+					(elements[type].Properties&PROP_CONDUCTS);
+			}
+		}
 	}
 	else
 		sample.isMouseInSim = false;
