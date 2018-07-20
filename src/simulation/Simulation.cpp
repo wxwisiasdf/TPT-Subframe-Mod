@@ -676,7 +676,10 @@ SimulationSample Simulation::GetSample(int x, int y)
 				if (partx == x && party == y)
 				{
 					if (sample.sparticle_count < 5)
+					{
 						sample.sparticles[sample.sparticle_count] = parts[i];
+						sample.sparticleIds[sample.sparticle_count] = i;
+					}
 					sample.sparticle_count++;
 				}
 			}

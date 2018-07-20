@@ -160,7 +160,10 @@ void ConfigTool::CalculatePreview(int x, int y, Simulation *sim)
 	switch (configState)
 	{
 	case ConfigState::ready:
-		configPart = getPartAt(sim, cursorPos);
+		currId = getIdAt(sim, cursorPos);
+		if (currId == -1)
+			break;
+		configPart = sim->parts[currId];
 		break;
 	case ConfigState::drayTmp:
 		configPart.tmp = getDist(proj);
@@ -191,6 +194,23 @@ void ConfigTool::CalculatePreview(int x, int y, Simulation *sim)
 	}
 }
 
+void ConfigTool::ProcessSample(SimulationSample sample)
+{
+	if (configState != ConfigState::ready)
+		return;
+
+	for (int i = sample.sparticle_count - 1; i >= 0; i--)
+	{
+		int type = sample.sparticles[i].type;
+		if (IsConfigurableType(type) && type != PT_CONV)
+		{
+			configPart = sample.sparticles[i];
+			currId = sample.sparticleIds[i];
+			break;
+		}
+	}
+}
+
 void ConfigTool::Click(Simulation *sim, Brush *brush, ui::Point position)
 {
 	if (configState != ConfigState::ready &&
@@ -198,14 +218,13 @@ void ConfigTool::Click(Simulation *sim, Brush *brush, ui::Point position)
 	{
 		Reset();
 	}
-	CalculatePreview(position.X, position.Y, sim);
+	Particle oldPart = sim->parts[currId];
+	int oldX = int(oldPart.x + 0.5f), oldY = int(oldPart.y + 0.5f);
+	if (!oldPart.type || oldX != position.X || oldY != position.Y)
+		CalculatePreview(position.X, position.Y, sim);
 	switch (configState)
 	{
 	case ConfigState::ready:
-		currId = getIdAt(sim, position);
-		if (currId == -1)
-			break;
-		configPart = sim->parts[currId];
 		switch (configPart.type)
 		{
 		case PT_DRAY:
@@ -275,6 +294,11 @@ void ConfigTool::Reset()
 Particle ConfigTool::GetPart()
 {
 	return configPart;
+}
+
+int ConfigTool::GetId()
+{
+	return currId;
 }
 
 bool ConfigTool::IsConfigurableType(int type)
@@ -348,6 +372,8 @@ void ConfigTool::DrawHUD(Renderer *ren)
 	{
 	case ConfigState::ready:
 		ren->xor_line(cursorPos.X, cursorPos.Y, cursorPos.X, cursorPos.Y);
+		if (currId == -1)
+			break;
 		switch (configPart.type)
 		{
 		case PT_DTEC:

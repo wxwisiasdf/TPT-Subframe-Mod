@@ -156,6 +156,7 @@ public:
 	virtual ~ConfigTool() {}
 	void Reset();
 	Particle GetPart();
+	int GetId();
 	static bool IsConfigurableType(int type);
 	bool IsConfiguring();
 	bool IsConfiguringTemp();
@@ -163,6 +164,7 @@ public:
 	bool IsConfiguringTmp();
 	bool IsConfiguringTmp2();
 	void CalculatePreview(int x, int y, Simulation *sim);
+	void ProcessSample(SimulationSample sample);
 	void DrawHUD(Renderer *ren);
 	void OnSelectFiltTmp(Simulation *sim, int tmp);
 	virtual void Click(Simulation * sim, Brush * brush, ui::Point position);

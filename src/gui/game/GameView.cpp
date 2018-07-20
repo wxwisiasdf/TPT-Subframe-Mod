@@ -2197,7 +2197,10 @@ void GameView::OnDraw()
 {
 	ConfigTool * configTool = c->GetActiveConfigTool();
 	if(configTool)
+	{
 		configTool->CalculatePreview(sample.PositionX, sample.PositionY, c->GetSimulation());
+		configTool->ProcessSample(sample);
+	}
 	Graphics * g = GetGraphics();
 	if (ren)
 	{
@@ -2416,10 +2419,12 @@ void GameView::OnDraw()
 							sampleInfo << c->ElementResolve(type, ctype).FromAscii();
 						else
 						{
-							bool isConfigurable = configTool &&
-								i == sparticleCount - 1 &&
-								(configTool->IsConfiguring() ||
-								ConfigTool::IsConfigurableType(type));
+							bool isConfigurable =
+								(configTool &&
+								configTool->GetId() ==
+									sample.sparticleIds[i] &&
+								ConfigTool::IsConfigurableType(type)) ||
+								isConfiguring;
 							if (isConfigurable)
 								sampleInfo << lbrace;
 							sampleInfo << c->ElementResolve(type, ctype).FromAscii();

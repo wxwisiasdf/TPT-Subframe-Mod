@@ -12,6 +12,7 @@ public:
 	int sparticle_count;
 	Particle sparticles[5];
 	int ParticleID;
+	int sparticleIds[5];
 	int PositionX, PositionY;
 	float AirPressure;
 	float AirTemperature;
