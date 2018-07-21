@@ -168,7 +168,7 @@ public:
 	bool IsConfiguringLife();
 	bool IsConfiguringTmp();
 	bool IsConfiguringTmp2();
-	void CalculatePreview(int x, int y, Simulation *sim);
+	void CalculatePreview(int x, int y, Particle samplePart, int sampleId);
 	void ProcessSample(SimulationSample sample);
 	void DrawHUD(Renderer *ren);
 	void OnSelectFiltTmp(Simulation *sim, int tmp);
