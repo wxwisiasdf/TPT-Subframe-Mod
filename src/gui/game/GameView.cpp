@@ -2479,10 +2479,10 @@ void GameView::OnDraw()
 						if (sparticle.type != PT_RFRG && sparticle.type != PT_RFGL)
 						{
 							sampleInfo << ", " <<
-							(isConfiguringTmp ? lbrace : noneString) <<
-							"Tmp" <<
-							(isConfiguringTmp ? rbrace : noneString) <<
-							": ";
+								(isConfiguringTmp ? lbrace : noneString) <<
+								"Tmp" <<
+								(isConfiguringTmp ? rbrace : noneString) <<
+								": ";
 							if (sparticle.type == PT_CONV)
 							{
 								String elemName = c->ElementResolve(
@@ -2501,10 +2501,10 @@ void GameView::OnDraw()
 						if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC)
 						{
 							sampleInfo << ", " <<
-							(isConfiguringTmp2 ? lbrace : noneString) <<
-							"Tmp2" <<
-							(isConfiguringTmp2 ? rbrace : noneString) <<
-							": " << sparticle.tmp2;
+								(isConfiguringTmp2 ? lbrace : noneString) <<
+								"Tmp2" <<
+								(isConfiguringTmp2 ? rbrace : noneString) <<
+								": " << sparticle.tmp2;
 						}
 
 						sampleInfo << ", Pressure: " << sample.AirPressure;
