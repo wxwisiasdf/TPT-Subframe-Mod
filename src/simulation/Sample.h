@@ -8,6 +8,9 @@
 class SimulationSample
 {
 public:
+	static const int SPRK_FLAG = 0x1;
+	static const int FILT_FLAG = 0x2;
+
 	Particle particle;
 	int sparticle_count;
 	Particle sparticles[5];
@@ -15,7 +18,7 @@ public:
 	int sparticleIds[5];
 
 	// Config Tool Info
-	bool adjacentSparkable[3][3];
+	int adjacentPartsInfo[3][3];
 
 	int PositionX, PositionY;
 	float AirPressure;

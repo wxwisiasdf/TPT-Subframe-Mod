@@ -388,8 +388,14 @@ void ConfigTool::DrawHUD(Renderer *ren)
 				{
 					if (!(dirx || diry))
 						continue;
-					bool hasSpark = lastSample.adjacentSparkable[-diry+1][-dirx+1];
-					if (!hasSpark)
+					bool hasConductor =
+						(lastSample.adjacentPartsInfo[-diry+1][-dirx+1] &
+						SimulationSample::SPRK_FLAG) != 0;
+					bool hasFilt =
+						(lastSample.adjacentPartsInfo[-diry+1][-dirx+1] &
+						SimulationSample::FILT_FLAG) != 0;
+					if (!hasConductor &&
+						!(configPart.type == PT_LDTC && hasFilt))
 						continue;
 					switch (configPart.type)
 					{

@@ -715,13 +715,17 @@ SimulationSample Simulation::GetSample(int x, int y)
 		{
 			for (int j = -1; j <= 1; j++)
 			{
+				int partInfo = 0;
 				int nx = x + j, ny = y + i;
 				int type = PT_NONE;
 				if (nx >= 0 && ny >= 0 && nx < XRES && ny < YRES)
 					type = TYP(pmap[ny][nx]);
-				sample.adjacentSparkable[i+1][j+1] =
-					type == PT_SPRK || type == PT_INST ||
-					(elements[type].Properties&PROP_CONDUCTS);
+				bool conducts = elements[type].Properties&PROP_CONDUCTS;
+				if (type == PT_SPRK || type == PT_INST || conducts)
+					partInfo |= SimulationSample::SPRK_FLAG;
+				if (type == PT_FILT)
+					partInfo |= SimulationSample::FILT_FLAG;
+				sample.adjacentPartsInfo[i+1][j+1] = partInfo;
 			}
 		}
 	}
