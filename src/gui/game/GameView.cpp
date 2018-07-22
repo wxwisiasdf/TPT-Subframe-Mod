@@ -2482,7 +2482,19 @@ void GameView::OnDraw()
 							(isConfiguringTmp ? lbrace : noneString) <<
 							"Tmp" <<
 							(isConfiguringTmp ? rbrace : noneString) <<
-							": " << sparticle.tmp;
+							": ";
+							if (sparticle.type == PT_CONV)
+							{
+								String elemName = c->ElementResolve(
+									TYP(sparticle.tmp),
+									ID(sparticle.tmp)).FromAscii();
+								if (elemName == "")
+									sampleInfo << sparticle.tmp;
+								else
+									sampleInfo << elemName;
+							}
+							else
+								sampleInfo << sparticle.tmp;
 						}
 
 						// only elements that use .tmp2 show it in the debug HUD
