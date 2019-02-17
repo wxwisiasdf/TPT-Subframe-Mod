@@ -280,7 +280,9 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	{
 		for(int saveBlockY = 0; saveBlockY < save->blockHeight; saveBlockY++)
 		{
-			if(InBounds((saveBlockX + blockX) * CELL, (saveBlockY + blockY) * CELL) && save->blockMap[saveBlockY][saveBlockX])
+			if (!InBounds((saveBlockX + blockX) * CELL, (saveBlockY + blockY) * CELL))
+				continue;
+			if(save->blockMap[saveBlockY][saveBlockX])
 			{
 				bmap[saveBlockY+blockY][saveBlockX+blockX] = save->blockMap[saveBlockY][saveBlockX];
 				fvx[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelX[saveBlockY][saveBlockX];
