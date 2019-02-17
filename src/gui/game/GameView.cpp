@@ -1482,7 +1482,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		enableShiftBehaviour();
 		break;
 	case ' ': //Space
-		if (shift && c->GetSubframeEnabled())
+		if (shift)
 		{
 			c->SetSubframeMode();
 		}
@@ -1532,7 +1532,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		SetDebugHUD(!GetDebugHUD());
 		break;
 	case SDLK_F5:
-		if (shift && c->GetSubframeEnabled())
+		if (shift)
 			c->ReloadParticleOrder();
 		else
 			c->ReloadSim();
@@ -1549,7 +1549,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 	case 'r':
 		if (ctrl)
 			c->ReloadSim();
-		else if (shift && c->GetSubframeEnabled())
+		else if (shift)
 		{
 			Record(!recording, true);
 		}

@@ -45,6 +45,7 @@ private:
 	CommandInterface * commandInterface;
 	vector<DebugInfo*> debugInfo;
 	unsigned int debugFlags;
+	bool autoreloadEnabled;
 public:
 	bool HasDone;
 	class SearchCallback;
@@ -106,7 +107,8 @@ public:
 	void SetDebugHUD(bool hudState);
 	bool GetDebugHUD();
     unsigned int GetDebugFlags() { return debugFlags; }
-	bool GetSubframeEnabled() { return debugFlags & 0x8; }
+	bool GetAutoreloadEnabled() { return autoreloadEnabled; }
+	void SetAutoreloadEnabled(bool e) { autoreloadEnabled = e; }
 	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
 	void SetActiveMenu(int menuID);
 	std::vector<Menu*> GetMenuList();

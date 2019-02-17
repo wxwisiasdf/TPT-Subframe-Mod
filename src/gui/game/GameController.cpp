@@ -140,6 +140,7 @@ GameController::GameController():
 	localBrowser(NULL),
 	options(NULL),
 	debugFlags(0),
+	autoreloadEnabled(false),
 	HasDone(false)
 {
 	gameView = new GameView();
@@ -999,7 +1000,7 @@ void GameController::Update()
 
 	if(!sim->sys_pause || sim->framerender || sim->subframe_mode)
 	{
-		if(GetSubframeEnabled() && sim->debug_needReloadParticleOrder)
+		if(GetAutoreloadEnabled() && sim->debug_needReloadParticleOrder)
 		{
 			gameModel->ReloadParticleOrder();
 			sim->debug_needReloadParticleOrder = false;
@@ -1343,7 +1344,7 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 		else if (gameModel->GetSaveFile())
 		{
 			std::string filename = gameModel->GetSaveFile()->GetName();
-			if (GetSubframeEnabled() && Client::Ref().FileExists(filename))
+			if (GetAutoreloadEnabled() && Client::Ref().FileExists(filename))
 			{
 				try
 				{
