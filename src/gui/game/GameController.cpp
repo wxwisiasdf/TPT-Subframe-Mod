@@ -37,6 +37,7 @@
 #else
 #include "lua/TPTScriptInterface.h"
 #endif
+#include "lua/LuaEvents.h"
 
 using namespace std;
 
@@ -156,11 +157,6 @@ GameController::GameController():
 #else
 	commandInterface = new TPTScriptInterface(this, gameModel);
 #endif
-
-	ActiveToolChanged(0, gameModel->GetActiveTool(0));
-	ActiveToolChanged(1, gameModel->GetActiveTool(1));
-	ActiveToolChanged(2, gameModel->GetActiveTool(2));
-	ActiveToolChanged(3, gameModel->GetActiveTool(3));
 
 	Client::Ref().AddListener(this);
 
@@ -633,12 +629,14 @@ void GameController::CutRegion(ui::Point point1, ui::Point point2, bool includeP
 
 bool GameController::MouseMove(int x, int y, int dx, int dy)
 {
-	return commandInterface->OnMouseMove(x, y, dx, dy);
+	MouseMoveEvent ev(x, y, dx, dy);
+	return commandInterface->HandleEvent(LuaEvents::mousemove, &ev);
 }
 
 bool GameController::MouseDown(int x, int y, unsigned button)
 {
-	bool ret = commandInterface->OnMouseDown(x, y, button);
+	MouseDownEvent ev(x, y, button);
+	bool ret = commandInterface->HandleEvent(LuaEvents::mousedown, &ev);
 	if (ret && y<YRES && x<XRES && !gameView->GetPlacingSave() && !gameView->GetPlacingZoom())
 	{
 		ui::Point point = gameModel->AdjustZoomCoords(ui::Point(x, y));
@@ -660,7 +658,8 @@ bool GameController::MouseDown(int x, int y, unsigned button)
 
 bool GameController::MouseUp(int x, int y, unsigned button, char type)
 {
-	bool ret = commandInterface->OnMouseUp(x, y, button, type);
+	MouseUpEvent ev(x, y, button, type);
+	bool ret = commandInterface->HandleEvent(LuaEvents::mouseup, &ev);
 	if (type)
 		return ret;
 	if (ret && foundSignID != -1 && y<YRES && x<XRES && !gameView->GetPlacingSave())
@@ -718,12 +717,20 @@ bool GameController::MouseUp(int x, int y, unsigned button, char type)
 
 bool GameController::MouseWheel(int x, int y, int d)
 {
-	return commandInterface->OnMouseWheel(x, y, d);
+	MouseWheelEvent ev(x, y, d);
+	return commandInterface->HandleEvent(LuaEvents::mousewheel, &ev);
+}
+
+bool GameController::TextInput(String text)
+{
+	TextInputEvent ev(text);
+	return commandInterface->HandleEvent(LuaEvents::textinput, &ev);
 }
 
 bool GameController::KeyPress(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt)
 {
-	bool ret = commandInterface->OnKeyPress(key, scan, repeat, shift, ctrl, alt);
+	KeyEvent ev(key, scan, repeat, shift, ctrl, alt);
+	bool ret = commandInterface->HandleEvent(LuaEvents::keypress, &ev);
 	if (repeat)
 		return ret;
 	if (ret)
@@ -805,7 +812,8 @@ bool GameController::KeyPress(int key, int scan, bool repeat, bool shift, bool c
 
 bool GameController::KeyRelease(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt)
 {
-	bool ret = commandInterface->OnKeyRelease(key, scan, repeat, shift, ctrl, alt);
+	KeyEvent ev(key, scan, repeat, shift, ctrl, alt);
+	bool ret = commandInterface->HandleEvent(LuaEvents::keyrelease, &ev);
 	if (repeat)
 		return ret;
 	if (ret)
@@ -842,11 +850,6 @@ bool GameController::KeyRelease(int key, int scan, bool repeat, bool shift, bool
 	return ret;
 }
 
-bool GameController::MouseTick()
-{
-	return commandInterface->OnMouseTick();
-}
-
 void GameController::Tick()
 {
 	if(firstTick)
@@ -870,8 +873,18 @@ void GameController::Tick()
 	commandInterface->OnTick();
 }
 
+void GameController::Blur()
+{
+	// Tell lua that mouse is up (even if it really isn't)
+	MouseUp(0, 0, 0, 1);
+	BlurEvent ev;
+	commandInterface->HandleEvent(LuaEvents::blur, &ev);
+}
+
 void GameController::Exit()
 {
+	CloseEvent ev;
+	commandInterface->HandleEvent(LuaEvents::close, &ev);
 	gameView->CloseActiveWindow();
 	HasDone = true;
 }
@@ -1212,11 +1225,6 @@ int GameController::GetNumMenus(bool onlyEnabled)
 void GameController::RebuildFavoritesMenu()
 {
 	gameModel->BuildFavoritesMenu();
-}
-
-void GameController::ActiveToolChanged(int toolSelection, Tool *tool)
-{
-	commandInterface->OnActiveToolChanged(toolSelection, tool);
 }
 
 ConfigTool * GameController::GetActiveConfigTool()
@@ -1747,7 +1755,11 @@ void GameController::NotifyUpdateAvailable(Client * sender)
 		{
 			UpdateInfo info = Client::Ref().GetUpdateInfo();
 			StringBuilder updateMessage;
+#ifndef MACOSX
 			updateMessage << "Are you sure you want to run the updater? Please save any changes before updating.\n\nCurrent version:\n ";
+#else
+			updateMessage << "Click \"Continue\" to download the latest version from our website.\n\nCurrent version:\n ";
+#endif
 
 #ifdef SNAPSHOT
 			updateMessage << "Snapshot " << SNAPSHOT_ID;
@@ -1803,6 +1815,17 @@ void GameController::RemoveNotification(Notification * notification)
 
 void GameController::RunUpdater()
 {
+#ifndef MACOSX
 	Exit();
 	new UpdateActivity();
+#else
+
+#ifdef UPDATESERVER
+	ByteString file = ByteString::Build("https://", UPDATESERVER, Client::Ref().GetUpdateInfo().File);
+#else
+	ByteString file = ByteString::Build("https://", SERVER, Client::Ref().GetUpdateInfo().File);
+#endif
+
+	Platform::OpenURI(file);
+#endif // MACOSX
 }

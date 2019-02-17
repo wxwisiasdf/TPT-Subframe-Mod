@@ -1422,7 +1422,8 @@ void Renderer::render_parts()
 
 				if (findingElement)
 				{
-					if (findingElement == parts[i].type)
+					if (TYP(findingElement) == parts[i].type &&
+							(parts[i].type != PT_LIFE || (ID(findingElement) == parts[i].ctype)))
 					{
 						colr = firer = 255;
 						colg = fireg = colb = fireb = 0;
@@ -2648,8 +2649,8 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 	renderModePresets[10].ColourMode = COLOUR_LIFE;
 
 	//Prepare the graphics cache
-	graphicscache = (gcache_item *)malloc(sizeof(gcache_item)*PT_NUM);
-	memset(graphicscache, 0, sizeof(gcache_item)*PT_NUM);
+	graphicscache = new gcache_item[PT_NUM];
+	std::fill(&graphicscache[0], &graphicscache[PT_NUM], gcache_item());
 
 	int fireColoursCount = 4;
 	pixel fireColours[] = {PIXPACK(0xAF9F0F), PIXPACK(0xDFBF6F), PIXPACK(0x60300F), PIXPACK(0x000000)};
@@ -2960,7 +2961,7 @@ Renderer::~Renderer()
 	delete[] persistentVid;
 	delete[] warpVid;
 #endif
-	free(graphicscache);
+	delete[] graphicscache;
 	free(flm_data);
 	free(plasma_data);
 }

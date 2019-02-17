@@ -19,7 +19,6 @@
 #include "gui/interface/Mouse.h"
 #include "gui/interface/Slider.h"
 #include "gui/interface/Window.h"
-#include "gui/search/Thumbnail.h"
 #include "simulation/SaveRenderer.h"
 #include "simulation/SimulationData.h"
 
@@ -734,19 +733,15 @@ void GameView::NotifyActiveToolsChanged(GameModel * sender)
 			toolButtons[i]->SetSelectionState(-1);
 		}
 	}
-	//need to do this for all tools every time just in case it wasn't caught if you weren't in the menu a tool was changed to
-	c->ActiveToolChanged(0, sender->GetActiveTool(0));
+
 	if (sender->GetRenderer()->findingElement)
 	{
 		Tool *active = sender->GetActiveTool(0);
 		if (!active->GetIdentifier().Contains("_PT_"))
 			ren->findingElement = 0;
 		else
-			ren->findingElement = sender->GetActiveTool(0)->GetToolID()%256;
+			ren->findingElement = sender->GetActiveTool(0)->GetToolID();
 	}
-	c->ActiveToolChanged(1, sender->GetActiveTool(1));
-	c->ActiveToolChanged(2, sender->GetActiveTool(2));
-	c->ActiveToolChanged(3, sender->GetActiveTool(3));
 }
 
 void GameView::NotifyLastToolChanged(GameModel * sender)
@@ -1244,10 +1239,12 @@ void GameView::OnMouseDown(int x, int y, unsigned button)
 			// update tool index, set new "last" tool so GameView can detect certain tools properly
 			if (button == SDL_BUTTON_LEFT)
 				toolIndex = 0;
-			if (button == SDL_BUTTON_RIGHT)
+			else if (button == SDL_BUTTON_RIGHT)
 				toolIndex = 1;
-			if (button == SDL_BUTTON_MIDDLE)
+			else if (button == SDL_BUTTON_MIDDLE)
 				toolIndex = 2;
+			else
+				return;
 			Tool *lastTool = c->GetActiveTool(toolIndex);
 			c->SetLastTool(lastTool);
 			UpdateDrawMode();
@@ -1564,10 +1561,10 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		if (ctrl)
 		{
 			Tool *active = c->GetActiveTool(0);
-			if (!active->GetIdentifier().Contains("_PT_") || ren->findingElement == active->GetToolID()%256)
+			if (!active->GetIdentifier().Contains("_PT_") || (ren->findingElement == active->GetToolID()))
 				ren->findingElement = 0;
 			else
-				ren->findingElement = active->GetToolID()%256;
+				ren->findingElement = active->GetToolID();
 		}
 		else
 			c->FrameStep();
@@ -1787,9 +1784,7 @@ void GameView::OnBlur()
 	disableShiftBehaviour();
 	isMouseDown = false;
 	drawMode = DrawPoints;
-	c->MouseUp(0, 0, 0, 1); // tell lua that mouse is up (even if it really isn't)
-	if (GetModifiers())
-		c->KeyRelease(0, 0, false, false, false, false);
+	c->Blur();
 }
 
 void GameView::OnTick(float dt)
@@ -1923,6 +1918,12 @@ void GameView::DoMouseWheel(int x, int y, int d)
 		Window::DoMouseWheel(x, y, d);
 }
 
+void GameView::DoTextInput(String text)
+{
+	if (c->TextInput(text))
+		Window::DoTextInput(text);
+}
+
 void GameView::DoKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt)
 {
 	if (c->KeyPress(key, scan, repeat, shift, ctrl, alt))
@@ -1935,16 +1936,10 @@ void GameView::DoKeyRelease(int key, int scan, bool repeat, bool shift, bool ctr
 		Window::DoKeyRelease(key, scan, repeat, shift, ctrl, alt);
 }
 
-void GameView::DoTick(float dt)
+void GameView::DoExit()
 {
-	//mouse events trigger every frame when mouse is held down, needs to happen here (before things are drawn) so it can clear the point queue if false is returned from a lua mouse event
-	if (!c->MouseTick())
-	{
-		isMouseDown = false;
-		selectMode = SelectNone;
-		drawMode = DrawPoints;
-	}
-	Window::DoTick(dt);
+	Window::DoExit();
+	c->Exit();
 }
 
 void GameView::DoDraw()

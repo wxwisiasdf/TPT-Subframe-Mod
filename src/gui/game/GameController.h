@@ -64,10 +64,11 @@ public:
 	bool MouseDown(int x, int y, unsigned button);
 	bool MouseUp(int x, int y, unsigned button, char type);
 	bool MouseWheel(int x, int y, int d);
+	bool TextInput(String text);
 	bool KeyPress(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt);
 	bool KeyRelease(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt);
-	bool MouseTick();
 	void Tick();
+	void Blur();
 	void Exit();
 
 	void Install();
@@ -119,7 +120,6 @@ public:
 	void ToggleConfigTool();
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
-	void ActiveToolChanged(int toolSelection, Tool *tool);
 	void SetActiveColourPreset(int preset);
 	void SetColour(ui::Colour colour);
 	void SetToolStrength(float value);

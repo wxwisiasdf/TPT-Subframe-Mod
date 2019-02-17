@@ -43,7 +43,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	{
 		save->Expand();
 	}
-	catch (ParseException)
+	catch (ParseException &)
 	{
 		return 1;
 	}
@@ -76,7 +76,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 				// if this is a custom element, set the ID to the ID we found when comparing identifiers in the palette map
 				// set type to 0 if we couldn't find an element with that identifier present when loading,
 				//  unless this is a default element, in which case keep the current ID, because otherwise when an element is renamed it wouldn't show up anymore in older saves
-				if (myId != 0 || pi.first.BeginsWith("DEFAULT_PT_"))
+				if (myId != 0 || !pi.first.BeginsWith("DEFAULT_PT_"))
 					partMap[pi.second] = myId;
 			}
 		}
@@ -526,6 +526,7 @@ void Simulation::Restore(const Snapshot & snap)
 	std::copy(snap.WirelessData.begin(), snap.WirelessData.end(), &wireless[0][0]);
 	if (grav->ngrav_enable)
 	{
+		grav->Clear();
 		std::copy(snap.GravVelocityX.begin(), snap.GravVelocityX.end(), gravx);
 		std::copy(snap.GravVelocityY.begin(), snap.GravVelocityY.end(), gravy);
 		std::copy(snap.GravValue.begin(), snap.GravValue.end(), gravp);
@@ -2782,9 +2783,12 @@ int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
 		parts[i].y = nyf;
 		if (ny!=y || nx!=x)
 		{
-			if (ID(pmap[y][x])==i) pmap[y][x] = 0;
-			else if (ID(photons[y][x])==i) photons[y][x] = 0;
-			if (nx<CELL || nx>=XRES-CELL || ny<CELL || ny>=YRES-CELL)//kill_part if particle is out of bounds
+			if (ID(pmap[y][x]) == i)
+				pmap[y][x] = 0;
+			if (ID(photons[y][x]) == i)
+				photons[y][x] = 0;
+			// kill_part if particle is out of bounds
+			if (nx < CELL || nx >= XRES - CELL || ny < CELL || ny >= YRES - CELL)
 			{
 				kill_part(i);
 				return -1;
@@ -5216,7 +5220,7 @@ void Simulation::CheckStacking()
 						excessive_stacking_found = 1;
 					}
 				}
-				else if (pmap_count[y][x]>1500 || (random_gen()%1600) <= (pmap_count[y][x]+100))
+				else if (pmap_count[y][x]>1500 || (unsigned int)RNG::Ref().between(0, 1599) <= (pmap_count[y][x]+100))
 				{
 					pmap_count[y][x] = pmap_count[y][x] + NPART;
 					excessive_stacking_found = true;

@@ -22,11 +22,15 @@
 #if defined(LIN)
 #include "icon.h"
 #endif
-#include <signal.h>
+#include <csignal>
 #include <stdexcept>
 
 #ifndef WIN
 #include <unistd.h>
+#endif
+#ifdef MACOSX
+#include <CoreServices/CoreServices.h>
+#include <sys/stat.h>
 #endif
 
 #include "Format.h"
@@ -190,7 +194,7 @@ int SDLOpen()
 	SendMessage(WindowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
 #endif
 #ifdef LIN
-	SDL_Surface *icon = SDL_CreateRGBSurfaceFrom((void*)app_icon, 48, 48, 32, 192, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000);
+	SDL_Surface *icon = SDL_CreateRGBSurfaceFrom((void*)app_icon, 128, 128, 32, 512, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000);
 	SDL_SetWindowIcon(sdl_window, icon);
 	SDL_FreeSurface(icon);
 #endif
@@ -546,6 +550,23 @@ void SigHandler(int signal)
 	}
 }
 
+void ChdirToDataDirectory()
+{
+#ifdef MACOSX
+	FSRef ref;
+	OSType folderType = kApplicationSupportFolderType;
+	char path[PATH_MAX];
+
+	FSFindFolder( kUserDomain, folderType, kCreateFolder, &ref );
+
+	FSRefMakePath( &ref, (UInt8*)&path, PATH_MAX );
+
+	std::string tptPath = std::string(path) + "/The Powder Toy";
+	mkdir(tptPath.c_str(), 0755);
+	chdir(tptPath.c_str());
+#endif
+}
+
 int main(int argc, char * argv[])
 {
 #if defined(_DEBUG) && defined(_MSC_VER)
@@ -563,6 +584,8 @@ int main(int argc, char * argv[])
 #else
 		chdir(arguments["ddir"].c_str());
 #endif
+	else
+		ChdirToDataDirectory();
 
 	scale = Client::Ref().GetPrefInteger("Scale", 1);
 	resizable = Client::Ref().GetPrefBool("Resizable", false);
