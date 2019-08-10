@@ -1437,9 +1437,9 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			case SDLK_DOWN:
 				c->TranslateSave(ui::Point(0, 1));
 				return;
-			case 'r':
-				if (repeat)
-					return;
+			}
+			if (scan == SDL_SCANCODE_R && !repeat)
+			{
 				if (ctrl && shift)
 				{
 					//Vertical flip
@@ -1462,26 +1462,15 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 
 	if (repeat)
 		return;
-	if (scan == SDL_SCANCODE_GRAVE)
+	bool didKeyShortcut = true;
+	switch(scan)
 	{
+	case SDL_SCANCODE_GRAVE:
+		SDL_StopTextInput();
+		SDL_StartTextInput();
 		c->ShowConsole();
-		return;
-	}
-	switch(key)
-	{
-	case SDLK_LALT:
-	case SDLK_RALT:
-		enableAltBehaviour();
 		break;
-	case SDLK_LCTRL:
-	case SDLK_RCTRL:
-		enableCtrlBehaviour();
-		break;
-	case SDLK_LSHIFT:
-	case SDLK_RSHIFT:
-		enableShiftBehaviour();
-		break;
-	case ' ': //Space
+	case SDL_SCANCODE_SPACE: //Space
 		if (shift)
 		{
 			c->SetSubframeMode();
@@ -1491,7 +1480,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			c->SetPaused();
 		}
 		break;
-	case 'z':
+	case SDL_SCANCODE_Z:
 		if (selectMode != SelectNone && isMouseDown)
 			break;
 		if (ctrl && !isMouseDown)
@@ -1508,16 +1497,13 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			c->SetZoomEnabled(true);
 		}
 		break;
-	case SDLK_TAB: //Tab
-		c->ChangeBrush();
-		break;
-	case 'p':
+	case SDL_SCANCODE_P:
 		if (shift)
 			c->SetActiveTool(1, "DEFAULT_UI_PROPERTY");
 		else
 			c->SetActiveTool(0, "DEFAULT_UI_PROPERTY");
 		break;
-	case SDLK_F2:
+	case SDL_SCANCODE_F2:
 		if (ctrl)
 		{
 			if (shift)
@@ -1528,10 +1514,10 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		else
 			screenshot();
 		break;
-	case SDLK_F3:
+	case SDL_SCANCODE_F3:
 		SetDebugHUD(!GetDebugHUD());
 		break;
-	case SDLK_F5:
+	case SDL_SCANCODE_F5:
 		if (shift)
 			c->ReloadParticleOrder();
 		else
@@ -1546,7 +1532,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			new InformationMessage("Save authorship info", authorString.FromUtf8(), true);
 		}
 		break;
-	case 'r':
+	case SDL_SCANCODE_R:
 		if (ctrl)
 			c->ReloadSim();
 		else if (shift)
@@ -1554,10 +1540,10 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			Record(!recording, true);
 		}
 		break;
-	case 'e':
+	case SDL_SCANCODE_E:
 		c->OpenElementSearch();
 		break;
-	case 'f':
+	case SDL_SCANCODE_F:
 		if (ctrl)
 		{
 			Tool *active = c->GetActiveTool(0);
@@ -1569,7 +1555,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		else
 			c->FrameStep();
 		break;
-	case 'g':
+	case SDL_SCANCODE_G:
 		if (ctrl)
 			c->ShowGravityGrid();
 		else if(shift)
@@ -1577,13 +1563,13 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		else
 			c->AdjustGridSize(1);
 		break;
-	case SDLK_F1:
+	case SDL_SCANCODE_F1:
 		if(!introText)
 			introText = 8047;
 		else
 			introText = 0;
 		break;
-	case 'h':
+	case SDL_SCANCODE_H:
 		if(ctrl)
 		{
 			if(!introText)
@@ -1594,7 +1580,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		else
 			showHud = !showHud;
 		break;
-	case 'j':
+	case SDL_SCANCODE_J:
 		if(ctrl)
 		{
 			wavelengthGfxMode = (wavelengthGfxMode + 1) % 3;
@@ -1614,7 +1600,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			Client::Ref().SetPref("Renderer.WavelengthGfxMode", wavelengthGfxMode);
 		}
 		break;
-	case 'b':
+	case SDL_SCANCODE_B:
 		if(ctrl)
 			c->SetDecoration();
 		else
@@ -1627,7 +1613,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 				c->SetActiveMenu(SC_DECO);
 			}
 		break;
-	case 'y':
+	case SDL_SCANCODE_Y:
 		if (ctrl)
 		{
 			c->HistoryForward();
@@ -1637,23 +1623,23 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			c->SwitchAir();
 		}
 		break;
-	case SDLK_ESCAPE:
-	case 'q':
+	case SDL_SCANCODE_ESCAPE:
+	case SDL_SCANCODE_Q:
 		ui::Engine::Ref().ConfirmExit(c->GetHasUnsavedChanges());
 		break;
-	case 'u':
+	case SDL_SCANCODE_U:
 		c->ToggleAHeat();
 		break;
-	case 'n':
+	case SDL_SCANCODE_N:
 		c->ToggleNewtonianGravity();
 		break;
-	case '=':
+	case SDL_SCANCODE_EQUALS:
 		if(ctrl)
 			c->ResetSpark();
 		else
 			c->ResetAir();
 		break;
-	case 'c':
+	case SDL_SCANCODE_C:
 		if(ctrl)
 		{
 			selectMode = SelectCopy;
@@ -1667,7 +1653,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			c->ToggleConfigTool();
 		}
 		break;
-	case 'x':
+	case SDL_SCANCODE_X:
 		if(ctrl)
 		{
 			selectMode = SelectCut;
@@ -1677,7 +1663,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			buttonTipShow = 120;
 		}
 		break;
-	case 'v':
+	case SDL_SCANCODE_V:
 		if (ctrl)
 		{
 			if (c->LoadClipboard())
@@ -1687,7 +1673,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			}
 		}
 		break;
-	case 'l':
+	case SDL_SCANCODE_L:
 	{
 		std::vector<ByteString> stampList = Client::Ref().GetStamps(0, 1);
 		if (stampList.size())
@@ -1700,53 +1686,77 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			break;
 		}
 	}
-	case 'k':
+	case SDL_SCANCODE_K:
 		selectMode = SelectNone;
 		selectPoint1 = selectPoint2 = ui::Point(-1, -1);
 		c->OpenStamps();
 		break;
-	case ']':
+	case SDL_SCANCODE_RIGHTBRACKET:
 		if(zoomEnabled && !zoomCursorFixed)
 			c->AdjustZoomSize(1, !alt);
 		else
 			c->AdjustBrushSize(1, !alt, shiftBehaviour, ctrlBehaviour);
 		break;
-	case '[':
+	case SDL_SCANCODE_LEFTBRACKET:
 		if(zoomEnabled && !zoomCursorFixed)
 			c->AdjustZoomSize(-1, !alt);
 		else
 			c->AdjustBrushSize(-1, !alt, shiftBehaviour, ctrlBehaviour);
 		break;
-	case 'i':
+	case SDL_SCANCODE_I:
 		if(ctrl)
 			c->Install();
 		else
 			c->InvertAirSim();
 		break;
-	case ';':
+	case SDL_SCANCODE_SEMICOLON:
 		if (ctrl)
-		{
 			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^SPECIFIC_DELETE);
-			break;
-		}
-		if (shift)
+		else if (shift)
 		{
 			c->ReloadParticleOrder();
 			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^STACK_MODE);
+		}
+		else
+			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^REPLACE_MODE);
+		break;
+	default:
+		didKeyShortcut = false;
+	}
+	if (!didKeyShortcut)
+	{
+		switch (key)
+		{
+		case SDLK_LALT:
+		case SDLK_RALT:
+			enableAltBehaviour();
+			break;
+		case SDLK_LCTRL:
+		case SDLK_RCTRL:
+			enableCtrlBehaviour();
+			break;
+		case SDLK_LSHIFT:
+		case SDLK_RSHIFT:
+			enableShiftBehaviour();
+			break;
+		case SDLK_TAB: //Tab
+			c->ChangeBrush();
+			break;
+		case SDLK_INSERT:
+			if (ctrl)
+				c->SetReplaceModeFlags(c->GetReplaceModeFlags()^SPECIFIC_DELETE);
+			else
+				c->SetReplaceModeFlags(c->GetReplaceModeFlags()^REPLACE_MODE);
+			break;
+		case SDLK_DELETE:
+			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^SPECIFIC_DELETE);
 			break;
 		}
-		//fancy case switch without break
-	case SDLK_INSERT:
-		c->SetReplaceModeFlags(c->GetReplaceModeFlags()^REPLACE_MODE);
-		break;
-	case SDLK_DELETE:
-		c->SetReplaceModeFlags(c->GetReplaceModeFlags()^SPECIFIC_DELETE);
-		break;
 	}
 
 	if (shift && showDebug && key == '1')
 		c->LoadRenderPreset(10);
-	else if(key >= '0' && key <= '9')
+	else if (key >= '0' && key <= '9')
 	{
 		c->LoadRenderPreset(key-'0');
 	}
@@ -1756,6 +1766,12 @@ void GameView::OnKeyRelease(int key, int scan, bool repeat, bool shift, bool ctr
 {
 	if (repeat)
 		return;
+	if (scan == SDL_SCANCODE_Z)
+	{
+		if (!zoomCursorFixed && !alt)
+			c->SetZoomEnabled(false);
+		return;
+	}
 	switch(key)
 	{
 	case SDLK_LALT:
@@ -1769,10 +1785,6 @@ void GameView::OnKeyRelease(int key, int scan, bool repeat, bool shift, bool ctr
 	case SDLK_LSHIFT:
 	case SDLK_RSHIFT:
 		disableShiftBehaviour();
-		break;
-	case 'z':
-		if(!zoomCursorFixed && !alt)
-			c->SetZoomEnabled(false);
 		break;
 	}
 }
