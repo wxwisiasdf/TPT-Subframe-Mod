@@ -120,6 +120,7 @@ int luatpt_setwindowsize(lua_State* l);
 
 int luatpt_screenshot(lua_State* l);
 int luatpt_record(lua_State* l);
+int luatpt_setrecordinterval(lua_State* l);
 
 
 #endif /* LUASCRIPTHELPER_H_ */

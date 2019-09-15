@@ -162,6 +162,8 @@ public:
 	bool IsValidElement(int type);
 	String WallName(int type);
 	int Record(bool record, bool subframe);
+	int GetRecordInterval();
+	void SetRecordInterval(int val);
 
 	void ResetAir();
 	void ResetSpark();

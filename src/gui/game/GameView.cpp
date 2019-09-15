@@ -190,6 +190,8 @@ GameView::GameView():
 	recordingFolder(0),
 	recordingIndex(0),
 	recordingSubframe(false),
+	recordInterval(1),
+	recordIntervalIndex(0),
 	currentPoint(ui::Point(0, 0)),
 	lastPoint(ui::Point(0, 0)),
 	ren(NULL),
@@ -1080,6 +1082,7 @@ int GameView::Record(bool record, bool subframe)
 		recordingSubframe = false;
 		recording = false;
 		recordingIndex = 0;
+		recordIntervalIndex = 0;
 		recordingFolder = 0;
 	}
 	else if (recording && subframe && !recordingSubframe)
@@ -1102,6 +1105,7 @@ int GameView::Record(bool record, bool subframe)
 			Client::Ref().MakeDirectory(ByteString::Build("recordings", PATH_SEP, recordingFolder).c_str());
 			recording = true;
 			recordingIndex = 0;
+			recordIntervalIndex = 0;
 
 			if (subframe)
 			{
@@ -1533,12 +1537,12 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		}
 		break;
 	case SDL_SCANCODE_R:
-		if (ctrl)
+		if (ctrl && shift)
+			Record(!recording, false);
+		else if (ctrl)
 			c->ReloadSim();
 		else if (shift)
-		{
 			Record(!recording, true);
-		}
 		break;
 	case SDL_SCANCODE_E:
 		c->OpenElementSearch();
@@ -2341,12 +2345,20 @@ void GameView::OnDraw()
 
 		if(recording)
 		{
-			VideoBuffer screenshot(ren->DumpFrame());
-			std::vector<char> data = format::VideoBufferToPPM(screenshot);
+			recordIntervalIndex++;
+			if (recordIntervalIndex >= recordInterval) {
+				recordIntervalIndex = 0;
+			}
 
-			ByteString filename = ByteString::Build("recordings", PATH_SEP, recordingFolder, PATH_SEP, "frame_", Format::Width(screenshotIndex++, 6), ".ppm");
+			if (recordingSubframe || recordIntervalIndex == 0) {
+				VideoBuffer screenshot(ren->DumpFrame());
+				std::vector<char> data = format::VideoBufferToPPM(screenshot);
 
-			Client::Ref().WriteFile(data, filename);
+				ByteString filename = ByteString::Build("recordings", PATH_SEP, recordingFolder, PATH_SEP, "frame_", Format::Width(screenshotIndex++, 6), ".ppm");
+
+				Client::Ref().WriteFile(data, filename);
+				recordingIndex++;
+			}
 		}
 
 		if (logEntries.size())

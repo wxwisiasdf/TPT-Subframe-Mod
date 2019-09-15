@@ -72,6 +72,8 @@ private:
 	int recordingFolder;
 	int recordingIndex;
 	bool recordingSubframe; 
+	int recordInterval;
+	int recordIntervalIndex;
 
 	ui::Point currentPoint, lastPoint;
 	GameController * c;
@@ -155,8 +157,9 @@ public:
 	ui::Point GetPlaceSaveOffset() { return placeSaveOffset; }
 	void SetPlaceSaveOffset(ui::Point offset) { placeSaveOffset = offset; }
 	int Record(bool record, bool subframe);
-
 	bool GetRecordingSubframe(){ return recordingSubframe; }
+	int GetRecordInterval() { return recordInterval; }
+	void SetRecordInterval(int val) { recordInterval = val; }
 
 	//all of these are only here for one debug lines
 	bool GetMouseDown() { return isMouseDown; }

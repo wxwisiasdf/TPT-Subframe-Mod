@@ -33,6 +33,7 @@ These features will be present without enabling:
 - (v1.6) 30th-bit handling: Adding "c" before typing in a number into the property tool when setting ctype will set the 30th bit. For example, "c50" will set the ctype to (50 | 0x20000000). Works with hex too -- just add "0x", like in "c0xC0FFEE". Even without "c", setting the ctype of colored particles using the property tool will not set the 31st and 32nd bit.
 - (v1.6) Ctrl-J toggles the colored particle ctype display mode. This changes how the ctype of a colored particle is displayed in the debug HUD. The ctype is displayed in hex by default, but you can switch it back to decimal. For decimal, you can choose to enable 30th-bit handling. This ignores the 30th bit and, if the 29th bit is set, displays the ctype as a negative number.
 - (v1.7) Config tool (Shortcut: C): Set the configuration of configurable particles in a few clicks. DRAY: Sets tmp, then tmp2. CRAY: Sets tmp2, then tmp. LDTC: Sets life, then tmp. DTEC: Sets tmp2. FILT: Sets tmp. CONV: Sets tmp (click on another particle with the type you want to set the tmp to).
+- (v1.8) `tpt.setrecordinterval(<frames>)` will change the interval that frames are captured when recording. Useful when making timelapses.
 
 Note that the original game already supports the following subframe debugging features (enable with the Lua command `tpt.setdebug(0x8)`):
 
@@ -85,3 +86,7 @@ v1.7:
 - Fix crash when pasting outside window boundaries.
 - Add Lua function to set autoreload, separate from debug flags.
 - Make subframe reloading, simulation and recording enabled by default.
+
+v1.8:
+- Merge chages in 94.1.
+- Add Lua timelapse feature.
