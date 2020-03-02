@@ -8,7 +8,13 @@
 #include "font.h"
 
 #include "gui/interface/Window.h"
-#include "gui/interface/Textbox.h"
+
+namespace ui
+{
+	class Textbox;
+	class Label;
+	class Button;
+}
 
 #define MAX_WIDTH 64
 class FontEditor: public ui::Window
@@ -67,9 +73,9 @@ private:
 public:
 	FontEditor(ByteString header);
 
-	void OnDraw();
-	void OnMouseDown(int x, int y, unsigned button);
-	void OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool alt);
+	void OnDraw() override;
+	void OnMouseDown(int x, int y, unsigned button) override;
+	void OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt) override;
 };
 
 #endif

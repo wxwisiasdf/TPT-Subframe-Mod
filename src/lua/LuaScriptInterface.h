@@ -2,10 +2,13 @@
 #define LUASCRIPTINTERFACE_H_
 
 #include "LuaCompat.h"
+#include "LuaSmartRef.h"
 
 #include "CommandInterface.h"
 #include "lua/LuaEvents.h"
-#include "simulation/Simulation.h"
+#include "simulation/StructProperty.h"
+
+#include <map>
 
 namespace ui
 {
@@ -34,7 +37,9 @@ class Tool;
 	lua_pushinteger(L, NAME);\
 	lua_setfield(L, -2, #NAME)
 
+class Simulation;
 class TPTScriptInterface;
+class LuaComponent;
 
 class LuaScriptInterface: public CommandInterface
 {
@@ -50,8 +55,6 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_newsign(lua_State *l);
 
 	//Simulation
-	static StructProperty * particleProperties;
-	static int particlePropertiesCount;
 
 	void initSimulationAPI();
 	static void set_map(int x, int y, int width, int height, float value, int mapType);
@@ -122,6 +125,9 @@ class LuaScriptInterface: public CommandInterface
 	static int renderer_grid(lua_State * l);
 	static int renderer_debugHUD(lua_State * l);
 	static int renderer_depth3d(lua_State * l);
+	static int renderer_zoomEnabled(lua_State *l);
+	static int renderer_zoomWindowInfo(lua_State *l);
+	static int renderer_zoomScopeInfo(lua_State *l);
 
 	//Elements
 	void initElementsAPI();
@@ -175,6 +181,13 @@ class LuaScriptInterface: public CommandInterface
 	static int event_unregister(lua_State * l);
 	static int event_getmodifiers(lua_State * l);
 
+	void initHttpAPI();
+	static int http_get(lua_State * l);
+	static int http_post(lua_State * l);
+
+	std::vector<LuaSmartRef> lua_el_func_v, lua_gr_func_v, lua_cd_func_v;
+	std::vector<int> lua_el_mode_v;
+
 public:
 	int tpt_index(lua_State *l);
 	int tpt_newIndex(lua_State *l);
@@ -184,15 +197,16 @@ public:
 
 	ui::Window * Window;
 	lua_State *l;
+	std::map<LuaComponent *, LuaSmartRef> grabbed_components;
 	LuaScriptInterface(GameController * c, GameModel * m);
 
-	virtual void OnTick();
-	virtual bool HandleEvent(LuaEvents::EventTypes eventType, Event * event);
+	void OnTick() override;
+	bool HandleEvent(LuaEvents::EventTypes eventType, Event * event) override;
 
-	virtual void Init();
-	virtual void SetWindow(ui::Window * window);
-	virtual int Command(String command);
-	virtual String FormatCommand(String command);
+	void Init();
+	void SetWindow(ui::Window * window);
+	int Command(String command) override;
+	String FormatCommand(String command) override;
 	virtual ~LuaScriptInterface();
 };
 

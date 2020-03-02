@@ -3,6 +3,7 @@
 
 #include "CommandInterface.h"
 #include "TPTSTypes.h"
+#include <deque>
 
 class TPTScriptInterface: public CommandInterface {
 protected:
@@ -18,9 +19,8 @@ protected:
 	ValueType testType(String word);
 public:
 	TPTScriptInterface(GameController * c, GameModel * m);
-	virtual void Tick() {}
-	virtual int Command(String command);
-	virtual String FormatCommand(String command);
+	int Command(String command) override;
+	String FormatCommand(String command) override;
 	virtual ~TPTScriptInterface();
 };
 

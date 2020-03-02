@@ -3,26 +3,24 @@
 
 #include <vector>
 #include <deque>
-#include "client/SaveInfo.h"
-#include "simulation/Simulation.h"
+
 #include "gui/interface/Colour.h"
-#include "graphics/Renderer.h"
-#include "GameView.h"
-#include "GameController.h"
-#include "Brush.h"
 #include "client/User.h"
-#include "Notification.h"
-#include "QuickOption.h"
-#include "Tool.h"
-#include "Menu.h"
+#include "gui/interface/Point.h"
 
-using namespace std;
-
+class Menu;
+class Tool;
+class QuickOption;
+class Brush;
 class GameView;
+class Notification;
 class GameController;
+class SaveInfo;
 class SaveFile;
 class Simulation;
 class Renderer;
+class Snapshot;
+class GameSave;
 
 class ToolSelection
 {
@@ -36,27 +34,27 @@ public:
 class GameModel
 {
 private:
-	vector<Notification*> notifications;
+	std::vector<Notification*> notifications;
 	//int clipboardSize;
 	//unsigned char * clipboardData;
 	GameSave * clipboard;
 	GameSave * placeSave;
-	deque<String> consoleLog;
-	vector<GameView*> observers;
-	vector<Tool*> toolList;
+	std::deque<String> consoleLog;
+	std::vector<GameView*> observers;
+	std::vector<Tool*> toolList;
 
 	//All tools that are associated with elements
-	vector<Tool*> elementTools;
+	std::vector<Tool*> elementTools;
 	//Tools that are present in elementTools, but don't have an associated menu and need to be freed manually
-	vector<Tool*> extraElementTools;
+	std::vector<Tool*> extraElementTools;
 
 	Simulation * sim;
 	Renderer * ren;
-	vector<Menu*> menuList;
-	vector<QuickOption*> quickOptions;
+	std::vector<Menu*> menuList;
+	std::vector<QuickOption*> quickOptions;
 	int activeMenu;
 	int currentBrush;
-	vector<Brush *> brushList;
+	std::vector<Brush *> brushList;
 	SaveInfo * currentSave;
 	SaveFile * currentFile;
 	Tool * lastTool;
@@ -71,6 +69,9 @@ private:
 	Snapshot *redoHistory;
 	unsigned int historyPosition;
 	unsigned int undoHistoryLimit;
+	bool mouseClickRequired;
+	bool includePressure;
+	bool perfectCircle = true;
 
 	size_t activeColourPreset;
 	std::vector<ui::Colour> colourPresets;
@@ -78,6 +79,7 @@ private:
 	ui::Colour colour;
 
 	int edgeMode;
+	int decoSpace;
 
 	String infoTip;
 	String toolTip;
@@ -111,6 +113,8 @@ public:
 
 	void SetEdgeMode(int edgeMode);
 	int GetEdgeMode();
+	void SetDecoSpace(int decoSpace);
+	int GetDecoSpace();
 
 	void SetActiveColourPreset(size_t preset);
 	size_t GetActiveColourPreset();
@@ -132,6 +136,7 @@ public:
 
 	void BuildMenus();
 	void BuildFavoritesMenu();
+	void BuildBrushList();
 	void BuildQuickOptionMenu(GameController * controller);
 
 	std::deque<Snapshot*> GetHistory();
@@ -152,13 +157,13 @@ public:
 	float GetToolStrength();
 	Tool * GetLastTool();
 	void SetLastTool(Tool * newTool);
-	Tool * GetToolFromIdentifier(ByteString identifier);
+	Tool *GetToolFromIdentifier(ByteString const &identifier);
 	Tool * GetElementTool(int elementID);
-	vector<Tool*> GetToolList();
-	vector<Tool*> GetUnlistedTools();
+	std::vector<Tool*> GetToolList();
+	std::vector<Tool*> GetUnlistedTools();
 
 	Brush * GetBrush();
-	vector<Brush*> GetBrushList();
+	std::vector<Brush*> GetBrushList();
 	int GetBrushID();
 	void SetBrushID(int i);
 
@@ -168,8 +173,8 @@ public:
 	void SetVote(int direction);
 	SaveInfo * GetSave();
 	SaveFile * GetSaveFile();
-	void SetSave(SaveInfo * newSave);
-	void SetSaveFile(SaveFile * newSave);
+	void SetSave(SaveInfo * newSave, bool invertIncludePressure);
+	void SetSaveFile(SaveFile * newSave, bool invertIncludePressure);
 	void AddObserver(GameView * observer);
 	void ReloadParticleOrder();
 
@@ -186,8 +191,8 @@ public:
 	bool GetGravityGrid();
 	void ShowGravityGrid(bool showGrid);
 	void ClearSimulation();
-	vector<Menu*> GetMenuList();
-	vector<QuickOption*> GetQuickOptions();
+	std::vector<Menu*> GetMenuList();
+	std::vector<QuickOption*> GetQuickOptions();
 	void SetActiveMenu(int menuID);
 	int GetActiveMenu();
 	void FrameStep(int frames);
@@ -210,9 +215,14 @@ public:
 	void SetClipboard(GameSave * save);
 	void SetPlaceSave(GameSave * save);
 	void Log(String message, bool printToFile);
-	deque<String> GetLog();
+	std::deque<String> GetLog();
 	GameSave * GetClipboard();
 	GameSave * GetPlaceSave();
+	bool GetMouseClickRequired();
+	void SetMouseClickRequired(bool mouseClickRequired);
+	bool GetIncludePressure();
+	void SetIncludePressure(bool includePressure);
+	void SetPerfectCircle(bool perfectCircle);
 
 	std::vector<Notification*> GetNotifications();
 	void AddNotification(Notification * notification);

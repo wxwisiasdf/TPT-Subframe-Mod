@@ -1,6 +1,7 @@
-#include <iostream>
 #include "Tool.h"
+
 #include "client/Client.h"
+
 #include "gui/Style.h"
 #include "gui/game/Brush.h"
 #include "gui/interface/Window.h"
@@ -10,7 +11,13 @@
 #include "gui/interface/DropDown.h"
 #include "gui/interface/Keys.h"
 #include "gui/dialogues/ErrorMessage.h"
+
 #include "simulation/Simulation.h"
+#include "simulation/ElementClasses.h"
+
+#include "graphics/Graphics.h"
+
+#include <iostream>
 
 class PropertyWindow: public ui::Window
 {
@@ -22,24 +29,10 @@ public:
 	std::vector<StructProperty> properties;
 	PropertyWindow(PropertyTool *tool_, Simulation *sim);
 	void SetProperty();
-	virtual void OnDraw();
-	virtual void OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt);
-	virtual void OnTryExit(ExitMethod method);
+	void OnDraw() override;
+	void OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt) override;
+	void OnTryExit(ExitMethod method) override;
 	virtual ~PropertyWindow() {}
-	class OkayAction: public ui::ButtonAction
-	{
-	public:
-		PropertyWindow * prompt;
-		OkayAction(PropertyWindow * prompt_) { prompt = prompt_; }
-		void ActionCallback(ui::Button * sender)
-		{
-			prompt->CloseActiveWindow();
-			if(prompt->textField->GetText().length())
-				prompt->SetProperty();
-			prompt->SelfDestruct();
-			return;
-		}
-	};
 };
 
 PropertyWindow::PropertyWindow(PropertyTool * tool_, Simulation *sim_):
@@ -59,22 +52,17 @@ sim(sim_)
 	okayButton->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
 	okayButton->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
 	okayButton->Appearance.BorderInactive = ui::Colour(200, 200, 200);
-	okayButton->SetActionCallback(new OkayAction(this));
+	okayButton->SetActionCallback({ [this] {
+		CloseActiveWindow();
+		if (textField->GetText().length())
+			SetProperty();
+		SelfDestruct();
+	} });
 	AddComponent(okayButton);
 	SetOkayButton(okayButton);
 
-	class PropertyChanged: public ui::DropDownAction
-	{
-		PropertyWindow * w;
-	public:
-		PropertyChanged(PropertyWindow * w): w(w) { }
-		virtual void OptionChanged(ui::DropDown * sender, std::pair<String, int> option)
-		{
-			w->FocusComponent(w->textField);
-		}
-	};
-	property = new ui::DropDown(ui::Point(8, 25), ui::Point(Size.X-16, 17));
-	property->SetActionCallback(new PropertyChanged(this));
+	property = new ui::DropDown(ui::Point(8, 25), ui::Point(Size.X-16, 16));
+	property->SetActionCallback({ [this] { FocusComponent(textField); } });
 	AddComponent(property);
 	for (size_t i = 0; i < properties.size(); i++)
 	{
@@ -227,6 +215,7 @@ void PropertyWindow::SetProperty()
 			}
 			tool->propOffset = properties[property->GetOption().second].Offset;
 			tool->propType = properties[property->GetOption().second].Type;
+			tool->changeType = properties[property->GetOption().second].Name == "type";
 		} catch (const std::exception& ex) {
 			new ErrorMessage("Could not set property", "Invalid value provided");
 			return;
@@ -272,6 +261,13 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 		i = sim->photons[position.Y][position.X];
 	if(!i)
 		return;
+
+	if (changeType)
+	{
+		sim->part_change_type(ID(i), sim->parts[ID(i)].x+0.5f, sim->parts[ID(i)].y+0.5f, propValue.Integer);
+		return;
+	}
+
 	switch (propType)
 	{
 		case StructProperty::Float:

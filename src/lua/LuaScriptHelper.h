@@ -1,6 +1,18 @@
 #ifndef LUASCRIPTHELPER_H_
 #define LUASCRIPTHELPER_H_
 
+#include "simulation/Particle.h"
+#include "simulation/ElementDefs.h"
+#include "common/String.h"
+#include "LuaCompat.h"
+
+class GameModel;
+class GameController;
+class Simulation;
+class LuaScriptInterface;
+class Graphics;
+class Renderer;
+
 extern GameModel * luacon_model;
 extern GameController * luacon_controller;
 extern Simulation * luacon_sim;
@@ -11,13 +23,16 @@ extern Renderer * luacon_ren;
 extern bool *luacon_currentCommand;
 extern String *luacon_lastError;
 
-extern int *lua_el_func, *lua_el_mode, *lua_gr_func;
+class LuaSmartRef;
+extern int *lua_el_mode;
+extern LuaSmartRef *lua_el_func, *lua_gr_func;
 
 extern int getPartIndex_curIdx;
 extern int tptProperties; //Table for some TPT properties
 extern int tptPropertiesVersion;
 extern int tptElements; //Table for TPT element names
-extern int tptParts, tptPartsMeta, tptElementTransitions, tptPartsCData, tptPartMeta, tptPart, cIndex;
+extern int tptParts, tptPartsMeta, tptElementTransitions, tptPartsCData, tptPartMeta, cIndex;
+extern LuaSmartRef *tptPart;
 
 void luaopen_eventcompat(lua_State *l);
 void luacon_hook(lua_State *L, lua_Debug *ar);

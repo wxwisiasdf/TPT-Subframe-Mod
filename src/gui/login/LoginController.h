@@ -2,22 +2,20 @@
 #define LOGINCONTROLLER_H_
 
 #include "common/String.h"
-#include "LoginView.h"
-#include "LoginModel.h"
-#include "Controller.h"
 #include "client/User.h"
 
-using namespace std;
+#include <functional>
 
 class LoginView;
 class LoginModel;
-class LoginController {
+class LoginController
+{
 	LoginView * loginView;
 	LoginModel * loginModel;
-	ControllerCallback * callback;
+	std::function<void ()> onDone;
 public:
 	bool HasExited;
-	LoginController(ControllerCallback * callback = NULL);
+	LoginController(std::function<void ()> onDone = nullptr);
 	void Login(ByteString username, ByteString password);
 	void Exit();
 	LoginView * GetView() { return loginView; }

@@ -1,7 +1,7 @@
 #ifndef RENDERER
 
+#include "common/tpt-minmax.h"
 #include <map>
-#include "common/String.h"
 #include <ctime>
 #include <climits>
 #ifdef WIN
@@ -18,7 +18,6 @@
 
 #include <iostream>
 #include "Config.h"
-#include "graphics/Graphics.h"
 #if defined(LIN)
 #include "icon.h"
 #endif
@@ -34,26 +33,23 @@
 #endif
 
 #include "Format.h"
+#include "Misc.h"
 
+#include "graphics/Graphics.h"
+
+#include "client/SaveInfo.h"
 #include "client/GameSave.h"
 #include "client/SaveFile.h"
-#include "simulation/SaveRenderer.h"
 #include "client/Client.h"
-#include "Misc.h"
 
 #include "gui/game/GameController.h"
 #include "gui/game/GameView.h"
-
 #include "gui/font/FontEditor.h"
-
 #include "gui/dialogues/ErrorMessage.h"
 #include "gui/dialogues/ConfirmPrompt.h"
 #include "gui/interface/Keys.h"
 #include "gui/Style.h"
-
-#include "client/HTTP.h"
-
-using namespace std;
+#include "gui/interface/Engine.h"
 
 #define INCLUDE_SYSWM
 #include "SDLCompat.h"
@@ -97,8 +93,21 @@ void LoadWindowPosition()
 	if (borderTop == 0)
 		borderTop = 5;
 
-	if (savedWindowX + borderLeft > 0 && savedWindowX + borderLeft < desktopWidth
-	        && savedWindowY + borderTop > 0 && savedWindowY + borderTop < desktopHeight)
+	int numDisplays = SDL_GetNumVideoDisplays();
+	SDL_Rect displayBounds;
+	bool ok = false;
+	for (int i = 0; i < numDisplays; i++)
+	{
+		SDL_GetDisplayBounds(i, &displayBounds);
+		if (savedWindowX + borderTop > displayBounds.x && savedWindowY + borderLeft > displayBounds.y &&
+				savedWindowX + borderTop < displayBounds.x + displayBounds.w &&
+				savedWindowY + borderLeft < displayBounds.y + displayBounds.h)
+		{
+			ok = true;
+			break;
+		}
+	}
+	if (ok)
 		SDL_SetWindowPosition(sdl_window, savedWindowX + borderLeft, savedWindowY + borderTop);
 }
 
@@ -274,6 +283,7 @@ std::map<ByteString, ByteString> readArguments(int argc, char * argv[])
 	arguments["nohud"] = "false"; //the nohud, sound, and scripts commands currently do nothing.
 	arguments["sound"] = "false";
 	arguments["kiosk"] = "false";
+	arguments["redirect"] = "false";
 	arguments["scripts"] = "false";
 	arguments["open"] = "";
 	arguments["ddir"] = "";
@@ -300,6 +310,10 @@ std::map<ByteString, ByteString> readArguments(int argc, char * argv[])
 		{
 			arguments["kiosk"] = "true";
 		}
+		else if (!strncmp(argv[i], "redirect", 8))
+		{
+			arguments["redirect"] = "true";
+		}
 		else if (!strncmp(argv[i], "sound", 5))
 		{
 			arguments["sound"] = "true";
@@ -324,6 +338,10 @@ std::map<ByteString, ByteString> readArguments(int argc, char * argv[])
 			i++;
 			break;
 		}
+		else if (!strncmp(argv[i], "disable-network", 16))
+		{
+			arguments["disable-network"] = "true";
+		}
 	}
 	return arguments;
 }
@@ -333,7 +351,7 @@ unsigned int lastTick = 0;
 unsigned int lastFpsUpdate = 0;
 float fps = 0;
 ui::Engine * engine = NULL;
-bool showDoubleScreenDialog = false;
+bool showLargeScreenDialog = false;
 float currentWidth, currentHeight;
 
 int mousex = 0, mousey = 0;
@@ -382,6 +400,10 @@ void EventProcess(SDL_Event event)
 		engine->onMouseMove(mousex, mousey);
 
 		hasMouseMoved = true;
+		break;
+	case SDL_DROPFILE:
+		engine->onFileDrop(event.drop.file);
+		SDL_free(event.drop.file);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		// if mouse hasn't moved yet, sdl will send 0,0. We don't want that
@@ -459,12 +481,12 @@ void EventProcess(SDL_Event event)
 	}
 }
 
-void DoubleScreenDialog()
+void LargeScreenDialog()
 {
 	StringBuilder message;
-	message << "Switching to double size mode since your screen was determined to be large enough: ";
-	message << desktopWidth << "x" << desktopHeight << " detected, " << WINDOWW*2 << "x" << WINDOWH*2 << " required";
-	message << "\nTo undo this, hit Cancel. You can toggle double size mode in settings at any time.";
+	message << "Switching to " << scale << "x size mode since your screen was determined to be large enough: ";
+	message << desktopWidth << "x" << desktopHeight << " detected, " << WINDOWW*scale << "x" << WINDOWH*scale << " required";
+	message << "\nTo undo this, hit Cancel. You can change this in settings at any time.";
 	if (!ConfirmPrompt::Blocking("Large screen detected", message.Build()))
 	{
 		Client::Ref().SetPref("Scale", 1);
@@ -521,16 +543,15 @@ void EngineProcess()
 			engine->SetFps(1000.0 / correctedFrameTimeAvg);
 			lastFpsUpdate = frameStart;
 		}
-		if (frameStart - lastTick > 1000)
+		if (frameStart - lastTick > 100)
 		{
-			//Run client tick every second
 			lastTick = frameStart;
 			Client::Ref().Tick();
 		}
-		if (showDoubleScreenDialog)
+		if (showLargeScreenDialog)
 		{
-			showDoubleScreenDialog = false;
-			DoubleScreenDialog();
+			showLargeScreenDialog = false;
+			LargeScreenDialog();
 		}
 	}
 #ifdef DEBUG
@@ -546,7 +567,7 @@ void BlueScreen(String detailMessage)
 	String errorTitle = "ERROR";
 	String errorDetails = "Details: " + detailMessage;
 	String errorHelp = "An unrecoverable fault has occurred, please report the error by visiting the website below\n"
-		"http://" SERVER;
+		SCHEME SERVER;
 	int currentY = 0, width, height;
 	int errorWidth = 0;
 	Graphics::textsize(errorHelp, errorWidth, height);
@@ -613,6 +634,24 @@ void ChdirToDataDirectory()
 #endif
 }
 
+constexpr int SCALE_MAXIMUM = 10;
+constexpr int SCALE_MARGIN = 30;
+
+int GuessBestScale()
+{
+	const int widthNoMargin = desktopWidth - SCALE_MARGIN;
+	const int widthGuess = widthNoMargin / WINDOWW;
+
+	const int heightNoMargin = desktopHeight - SCALE_MARGIN;
+	const int heightGuess = heightNoMargin / WINDOWH;
+
+	int guess = std::min(widthGuess, heightGuess);
+	if(guess < 1 || guess > SCALE_MAXIMUM)
+		guess = 1;
+
+	return guess;
+}
+
 int main(int argc, char * argv[])
 {
 #if defined(_DEBUG) && defined(_MSC_VER)
@@ -646,6 +685,12 @@ int main(int argc, char * argv[])
 		Client::Ref().SetPref("Fullscreen", fullscreen);
 	}
 
+	if(arguments["redirect"] == "true")
+	{
+		freopen("stdout.log", "w", stdout);
+		freopen("stderr.log", "w", stderr);
+	}
+
 	if(arguments["scale"].length())
 	{
 		scale = arguments["scale"].ToNumber<int>();
@@ -671,20 +716,27 @@ int main(int argc, char * argv[])
 		proxyString = (Client::Ref().GetPrefByteString("Proxy", ""));
 	}
 
-	Client::Ref().Initialise(proxyString);
+	bool disableNetwork = false;
+	if (arguments.find("disable-network") != arguments.end())
+		disableNetwork = true;
+
+	Client::Ref().Initialise(proxyString, disableNetwork);
 
 	// TODO: maybe bind the maximum allowed scale to screen size somehow
-	if(scale < 1 || scale > 10)
+	if(scale < 1 || scale > SCALE_MAXIMUM)
 		scale = 1;
 
 	SDLOpen();
-	// TODO: mabe make a nice loop that automagically finds the optimal scale
-	if (Client::Ref().IsFirstRun() && desktopWidth > WINDOWW*2+30 && desktopHeight > WINDOWH*2+30)
+
+	if (Client::Ref().IsFirstRun())
 	{
-		scale = 2;
-		Client::Ref().SetPref("Scale", 2);
-		SDL_SetWindowSize(sdl_window, WINDOWW * 2, WINDOWH * 2);
-		showDoubleScreenDialog = true;
+		scale = GuessBestScale();
+		if (scale > 1)
+		{
+			Client::Ref().SetPref("Scale", scale);
+			SDL_SetWindowSize(sdl_window, WINDOWW * scale, WINDOWH * scale);
+			showLargeScreenDialog = true;
+		}
 	}
 
 #ifdef OGLI
@@ -833,7 +885,7 @@ int main(int argc, char * argv[])
 
 #if !defined(DEBUG) && !defined(_DEBUG)
 	}
-	catch(exception& e)
+	catch(std::exception& e)
 	{
 		BlueScreen(ByteString(e.what()).FromUtf8());
 	}

@@ -1,5 +1,8 @@
 #if defined(RENDERER)
 
+#include "graphics/Graphics.h"
+#include "graphics/Renderer.h"
+
 #include <ctime>
 #include <iostream>
 #include <fstream>
@@ -9,8 +12,6 @@
 #include "Config.h"
 #include "Format.h"
 #include "gui/interface/Engine.h"
-#include "graphics/Graphics.h"
-#include "graphics/Renderer.h"
 
 #include "client/GameSave.h"
 #include "simulation/Simulation.h"
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
 	{
 		gameSave = new GameSave(inputFile);
 	}
-	catch (ParseException e)
+	catch (ParseException &e)
 	{
 		//Render the save again later or something? I don't know
 		if (ByteString(e.what()).FromUtf8() == "Save from newer version")
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
 
 	if (gameSave)
 	{
-		sim->Load(gameSave);
+		sim->Load(gameSave, true);
 
 		//Render save
 		ren->decorations_enable = true;

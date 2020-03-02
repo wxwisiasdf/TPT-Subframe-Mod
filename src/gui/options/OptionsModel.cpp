@@ -1,6 +1,15 @@
-#include "simulation/Air.h"
-#include "gui/game/GameModel.h"
 #include "OptionsModel.h"
+
+#include "OptionsView.h"
+
+#include "simulation/Simulation.h"
+#include "simulation/Air.h"
+#include "simulation/Gravity.h"
+
+#include "client/Client.h"
+
+#include "gui/interface/Engine.h"
+#include "gui/game/GameModel.h"
 
 OptionsModel::OptionsModel(GameModel * gModel_) {
 	gModel = gModel_;
@@ -37,7 +46,7 @@ void OptionsModel::SetAmbientHeatSimulation(bool state)
 
 bool OptionsModel::GetNewtonianGravity()
 {
-	return sim->grav->ngrav_enable?true:false;
+	return sim->grav->IsEnabled();
 }
 
 void OptionsModel::SetNewtonianGravity(bool state)
@@ -160,6 +169,16 @@ void OptionsModel::SetFastQuit(bool fastquit)
 	notifySettingsChanged();
 }
 
+int OptionsModel::GetDecoSpace()
+{
+	return gModel->GetDecoSpace();
+}
+void OptionsModel::SetDecoSpace(int decoSpace)
+{
+	gModel->SetDecoSpace(decoSpace);
+	notifySettingsChanged();
+}
+
 bool OptionsModel::GetShowAvatars()
 {
 	return Client::Ref().GetPrefBool("ShowAvatars", true);
@@ -168,6 +187,42 @@ bool OptionsModel::GetShowAvatars()
 void OptionsModel::SetShowAvatars(bool state)
 {
 	Client::Ref().SetPref("ShowAvatars", state);
+	notifySettingsChanged();
+}
+
+bool OptionsModel::GetMouseClickRequired()
+{
+	return Client::Ref().GetPrefBool("MouseClickRequired", false);
+}
+
+void OptionsModel::SetMouseClickRequired(bool mouseClickRequired)
+{
+	Client::Ref().SetPref("MouseClickRequired", mouseClickRequired);
+	gModel->SetMouseClickRequired(mouseClickRequired);
+	notifySettingsChanged();
+}
+
+bool OptionsModel::GetIncludePressure()
+{
+	return Client::Ref().GetPrefBool("Simulation.IncludePressure", true);
+}
+
+void OptionsModel::SetIncludePressure(bool includePressure)
+{
+	Client::Ref().SetPref("Simulation.IncludePressure", includePressure);
+	gModel->SetIncludePressure(includePressure);
+	notifySettingsChanged();
+}
+
+bool OptionsModel::GetPerfectCircle()
+{
+	return Client::Ref().GetPrefBool("PerfectCircleBrush", true);
+}
+
+void OptionsModel::SetPerfectCircle(bool perfectCircle)
+{
+	Client::Ref().SetPref("PerfectCircleBrush", perfectCircle);
+	gModel->SetPerfectCircle(perfectCircle);
 	notifySettingsChanged();
 }
 

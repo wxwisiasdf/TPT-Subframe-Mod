@@ -56,6 +56,8 @@ Makefile.me
 *.layout
 *.config
 *.creator*
+*.cflags
+*.cxxflags
 *.files
 *.includes
 config.log
@@ -65,8 +67,8 @@ config.log
 *.pyc
 site_scons/site_tools/mfprogram/*.pyc
 site_scons/site_tools/gch/*.pyc
-others*
-*.vim
+.vscode/
+.vs/
 
 screenshot_*
 downloads/*

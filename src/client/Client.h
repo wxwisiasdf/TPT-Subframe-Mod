@@ -1,20 +1,14 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include <queue>
 #include <vector>
 #include <list>
 
 #include "common/String.h"
-#include "Config.h"
 #include "common/Singleton.h"
-
-#include "User.h"
-#include "UserInfo.h"
-
 #include "json/json.h"
 
-#include "requestbroker/RequestBroker.h"
+#include "User.h"
 
 class SaveInfo;
 class SaveFile;
@@ -48,13 +42,17 @@ public:
 
 class RequestListener;
 class ClientListener;
+namespace http
+{
+	class Request;
+}
 class Client: public Singleton<Client> {
 private:
 	String messageOfTheDay;
 	std::vector<std::pair<String, ByteString> > serverNotifications;
 
-	void * versionCheckRequest;
-	void * alternateVersionCheckRequest;
+	http::Request *versionCheckRequest;
+	http::Request *alternateVersionCheckRequest;
 	bool usingAltUpdateServer;
 	bool updateAvailable;
 	UpdateInfo updateInfo;
@@ -116,8 +114,7 @@ public:
 	void SetMessageOfTheDay(String message);
 	String GetMessageOfTheDay();
 
-	void Initialise(ByteString proxyString);
-	void SetProxy(ByteString proxy);
+	void Initialise(ByteString proxyString, bool disableNetwork);
 	bool IsFirstRun();
 
 	int MakeDirectory(const char * dirname);
@@ -143,22 +140,14 @@ public:
 
 	RequestStatus AddComment(int saveID, String comment);
 
-	//Retrieves a "UserInfo" object
-	RequestBroker::Request * GetUserInfoAsync(ByteString username);
-	RequestBroker::Request * SaveUserInfoAsync(UserInfo info);
-
-	RequestBroker::Request * GetSaveDataAsync(int saveID, int saveDate);
-	unsigned char * GetSaveData(int saveID, int saveDate, int & dataLength);
 	std::vector<unsigned char> GetSaveData(int saveID, int saveDate);
 
 	LoginStatus Login(ByteString username, ByteString password, User & user);
 	std::vector<SaveInfo*> * SearchSaves(int start, int count, String query, ByteString sort, ByteString category, int & resultCount);
 	std::vector<std::pair<ByteString, int> > * GetTags(int start, int count, String query, int & resultCount);
 
-	RequestBroker::Request * GetCommentsAsync(int saveID, int start, int count);
-
 	SaveInfo * GetSave(int saveID, int saveDate);
-	RequestBroker::Request * GetSaveAsync(int saveID, int saveDate);
+	SaveFile * LoadSaveFile(ByteString filename);
 
 	RequestStatus DeleteSave(int saveID);
 	RequestStatus ReportSave(int saveID, String message);
@@ -172,9 +161,9 @@ public:
 	String GetLastError() {
 		return lastError;
 	}
-	RequestStatus ParseServerReturn(char *result, int status, bool json);
+	RequestStatus ParseServerReturn(ByteString &result, int status, bool json);
 	void Tick();
-	bool CheckUpdate(void *updateRequest, bool checkSession);
+	bool CheckUpdate(http::Request *updateRequest, bool checkSession);
 	void Shutdown();
 
 	// preferences functions

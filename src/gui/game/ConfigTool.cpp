@@ -1,5 +1,15 @@
-#include "GameModel.h"
 #include "Tool.h"
+
+#include "graphics/Graphics.h"
+#include "graphics/Renderer.h"
+
+#include "gui/interface/Window.h"
+#include "gui/interface/Button.h"
+
+#include "gui/game/Brush.h"
+
+#include "simulation/ElementClasses.h"
+#include "simulation/Simulation.h"
 
 class FiltConfigWindow: public ui::Window
 {
@@ -10,21 +20,6 @@ public:
 	void OnSelect(int result);
 	virtual void OnTryExit(ExitMethod method);
 	virtual ~FiltConfigWindow() {}
-	class SelectAction: public ui::ButtonAction
-	{
-	public:
-		FiltConfigWindow *prompt;
-		int result;
-		SelectAction(FiltConfigWindow *prompt_, int result_):
-		prompt(prompt_),
-		result(result_)
-		{ }
-		void ActionCallback(ui::Button *sender)
-		{
-			prompt->OnSelect(result);
-			return;
-		}
-	};
 };
 
 FiltConfigWindow::FiltConfigWindow(ConfigTool * tool_, Simulation *sim_):
@@ -33,10 +28,10 @@ tool(tool_),
 sim(sim_)
 {
 	int maxTextWidth = 0;
-	for (int i = 0; i <= Element_FILT::NUM_MODES; i++)
+	for (int i = 0; i <= FILT_NUM_MODES; i++)
 	{
-		String buttonText = (i == Element_FILT::NUM_MODES) ?
-			String::Build("Cancel") : Element_FILT::MODES[i];
+		String buttonText = (i == FILT_NUM_MODES) ?
+			String::Build("Cancel") : FILT_MODES[i];
 		int textWidth = Graphics::textwidth(buttonText);
 		if (textWidth > maxTextWidth)
 			maxTextWidth = textWidth;
@@ -44,14 +39,14 @@ sim(sim_)
 	int buttonWidth = maxTextWidth + 15;
 	int buttonHeight = 17;
 	int buttonLeft = Size.X/2 - buttonWidth/2;
-	int buttonTop = Size.Y/2 - ((buttonHeight-1) * (Element_FILT::NUM_MODES))/2;
-	for (int i = 0; i < Element_FILT::NUM_MODES; i++)
+	int buttonTop = Size.Y/2 - ((buttonHeight-1) * (FILT_NUM_MODES))/2;
+	for (int i = 0; i < FILT_NUM_MODES; i++)
 	{
-		String buttonText = Element_FILT::MODES[i];
+		String buttonText = FILT_MODES[i];
 		ui::Button * b = new ui::Button(ui::Point(buttonLeft, i * (buttonHeight-1) + buttonTop), ui::Point(buttonWidth, buttonHeight), buttonText);
 		b->Appearance.HorizontalAlign = ui::Appearance::AlignCentre;
 		b->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
-		b->SetActionCallback(new SelectAction(this, i));
+		b->SetActionCallback({ [this, i] { this->OnSelect(i); } });
 		AddComponent(b);
 	}
 	MakeActiveWindow();

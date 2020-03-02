@@ -88,5 +88,8 @@ v1.7:
 - Make subframe reloading, simulation and recording enabled by default.
 
 v1.8:
-- Merge chages in 94.1.
+- Merge changes in 94.1.
 - Add Lua timelapse feature.
+
+v1.9:
+- Merge changes in 95.0.

@@ -1,17 +1,19 @@
-#include <iostream>
-#include <stack>
-#include <cstdio>
+#include "gui/interface/Engine.h"
+
+#include "Window.h"
+
 #include <cmath>
+#include <cstring>
+
+#include "gui/dialogues/ConfirmPrompt.h"
+
+#include "graphics/Graphics.h"
 
 #include "Config.h"
 #include "Platform.h"
-#include "gui/interface/Window.h"
-#include "gui/interface/Engine.h"
-#include "gui/dialogues/ConfirmPrompt.h"
-#include "graphics/Graphics.h"
+#include "PowderToy.h"
 
 using namespace ui;
-using namespace std;
 
 Engine::Engine():
 	FpsLimit(60.0f),
@@ -21,9 +23,6 @@ Engine::Engine():
 	altFullscreen(false),
 	resizable(false),
 	lastBuffer(NULL),
-	prevBuffers(stack<pixel*>()),
-	windows(stack<Window*>()),
-	mousePositions(stack<Point>()),
 	state_(NULL),
 	windowTargetPosition(0, 0),
 	break_(false),
@@ -78,21 +77,11 @@ void Engine::Exit()
 
 void Engine::ConfirmExit(bool warnUnsavedChanges)
 {
-	class ExitConfirmation: public ConfirmDialogueCallback {
-	public:
-		ExitConfirmation() {}
-		virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
-			if (result == ConfirmPrompt::ResultOkay)
-			{
-				ui::Engine::Ref().Exit();
-			}
-		}
-		virtual ~ExitConfirmation() { }
-	};
-	if(warnUnsavedChanges)
-		new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to exit the game?", new ExitConfirmation());
-	else
-		new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
+	String unsavedChangesMessage = "WARNING: You have unsaved changes";
+	String normalMessage = "You are about to quit";
+	new ConfirmPrompt(String(warnUnsavedChanges ? unsavedChangesMessage : normalMessage), "Are you sure you want to exit the game?", { [] {
+		ui::Engine::Ref().Exit();
+	} });
 }
 
 void Engine::ShowWindow(Window * window)
@@ -228,7 +217,6 @@ void Engine::Draw()
 {
 	if(lastBuffer && !(state_ && state_->Position.X == 0 && state_->Position.Y == 0 && state_->Size.X == width_ && state_->Size.Y == height_))
 	{
-		g->Acquire();
 		g->Clear();
 #ifndef OGLI
 		memcpy(g->vid, lastBuffer, (width_ * height_) * PIXELSIZE);
@@ -245,7 +233,6 @@ void Engine::Draw()
 		state_->DoDraw();
 
 	g->Finalise();
-	g->Release();
 	FrameIndex++;
 	FrameIndex %= 7200;
 }
@@ -318,4 +305,10 @@ void Engine::onClose()
 {
 	if (state_)
 		state_->DoExit();
+}
+
+void Engine::onFileDrop(ByteString filename)
+{
+	if (state_)
+		state_->DoFileDrop(filename);
 }

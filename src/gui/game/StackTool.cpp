@@ -1,9 +1,13 @@
-#include <iostream>
-#include <sstream>
+#include "Tool.h"
+
+#include "GameModel.h"
+
 #include <vector>
 #include <algorithm>
-#include "GameModel.h"
-#include "Tool.h"
+
+#include "gui/game/Brush.h"
+
+#include "simulation/Simulation.h"
 
 bool StackTool::comparePoints(ui::Point a, ui::Point b)
 {

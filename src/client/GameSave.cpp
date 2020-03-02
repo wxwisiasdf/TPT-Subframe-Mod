@@ -1,17 +1,19 @@
-#include "common/tpt-minmax.h"
+#include "GameSave.h"
+
 #include <iostream>
 #include <cmath>
 #include <climits>
 #include <memory>
-#include <vector>
 #include <set>
 #include <bzlib.h>
+#include <cmath>
+
 #include "Config.h"
 #include "Format.h"
-#include "GameSave.h"
-#include "simulation/SimulationData.h"
-#include "ElementClasses.h"
 #include "hmap.h"
+
+#include "simulation/Simulation.h"
+#include "simulation/ElementClasses.h"
 
 GameSave::GameSave(GameSave & save):
     majorVersion(save.majorVersion),
@@ -161,6 +163,7 @@ void GameSave::InitData()
 void GameSave::InitVars()
 {
 	majorVersion = 0;
+	minorVersion = 0;
 	waterEEnabled = false;
 	legacyEnable = false;
 	gravityEnable = false;
@@ -567,6 +570,7 @@ void GameSave::readOPS(char * data, int dataLength)
 	unsigned int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
 	int savedVersion = inputData[4];
 	majorVersion = savedVersion;
+	minorVersion = 0;
 	bool fakeNewerVersion = false; // used for development builds only
 
 	bson b;
@@ -596,7 +600,7 @@ void GameSave::readOPS(char * data, int dataLength)
 	}
 
 	//Incompatible cell size
-	if (inputData[5] > CELL)
+	if (inputData[5] != CELL)
 		throw ParseException(ParseException::InvalidDimensions, "Incorrect CELL size");
 
 	//Too large/off screen
@@ -676,6 +680,17 @@ void GameSave::readOPS(char * data, int dataLength)
 								if (!strcmp(bson_iterator_key(&signiter), "text") && bson_iterator_type(&signiter) == BSON_STRING)
 								{
 									tempSign.text = format::CleanString(ByteString(bson_iterator_string(&signiter)).FromUtf8(), true, true, true).Substr(0, 45);
+									if (majorVersion < 94 || (majorVersion == 94 && minorVersion < 2))
+									{
+										if (tempSign.text == "{t}")
+										{
+											tempSign.text = "Temp: {t}";
+										}
+										else if (tempSign.text == "{p}")
+										{
+											tempSign.text = "Pressure: {p}";
+										}
+									}
 								}
 								else if (!strcmp(bson_iterator_key(&signiter), "justification") && bson_iterator_type(&signiter) == BSON_INT)
 								{
@@ -717,7 +732,7 @@ void GameSave::readOPS(char * data, int dataLength)
 				while (bson_iterator_next(&stkmiter))
 				{
 					CheckBsonFieldBool(stkmiter, "rocketBoots1", &stkm.rocketBoots1);
-					CheckBsonFieldBool(stkmiter, "rocketBoots1", &stkm.rocketBoots1);
+					CheckBsonFieldBool(stkmiter, "rocketBoots2", &stkm.rocketBoots2);
 					CheckBsonFieldBool(stkmiter, "fan1", &stkm.fan1);
 					CheckBsonFieldBool(stkmiter, "fan2", &stkm.fan2);
 					if (!strcmp(bson_iterator_key(&stkmiter), "rocketBootsFigh") && bson_iterator_type(&stkmiter) == BSON_ARRAY)
@@ -740,8 +755,6 @@ void GameSave::readOPS(char * data, int dataLength)
 								stkm.fanFigh.push_back(bson_iterator_int(&fighiter));
 						}
 					}
-					else
-						fprintf(stderr, "Unknown stkm property %s\n", bson_iterator_key(&stkmiter));
 				}
 			}
 			else
@@ -765,6 +778,28 @@ void GameSave::readOPS(char * data, int dataLength)
 						palette.push_back(PaletteItem(id, num));
 					}
 				}
+			}
+		}
+		else if (!strcmp(bson_iterator_key(&iter), "origin"))
+		{
+			if (bson_iterator_type(&iter) == BSON_OBJECT)
+			{
+				bson_iterator subiter;
+				bson_iterator_subiterator(&iter, &subiter);
+				while (bson_iterator_next(&subiter))
+				{
+					if (bson_iterator_type(&subiter) == BSON_INT)
+					{
+						if (!strcmp(bson_iterator_key(&subiter), "minorVersion"))
+						{
+							minorVersion = bson_iterator_int(&subiter);
+						}
+					}
+				}
+			}
+			else
+			{
+				fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
 			}
 		}
 		else if (!strcmp(bson_iterator_key(&iter), "minimumVersion"))
@@ -1132,6 +1167,19 @@ void GameSave::readOPS(char * data, int dataLength)
 						pavg = partsData[i++];
 						pavg |= (((unsigned)partsData[i++]) << 8);
 						particles[newIndex].pavg[1] = (float)pavg;
+
+						switch (particles[newIndex].type)
+						{
+						// List of elements that save pavg with a multiplicative bias of 2**6
+						// (or not at all if pressure is not saved).
+						// If you change this list, change it in Simulation::Load and GameSave::serialiseOPS too!
+						case PT_QRTZ:
+						case PT_GLAS:
+						case PT_TUNG:
+							particles[newIndex].pavg[0] /= 64;
+							particles[newIndex].pavg[1] /= 64;
+							break;
+						}
 					}
 
 					//Particle specific parsing:
@@ -1331,6 +1379,7 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 		throw ParseException(ParseException::WrongVersion, "Save from newer version");
 	ver = saveData[4];
 	majorVersion = saveData[4];
+	minorVersion = 0;
 
 	if (ver<34)
 	{
@@ -1752,7 +1801,7 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 			}
 			else
 			{
-				particles[i-1].temp = elements[particles[i-1].type].Temperature;
+				particles[i-1].temp = elements[particles[i-1].type].DefaultProperties.temp;
 			}
 		}
 	}
@@ -1929,6 +1978,14 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 		memcpy(tempSignText, data+p, x);
 		tempSignText[x] = 0;
 		tempSign.text = format::CleanString(ByteString(tempSignText).FromUtf8(), true, true, true).Substr(0, 45);
+		if (tempSign.text == "{t}")
+		{
+			tempSign.text = "Temp: {t}";
+		}
+		else if (tempSign.text == "{p}")
+		{
+			tempSign.text = "Pressure: {p}";
+		}
 		tempSigns.push_back(tempSign);
 		p += x;
 	}
@@ -1991,30 +2048,36 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 		throw BuildException("Save error, out of memory (blockmaps)");
 	unsigned int wallDataLen = blockWidth*blockHeight, fanDataLen = 0, pressDataLen = 0, vxDataLen = 0, vyDataLen = 0, ambientDataLen = 0;
 
-	for(x = blockX; x < blockX+blockW; x++)
+	for (x = blockX; x < blockX+blockW; x++)
 	{
-		for(y = blockY; y < blockY+blockH; y++)
+		for (y = blockY; y < blockY+blockH; y++)
 		{
 			wallData[(y-blockY)*blockW+(x-blockX)] = blockMap[y][x];
 			if (blockMap[y][x])
 				hasWallData = true;
 
-			//save pressure and x/y velocity grids
-			float pres = std::max(-255.0f,std::min(255.0f,pressure[y][x]))+256.0f;
-			float velX = std::max(-255.0f,std::min(255.0f,velocityX[y][x]))+256.0f;
-			float velY = std::max(-255.0f,std::min(255.0f,velocityY[y][x]))+256.0f;
-			pressData[pressDataLen++] = (unsigned char)((int)(pres*128)&0xFF);
-			pressData[pressDataLen++] = (unsigned char)((int)(pres*128)>>8);
+			if (hasPressure)
+			{
+				//save pressure and x/y velocity grids
+				float pres = std::max(-255.0f,std::min(255.0f,pressure[y][x]))+256.0f;
+				float velX = std::max(-255.0f,std::min(255.0f,velocityX[y][x]))+256.0f;
+				float velY = std::max(-255.0f,std::min(255.0f,velocityY[y][x]))+256.0f;
+				pressData[pressDataLen++] = (unsigned char)((int)(pres*128)&0xFF);
+				pressData[pressDataLen++] = (unsigned char)((int)(pres*128)>>8);
 
-			vxData[vxDataLen++] = (unsigned char)((int)(velX*128)&0xFF);
-			vxData[vxDataLen++] = (unsigned char)((int)(velX*128)>>8);
+				vxData[vxDataLen++] = (unsigned char)((int)(velX*128)&0xFF);
+				vxData[vxDataLen++] = (unsigned char)((int)(velX*128)>>8);
 
-			vyData[vyDataLen++] = (unsigned char)((int)(velY*128)&0xFF);
-			vyData[vyDataLen++] = (unsigned char)((int)(velY*128)>>8);
+				vyData[vyDataLen++] = (unsigned char)((int)(velY*128)&0xFF);
+				vyData[vyDataLen++] = (unsigned char)((int)(velY*128)>>8);
+			}
 
-			int tempTemp = (int)(ambientHeat[y][x]+0.5f);
-			ambientData[ambientDataLen++] = tempTemp;
-			ambientData[ambientDataLen++] = tempTemp >> 8;
+			if (hasAmbientHeat)
+			{
+				int tempTemp = (int)(ambientHeat[y][x]+0.5f);
+				ambientData[ambientDataLen++] = tempTemp;
+				ambientData[ambientDataLen++] = tempTemp >> 8;
+			}
 
 			if (blockMap[y][x] == WL_FAN)
 			{
@@ -2248,14 +2311,35 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				}
 
 				//Pavg, 4 bytes
-				//Don't save pavg for things that break under pressure, because then they will break when the save is loaded, since pressure isn't also loaded
-				if ((particles[i].pavg[0] || particles[i].pavg[1]) && !(particles[i].type == PT_QRTZ || particles[i].type == PT_GLAS || particles[i].type == PT_TUNG))
+				// save pavg if there's useful pavg to save
+				// and either we save pressure data too
+				// or the current particle is not one that cares about pressure
+				if (particles[i].pavg[0] || particles[i].pavg[1])
 				{
-					fieldDesc |= 1 << 13;
-					partsData[partsDataLen++] = (int)particles[i].pavg[0];
-					partsData[partsDataLen++] = ((int)particles[i].pavg[0])>>8;
-					partsData[partsDataLen++] = (int)particles[i].pavg[1];
-					partsData[partsDataLen++] = ((int)particles[i].pavg[1])>>8;
+					float pavg0 = particles[i].pavg[0];
+					float pavg1 = particles[i].pavg[1];
+					switch (particles[i].type)
+					{
+					// List of elements that save pavg with a multiplicative bias of 2**6
+					// (or not at all if pressure is not saved).
+					// If you change this list, change it in Simulation::Load and GameSave::readOPS too!
+					case PT_QRTZ:
+					case PT_GLAS:
+					case PT_TUNG:
+						if (!hasPressure)
+							break;
+						pavg0 *= 64;
+						pavg1 *= 64;
+						// fallthrough!
+
+					default:
+						fieldDesc |= 1 << 13;
+						partsData[partsDataLen++] = (int)pavg0;
+						partsData[partsDataLen++] = ((int)pavg0)>>8;
+						partsData[partsDataLen++] = (int)pavg1;
+						partsData[partsDataLen++] = ((int)pavg1)>>8;
+						break;
+					}
 				}
 
 				//Write the field descriptor
@@ -2320,6 +2404,13 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 						RESTRICTVERSION(94, 0);
 					}
 				}
+				if (particles[i].type == PT_LSNS)
+				{
+					if (particles[i].tmp >= 1 || particles[i].tmp <= 3)
+					{
+						RESTRICTVERSION(95, 0);
+					}
+				}
 
 				//Get the pmap entry for the next particle in the same position
 				i = partsPosLink[i];
@@ -2335,7 +2426,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 		soapLinkData = new unsigned char[3*soapCount];
 		if (!soapLinkData)
 			throw BuildException("Save error, out of memory (SOAP)");
-		soapLinkDataPtr = std::move(std::unique_ptr<unsigned char[]>(soapLinkData));
+		soapLinkDataPtr = std::unique_ptr<unsigned char[]>(soapLinkData);
 
 		//Iterate through particles in the same order that they were saved
 		for (y=0;y<fullH;y++)
@@ -2369,6 +2460,20 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					//Get the pmap entry for the next particle in the same position
 					i = partsPosLink[i];
 				}
+			}
+		}
+	}
+
+	for (size_t i = 0; i < signs.size(); i++)
+	{
+		if(signs[i].text.length() && signs[i].x>=0 && signs[i].x<=fullW && signs[i].y>=0 && signs[i].y<=fullH)
+		{
+			int x, y, w, h;
+			bool v95 = false;
+			signs[i].getDisplayText(nullptr, x, y, w, h, true, &v95);
+			if (v95)
+			{
+				RESTRICTVERSION(95, 0);
 			}
 		}
 	}
@@ -2458,13 +2563,13 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 		bson_append_binary(&b, "wallMap", BSON_BIN_USER, (const char *)wallData.get(), wallDataLen);
 	if (fanData && fanDataLen)
 		bson_append_binary(&b, "fanMap", BSON_BIN_USER, (const char *)fanData.get(), fanDataLen);
-	if (pressData && pressDataLen)
+	if (pressData && hasPressure && pressDataLen)
 		bson_append_binary(&b, "pressMap", (char)BSON_BIN_USER, (const char*)pressData.get(), pressDataLen);
-	if (vxData && vxDataLen)
+	if (vxData && hasPressure && vxDataLen)
 		bson_append_binary(&b, "vxMap", (char)BSON_BIN_USER, (const char*)vxData.get(), vxDataLen);
-	if (vyData && vyDataLen)
+	if (vyData && hasPressure && vyDataLen)
 		bson_append_binary(&b, "vyMap", (char)BSON_BIN_USER, (const char*)vyData.get(), vyDataLen);
-	if (ambientData && this->aheatEnable && ambientDataLen)
+	if (ambientData && hasAmbientHeat && this->aheatEnable && ambientDataLen)
 		bson_append_binary(&b, "ambientMap", (char)BSON_BIN_USER, (const char*)ambientData.get(), ambientDataLen);
 	if (soapLinkData && soapLinkDataLen)
 		bson_append_binary(&b, "soapLinks", BSON_BIN_USER, (const char *)soapLinkData, soapLinkDataLen);
@@ -2711,4 +2816,20 @@ void GameSave::dealloc()
 GameSave::~GameSave()
 {
 	dealloc();
+}
+
+GameSave& GameSave::operator << (Particle &v)
+{
+	if(particlesCount<NPART && v.type)
+	{
+		particles[particlesCount++] = v;
+	}
+	return *this;
+}
+
+GameSave& GameSave::operator << (sign &v)
+{
+	if(signs.size()<MAXSIGNS && v.text.length())
+		signs.push_back(v);
+	return *this;
 }
