@@ -92,6 +92,7 @@ void PropertyWindow::SetProperty()
 				case StructProperty::ParticleType:
 				{
 					int v;
+					int type;
 					if(value.length() > 2 && value.BeginsWith("0x"))
 					{
 						//0xC0FFEE
@@ -101,6 +102,20 @@ void PropertyWindow::SetProperty()
 					{
 						//#C0FFEE
 						v = value.Substr(1).ToNumber<unsigned int>(Format::Hex());
+					}
+					else if(value.length() > 5 && value.BeginsWith("filt:"))
+					{
+						//filt:5
+						v = value.Substr(5).ToNumber<unsigned int>();
+						v = PMAP(v, PT_FILT);
+					}
+					else if ((type = sim->GetParticleType(value.ToUtf8())) != -1)
+					{
+						v = type;
+
+#ifdef DEBUG
+						std::cout << "Got type from particle name" << std::endl;
+#endif
 					}
 					else if(value.length() > 1 && value.BeginsWith("c"))
 					{
@@ -117,27 +132,9 @@ void PropertyWindow::SetProperty()
 						}
 						v = (v & 0x3FFFFFFF) | (1<<29);
 					}
-					else if(value.length() > 5 && value.BeginsWith("filt:"))
-					{
-						//filt:5
-						v = value.Substr(5).ToNumber<unsigned int>();
-						v = PMAP(v, PT_FILT);
-					}
 					else
 					{
-						int type;
-						if ((type = sim->GetParticleType(value.ToUtf8())) != -1)
-						{
-							v = type;
-
-#ifdef DEBUG
-							std::cout << "Got type from particle name" << std::endl;
-#endif
-						}
-						else
-						{
-							v = value.ToNumber<int>();
-						}
+						v = value.ToNumber<int>();
 					}
 
 					if (properties[property->GetOption().second].Name == "type" && (v < 0 || v >= PT_NUM || !sim->elements[v].Enabled))
