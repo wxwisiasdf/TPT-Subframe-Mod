@@ -59,9 +59,9 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 			int nx = (int)(part->x + 0.5f), ny = (int)(part->y + 0.5f);
 			int t = part->type;
 			if (sim->elements[t].Properties & TYPE_ENERGY)
-				sim->photons[ny][nx] = t|(partID<<8);
+				sim->photons[ny][nx] = PMAP(partID, t);
 			else
-				sim->pmap[ny][nx] = t|(partID<<8);
+				sim->pmap[ny][nx] = PMAP(partID, t);
 		}
 		sim->debug_needReloadParticleOrder = true;
 	}

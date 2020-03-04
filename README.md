@@ -93,3 +93,4 @@ v1.8:
 
 v1.9:
 - Merge changes in 95.0.
+- Fix stack tool pmap id bug.
