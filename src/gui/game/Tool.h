@@ -135,6 +135,8 @@ class ConfigTool: public Tool
 		crayTmp,
 		crayTmp2,
 		dtecTmp2,
+		tsnsTmp2,
+		lsnsTmp2,
 		convTmp,
 		ldtcTmp,
 		ldtcLife
@@ -186,7 +188,7 @@ private:
 	void drawRedLine(Renderer *ren, int startx, int starty, int endx, int endy);
 	void drawWhiteLine(Renderer *ren, int startx, int starty, int endx, int endy);
 	void drawTripleLine(Renderer *ren, int firstLineLen, int midLineLen, bool drawFirstLine = true, bool drawThirdLine = true);
-	void drawDtecBox(Renderer *ren);
+	void drawSquareRdBox(Renderer *ren);
 };
 
 class PropertyTool: public Tool

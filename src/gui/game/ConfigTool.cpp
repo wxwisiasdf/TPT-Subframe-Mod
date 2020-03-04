@@ -150,7 +150,11 @@ void ConfigTool::OnSelectFiltTmp(Simulation *sim, int tmp)
 void ConfigTool::CalculatePreview(int x, int y, Particle samplePart, int sampleId)
 {
 	cursorPos = ui::Point(x, y);
-	bool allowDiag = !(configState == ConfigState::dtecTmp2);
+	bool allowDiag = !(
+		configState == ConfigState::dtecTmp2 ||
+		configState == ConfigState::tsnsTmp2 ||
+		configState == ConfigState::lsnsTmp2
+	);
 	ui::Point proj = projectPoint(configPart, x, y, allowDiag);
 	dirx = (proj.X == 0) ? 0 : ((proj.X > 0) ? 1 : -1);
 	diry = (proj.Y == 0) ? 0 : ((proj.Y > 0) ? 1 : -1);
@@ -179,6 +183,8 @@ void ConfigTool::CalculatePreview(int x, int y, Particle samplePart, int sampleI
 		configPart.tmp = getDist(proj, configPart.life);
 		break;
 	case ConfigState::dtecTmp2:
+	case ConfigState::tsnsTmp2:
+	case ConfigState::lsnsTmp2:
 		configPart.tmp2 = getDist(proj);
 		break;
 	case ConfigState::convTmp:
@@ -238,6 +244,12 @@ void ConfigTool::Click(Simulation *sim, Brush *brush, ui::Point position)
 		case PT_DTEC:
 			configState = ConfigState::dtecTmp2;
 			break;
+		case PT_TSNS:
+			configState = ConfigState::tsnsTmp2;
+			break;
+		case PT_LSNS:
+			configState = ConfigState::lsnsTmp2;
+			break;
 		case PT_CONV:
 			configState = ConfigState::convTmp;
 			break;
@@ -273,6 +285,8 @@ void ConfigTool::Click(Simulation *sim, Brush *brush, ui::Point position)
 		configState = ConfigState::ready;
 		break;
 	case ConfigState::dtecTmp2:
+	case ConfigState::tsnsTmp2:
+	case ConfigState::lsnsTmp2:
 		sim->parts[currId].tmp2 = configPart.tmp2;
 		configState = ConfigState::ready;
 		break;
@@ -303,7 +317,8 @@ int ConfigTool::GetId()
 bool ConfigTool::IsConfigurableType(int type)
 {
 	return type == PT_DRAY || type == PT_CRAY || type == PT_LDTC ||
-		type == PT_DTEC || type == PT_CONV || type == PT_FILT;
+		type == PT_DTEC || type == PT_TSNS || type == PT_LSNS ||
+		type == PT_CONV || type == PT_FILT;
 }
 
 bool ConfigTool::IsConfiguring()
@@ -333,7 +348,9 @@ bool ConfigTool::IsConfiguringTmp2()
 {
 	return configState == ConfigState::drayTmp2 ||
 		configState == ConfigState::crayTmp2 ||
-		configState == ConfigState::dtecTmp2;
+		configState == ConfigState::dtecTmp2 ||
+		configState == ConfigState::tsnsTmp2 ||
+		configState == ConfigState::lsnsTmp2;
 }
 
 void ConfigTool::drawRedLine(Renderer *ren, int startx, int starty, int endx, int endy)
@@ -360,7 +377,7 @@ void ConfigTool::drawTripleLine(Renderer *ren, int firstLineLen, int midLineLen,
 		drawWhiteLine(ren, mid2x + dirx, mid2y + diry, mid2x + dirx * firstLineLen, mid2y + diry * firstLineLen);
 }
 
-void ConfigTool::drawDtecBox(Renderer *ren)
+void ConfigTool::drawSquareRdBox(Renderer *ren)
 {
 	ren->drawrect(configPart.x - configPart.tmp2, configPart.y - configPart.tmp2, configPart.tmp2 * 2 + 1, configPart.tmp2 * 2 + 1, 200, 200, 200, 220);
 }
@@ -376,7 +393,9 @@ void ConfigTool::DrawHUD(Renderer *ren)
 		switch (configPart.type)
 		{
 		case PT_DTEC:
-			drawDtecBox(ren);
+		case PT_TSNS:
+		case PT_LSNS:
+			drawSquareRdBox(ren);
 			break;
 		case PT_DRAY:
 		case PT_CRAY:
@@ -432,7 +451,9 @@ void ConfigTool::DrawHUD(Renderer *ren)
 		drawTripleLine(ren, configPart.life, configPart.tmp, true, false);
 		break;
 	case ConfigState::dtecTmp2:
-		drawDtecBox(ren);
+	case ConfigState::tsnsTmp2:
+	case ConfigState::lsnsTmp2:
+		drawSquareRdBox(ren);
 		break;
 	case ConfigState::convTmp:
 	{
