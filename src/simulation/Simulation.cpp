@@ -95,6 +95,8 @@ int Simulation::Load(GameSave * save, bool includePressure, int fullX, int fullY
 		}
 	}
 
+	RecalcFreeParticles(false);
+
 	int i;
 	// Map of soap particles loaded into this save, old ID -> new ID
 	std::map<unsigned int, unsigned int> soapList;
