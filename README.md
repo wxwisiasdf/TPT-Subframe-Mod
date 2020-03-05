@@ -95,3 +95,5 @@ v1.9:
 - Merge changes in 95.0.
 - Fix stack tool pmap id bug.
 - Fix prop tool particle name recognition bug.
+- Extend config tool to TSNS/LSNS tmp2.
+- Fix pasting/stamping ID reordering bug.
