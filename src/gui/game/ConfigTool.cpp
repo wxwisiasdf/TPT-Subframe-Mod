@@ -200,7 +200,7 @@ void ConfigTool::ProcessSample(SimulationSample sample)
 	if (configState != ConfigState::ready)
 		return;
 
-	for (int i = sample.sparticle_count - 1; i >= 0; i--)
+	for (int i = (sample.sparticle_count >= 5 ? 5 : sample.sparticle_count) - 1; i >= 0; i--)
 	{
 		int type = sample.sparticles[i].type;
 		if (IsConfigurableType(type) && type != PT_CONV)
