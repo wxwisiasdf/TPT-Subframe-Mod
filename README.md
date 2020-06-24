@@ -97,3 +97,6 @@ v1.9:
 - Fix prop tool particle name recognition bug.
 - Extend config tool to TSNS/LSNS tmp2.
 - Fix pasting/stamping ID reordering bug.
+
+v1.10:
+- Fix config tool large stack crash bug.
