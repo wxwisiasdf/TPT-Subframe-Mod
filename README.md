@@ -101,3 +101,4 @@ v1.9:
 v1.10a:
 - Merge changes in 96.0.
 - Fix config tool large stack crash bug.
+- Fix local load unsaved changes bug.
