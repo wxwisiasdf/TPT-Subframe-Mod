@@ -100,3 +100,4 @@ v1.9:
 
 v1.10:
 - Fix config tool large stack crash bug.
+- Fix local load unsaved changes bug.

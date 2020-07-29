@@ -234,12 +234,13 @@ GameView::GameView():
 	currentX+=18;
 	searchButton->SetTogglable(false);
 	searchButton->SetActionCallback({ [this] {
+		bool isLocal = CtrlBehaviour();
 		if (this->c->GetHasUnsavedChanges()) {
 			bool searchConfirm = ConfirmPrompt::Blocking("WARNING: You have unsaved changes", "Are you sure you want to continue?");
 			if (!searchConfirm)
 				return;
 		}
-		if (CtrlBehaviour())
+		if (isLocal)
 			c->OpenLocalBrowse();
 		else
 			c->OpenSearch("");
