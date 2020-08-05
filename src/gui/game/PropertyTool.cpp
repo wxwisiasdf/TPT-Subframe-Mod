@@ -119,16 +119,20 @@ void PropertyWindow::SetProperty()
 					}
 					else if(value.length() > 1 && value.BeginsWith("c"))
 					{
+						int substrAmt = 1;
+						if (value.length() > 2 && value.BeginsWith("c:")) {
+							substrAmt = 2;
+						}
 						// 30th-bit handling
-						if(value.length() > 3 && value.Substr(1).BeginsWith("0x"))
+						if(value.length() > 3 && value.Substr(substrAmt).BeginsWith("0x"))
 						{
 							//c0xC0FFEE
-							v = value.Substr(3).ToNumber<unsigned int>(Format::Hex());
+							v = value.Substr(substrAmt + 2).ToNumber<unsigned int>(Format::Hex());
 						}
 						else
 						{
 							//c-50
-							v = value.Substr(1).ToNumber<int>();
+							v = value.Substr(substrAmt).ToNumber<int>();
 						}
 						v = (v & 0x3FFFFFFF) | (1<<29);
 					}
