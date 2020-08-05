@@ -141,26 +141,22 @@ void PropertyWindow::SetProperty()
 						v = value.Substr(5).ToNumber<unsigned int>();
 						v = PMAP(v, PT_FILT);
 					}
-					else if ((type = sim->GetParticleType(value.ToUtf8())) != -1)
-					{
-						v = type;
-
-#ifdef DEBUG
-						std::cout << "Got type from particle name" << std::endl;
-#endif
-					}
 					else if(value.length() > 1 && properties[property->GetOption().second].Name == "ctype" && value.BeginsWith("C"))
 					{
+						int substrAmt = 1;
+						if (value.length() > 2 && value.BeginsWith("C:")) {
+							substrAmt = 2;
+						}
 						// 30th-bit handling
-						if(value.length() > 3 && value.Substr(1).BeginsWith("0X"))
+						if(value.length() > 3 && value.Substr(substrAmt).BeginsWith("0X"))
 						{
 							//c0xC0FFEE
-							v = value.Substr(3).ToNumber<unsigned int>(Format::Hex());
+							v = value.Substr(substrAmt + 2).ToNumber<unsigned int>(Format::Hex());
 						}
 						else
 						{
 							//c-50
-							v = value.Substr(1).ToNumber<int>();
+							v = value.Substr(substrAmt).ToNumber<int>();
 						}
 						v = (v & 0x3FFFFFFF) | (1<<29);
 					}

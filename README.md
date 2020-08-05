@@ -30,7 +30,7 @@ These features will be present without enabling:
 - (v1.1) Shift-; (semicolon) toggles stack mode. It allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC.
 - (v1.2) DTEC is coloured a darker red to distinguish it from ARAY.
 - (v1.3) "filt:v" in property tool translates into (v<<8) + 125, to aid the configuration of CRAY that creates FILT with a preset tmp.
-- (v1.6) 30th-bit handling: Adding "c" before typing in a number into the property tool when setting ctype will set the 30th bit. For example, "c50" will set the ctype to (50 | 0x20000000). Works with hex too -- just add "0x", like in "c0xC0FFEE". Even without "c", setting the ctype of colored particles using the property tool will not set the 31st and 32nd bit.
+- (v1.6) 30th-bit handling: Adding "c:" before typing in a number into the property tool when setting ctype will set the 30th bit. For example, "c:50" will set the ctype to (50 | 0x20000000). Works with hex too -- just add "0x", like in "c:0xC0FFEE". Even without "c:", setting the ctype of colored particles using the property tool will not set the 31st and 32nd bit. (This used to be "c", but was changed due to collisions with element names.)
 - (v1.6) Ctrl-J toggles the colored particle ctype display mode. This changes how the ctype of a colored particle is displayed in the debug HUD. The ctype is displayed in hex by default, but you can switch it back to decimal. For decimal, you can choose to enable 30th-bit handling. This ignores the 30th bit and, if the 29th bit is set, displays the ctype as a negative number.
 - (v1.7) Config tool (Shortcut: C): Set the configuration of configurable particles in a few clicks. DRAY: Sets tmp, then tmp2. CRAY: Sets tmp2, then tmp. LDTC: Sets life, then tmp. DTEC/TSNS/LSNS: Sets tmp2. FILT: Sets tmp. CONV: Sets tmp (click on another particle with the type you want to set the tmp to).
 - (v1.8) `tpt.setrecordinterval(<frames>)` will change the interval that frames are captured when recording. Useful when making timelapses.
@@ -102,3 +102,4 @@ v1.10a:
 - Merge changes in 96.0.
 - Fix config tool large stack crash bug.
 - Fix local load unsaved changes bug.
+- Change "c" prop tool shortcut to "c:".
