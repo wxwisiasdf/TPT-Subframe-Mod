@@ -30,6 +30,27 @@ void ParticleDebug::updateSimUpTo(int i)
 	}
 }
 
+int ParticleDebug::updateSimOneParticle()
+{
+	int i = sim->debug_currentParticle;
+	while (i < NPART - 1 && !sim->parts[i].type)
+		i++;
+
+	updateSimUpTo(i);
+	return i;
+}
+
+int ParticleDebug::UpdateSimUpToInterestingChange()
+{
+	int i;
+	do
+	{
+		i = updateSimOneParticle();
+	}
+	while(i < NPART && !sim->debug_interestingChangeOccurred);
+	return i;
+}
+
 void ParticleDebug::Debug(int mode, int x, int y)
 {
 	int debug_currentParticle = sim->debug_currentParticle;
@@ -41,15 +62,13 @@ void ParticleDebug::Debug(int mode, int x, int y)
 		if (!sim->NUM_PARTS)
 			return;
 
-		i = debug_currentParticle;
-		while (i < NPART - 1 && !sim->parts[i].type)
-			i++;
-		updateSimUpTo(i);
+		i = updateSimOneParticle();
 
 		if (i == NPART - 1)
 			logmessage = "End of particles reached, updated sim";
 		else
 			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
+		model->Log(logmessage, false);
 	}
 	else if (mode == 1)
 	{
@@ -62,8 +81,13 @@ void ParticleDebug::Debug(int mode, int x, int y)
 			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
 
 		updateSimUpTo(i);
+
+		model->Log(logmessage, false);
 	}
-	model->Log(logmessage, false);
+	else
+	{
+		printf("BUG: SetDebug called with unknown mode");
+	}
 }
 
 bool ParticleDebug::KeyPress(int key, int scan, bool shift, bool ctrl, bool alt, ui::Point currentMouse)
@@ -96,11 +120,9 @@ bool ParticleDebug::KeyPress(int key, int scan, bool shift, bool ctrl, bool alt,
 				return true;
 			if (sim->debug_currentParticle > 0)
 			{
-				sim->UpdateParticles(sim->debug_currentParticle, NPART - 1);
-				sim->AfterSim();
 				String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end, updated sim");
+				sim->CompleteDebugUpdateParticles();
 				model->Log(logmessage, false);
-				sim->debug_currentParticle = 0;
 			}
 			else
 			{

@@ -2266,6 +2266,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
+	debug_interestingChangeOccurred = false;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -3483,6 +3484,16 @@ void Simulation::delete_part(int x, int y)//calls kill_part with the particle lo
 	kill_part(ID(i));
 }
 
+void Simulation::CompleteDebugUpdateParticles()
+{
+	if(debug_currentParticle > 0)
+	{
+		UpdateParticles(debug_currentParticle, NPART - 1);
+		AfterSim();
+		debug_currentParticle = 0;
+	}
+}
+
 void Simulation::UpdateParticles(int start, int end)
 {
 	int i, j, x, y, t, nx, ny, r, surround_space, s, rt, nt;
@@ -3496,6 +3507,8 @@ void Simulation::UpdateParticles(int start, int end)
 	int surround[8];
 	int surround_hconduct[8];
 	bool transitionOccurred;
+
+	debug_interestingChangeOccurred = false;
 
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
@@ -5226,6 +5239,7 @@ Simulation::Simulation():
 	replaceModeSelected(0),
 	replaceModeFlags(0),
 	debug_currentParticle(0),
+	debug_interestingChangeOccurred(false),
 	ISWIRE(0),
 	force_stacking_check(false),
 	emp_decor(0),
@@ -5243,6 +5257,7 @@ Simulation::Simulation():
 	legacy_enable(0),
 	aheat_enable(0),
 	water_equal_test(0),
+	subframe_mode(false),
 	sys_pause(0),
 	framerender(0),
 	pretty_powder(0),

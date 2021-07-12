@@ -11,11 +11,13 @@ class ParticleDebug : public DebugInfo
 	GameModel * model;
 public:
 	ParticleDebug(unsigned int id, Simulation * sim, GameModel * model);
+	int UpdateSimUpToInterestingChange();
 	void Debug(int mode, int x, int y);
 	bool KeyPress(int key, int scan, bool shift, bool ctrl, bool alt, ui::Point currentMouse) override;
 	virtual ~ParticleDebug();
 private:
 	void updateSimUpTo(int i);
+	int updateSimOneParticle();
 };
 
 #endif

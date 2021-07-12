@@ -194,6 +194,8 @@ public:
 
 	void SetPaused(bool pauseState);
 	bool GetPaused();
+	void SetSubframeMode(bool subframeModeState);
+	bool GetSubframeMode();
 	void SetDecoration(bool decorationState);
 	bool GetDecoration();
 	void SetAHeatEnable(bool aHeat);
