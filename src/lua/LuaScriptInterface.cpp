@@ -946,6 +946,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"lastUpdatedID", simulation_lastUpdatedID},
 		{"updateUpTo", simulation_updateUpTo},
 		{"temperatureScale", simulation_temperatureScale},
+		{"reloadParticleOrder", simulation_reloadParticleOrder},
 		{NULL, NULL}
 	};
 	luaL_register(l, "simulation", simulationAPIMethods);
@@ -2555,6 +2556,12 @@ int LuaScriptInterface::simulation_temperatureScale(lua_State *l)
 	if (temperatureScale < 0 || temperatureScale > 2)
 		return luaL_error(l, "Invalid temperature scale");
 	luacon_model->SetTemperatureScale(temperatureScale);
+	return 0;
+}
+
+int LuaScriptInterface::simulation_reloadParticleOrder(lua_State * l)
+{
+	luacon_controller->ReloadParticleOrder();
 	return 0;
 }
 

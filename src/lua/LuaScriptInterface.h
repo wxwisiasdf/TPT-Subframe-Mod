@@ -124,6 +124,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_lastUpdatedID(lua_State *l);
 	static int simulation_updateUpTo(lua_State *l);
 	static int simulation_temperatureScale(lua_State *l);
+	static int simulation_reloadParticleOrder(lua_State *l);
 
 
 	//Renderer
