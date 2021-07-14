@@ -198,6 +198,7 @@ GameView::GameView():
 	recordingIndex(0),
 	recording(false),
 	recordingFolder(0),
+	recordingSubframe(false),
 	currentPoint(ui::Point(0, 0)),
 	lastPoint(ui::Point(0, 0)),
 	ren(NULL),
@@ -985,17 +986,25 @@ ByteString GameView::TakeScreenshot(int captureUI, int fileType)
 	return filename;
 }
 
-int GameView::Record(bool record)
+int GameView::Record(bool record, bool subframe)
 {
 	if (!record)
 	{
 		recording = false;
 		recordingFolder = 0;
+		recordingSubframe = false;
+	}
+	else if (recording && subframe && !recordingSubframe)
+	{
+		c->SetSubframeMode(true);
+		recordingSubframe = true;
 	}
 	else if (!recording)
 	{
 		// block so that the return value is correct
-		bool record = ConfirmPrompt::Blocking("Recording", "You're about to start recording all drawn frames. This will use a load of disk space.");
+		String subframeRecordConfirmMessage = "You're about to start recording all remaining particle updates in this frame. This may use a load of disk space.";
+		String nonSubframeRecordConfirmMessage = "You're about to start recording all drawn frames. This will use a load of disk space.";
+		bool record = ConfirmPrompt::Blocking("Recording", subframe ? subframeRecordConfirmMessage : nonSubframeRecordConfirmMessage);
 		if (record)
 		{
 			time_t startTime = time(NULL);
@@ -1004,6 +1013,12 @@ int GameView::Record(bool record)
 			Platform::MakeDirectory(ByteString::Build("recordings", PATH_SEP, recordingFolder).c_str());
 			recording = true;
 			recordingIndex = 0;
+
+			if (subframe)
+			{
+				c->SubframeFrameStep();
+				recordingSubframe = true;
+			}
 		}
 	}
 	return recordingFolder;
@@ -2213,6 +2228,10 @@ void GameView::OnDraw()
 			ByteString filename = ByteString::Build("recordings", PATH_SEP, recordingFolder, PATH_SEP, "frame_", Format::Width(recordingIndex++, 6), ".ppm");
 
 			Platform::WriteFile(data, filename);
+		}
+
+		if (recordingSubframe && c->IsSubframeFrameStepComplete()) {
+			Record(false);
 		}
 
 		if (logEntries.size())

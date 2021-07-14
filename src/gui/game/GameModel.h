@@ -215,6 +215,8 @@ public:
 	void SetActiveToolset(int toolsetID);
 	int GetActiveToolset();
 	void FrameStep(int frames);
+	void SetSubframeFrameStep(int frames);
+	int GetSubframeFrameStep();
 	User GetUser();
 	void SetUser(User user);
 	Simulation * GetSimulation();

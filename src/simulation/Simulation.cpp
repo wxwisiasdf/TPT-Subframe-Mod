@@ -5234,6 +5234,15 @@ void Simulation::AfterSim()
 #ifdef LUACONSOLE
 	luacon_ci->HandleEvent(LuaEvents::aftersim, new AfterSimEvent());
 #endif
+
+	if (subframe_framerender)
+	{
+		subframe_framerender--;
+		if (subframe_framerender == 0)
+		{
+			subframe_mode = false;
+		}
+	}
 }
 
 Simulation::~Simulation()
@@ -5267,6 +5276,7 @@ Simulation::Simulation():
 	subframe_mode(false),
 	sys_pause(0),
 	framerender(0),
+	subframe_framerender(0),
 	pretty_powder(0),
 	sandcolour_frame(0),
 	deco_space(0)
