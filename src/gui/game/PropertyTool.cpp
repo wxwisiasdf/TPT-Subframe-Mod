@@ -19,6 +19,7 @@
 #include "simulation/BuiltinGOL.h"
 #include "simulation/Simulation.h"
 #include "simulation/SimulationData.h"
+#include "simulation/ElementClasses.h"
 
 #include "graphics/Graphics.h"
 
