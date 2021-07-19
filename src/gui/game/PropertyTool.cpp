@@ -1,7 +1,9 @@
 #include "Tool.h"
 
 #include "client/Client.h"
+#include "Menu.h"
 
+#include "gui/game/GameModel.h"
 #include "gui/Style.h"
 #include "gui/game/Brush.h"
 #include "gui/interface/Window.h"
@@ -12,12 +14,40 @@
 #include "gui/interface/Keys.h"
 #include "gui/dialogues/ErrorMessage.h"
 
+#include "simulation/GOLString.h"
+#include "simulation/BuiltinGOL.h"
 #include "simulation/Simulation.h"
 #include "simulation/ElementClasses.h"
+#include "simulation/SimulationData.h"
 
 #include "graphics/Graphics.h"
 
 #include <iostream>
+
+void ParseFloatProperty(String value, float &out)
+{
+	if (value.EndsWith("C"))
+	{
+		float v = value.SubstrFromEnd(1).ToNumber<float>();
+		out = v + 273.15;
+	}
+	else if(value.EndsWith("F"))
+	{
+		float v = value.SubstrFromEnd(1).ToNumber<float>();
+		out = (v-32.0f)*5/9+273.15f;
+	}
+	else if (value.EndsWith("K"))
+	{
+		out = value.SubstrFromEnd(1).ToNumber<float>();
+	}
+	else
+	{
+		out = value.ToNumber<float>();
+	}
+#ifdef DEBUG
+	std::cout << "Got float value " << out << std::endl;
+#endif
+}
 
 class PropertyWindow: public ui::Window
 {
@@ -53,10 +83,12 @@ sim(sim_)
 	okayButton->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
 	okayButton->Appearance.BorderInactive = ui::Colour(200, 200, 200);
 	okayButton->SetActionCallback({ [this] {
-		CloseActiveWindow();
 		if (textField->GetText().length())
+		{
+			CloseActiveWindow();
 			SetProperty();
-		SelfDestruct();
+			SelfDestruct();
+		}
 	} });
 	AddComponent(okayButton);
 	SetOkayButton(okayButton);
@@ -64,7 +96,7 @@ sim(sim_)
 	property = new ui::DropDown(ui::Point(8, 25), ui::Point(Size.X-16, 16));
 	property->SetActionCallback({ [this] { FocusComponent(textField); } });
 	AddComponent(property);
-	for (size_t i = 0; i < properties.size(); i++)
+	for (int i = 0; i < int(properties.size()); i++)
 	{
 		property->AddOption(std::pair<String, int>(properties[i].Name.FromAscii(), i));
 	}
@@ -84,7 +116,7 @@ void PropertyWindow::SetProperty()
 {
 	if(property->GetOption().second!=-1 && textField->GetText().length() > 0)
 	{
-		String value = textField->GetText();
+		String value = textField->GetText().ToUpper();
 		try {
 			switch(properties[property->GetOption().second].Type)
 			{
@@ -93,7 +125,7 @@ void PropertyWindow::SetProperty()
 				{
 					int v;
 					int type;
-					if(value.length() > 2 && value.BeginsWith("0x"))
+					if(value.length() > 2 && value.BeginsWith("0X"))
 					{
 						//0xC0FFEE
 						v = value.Substr(2).ToNumber<unsigned int>(Format::Hex());
@@ -103,7 +135,7 @@ void PropertyWindow::SetProperty()
 						//#C0FFEE
 						v = value.Substr(1).ToNumber<unsigned int>(Format::Hex());
 					}
-					else if(value.length() > 5 && value.BeginsWith("filt:"))
+					else if(value.length() > 5 && value.BeginsWith("FILT:"))
 					{
 						//filt:5
 						v = value.Substr(5).ToNumber<unsigned int>();
@@ -117,10 +149,10 @@ void PropertyWindow::SetProperty()
 						std::cout << "Got type from particle name" << std::endl;
 #endif
 					}
-					else if(value.length() > 1 && value.BeginsWith("c"))
+					else if(value.length() > 1 && properties[property->GetOption().second].Name == "ctype" && value.BeginsWith("C"))
 					{
 						// 30th-bit handling
-						if(value.length() > 3 && value.Substr(1).BeginsWith("0x"))
+						if(value.length() > 3 && value.Substr(1).BeginsWith("0X"))
 						{
 							//c0xC0FFEE
 							v = value.Substr(3).ToNumber<unsigned int>(Format::Hex());
@@ -134,7 +166,44 @@ void PropertyWindow::SetProperty()
 					}
 					else
 					{
-						v = value.ToNumber<int>();
+						// Try to parse as particle name
+						v = sim->GetParticleType(value.ToUtf8());
+
+						// Try to parse special GoL rules
+						if (v == -1 && properties[property->GetOption().second].Name == "ctype")
+						{
+							if (value.length() > 1 && value.BeginsWith("B") && value.Contains("/"))
+							{
+								v = ParseGOLString(value);
+								if (v == -1)
+								{
+									class InvalidGOLString : public std::exception
+									{
+									};
+									throw InvalidGOLString();
+								}
+							}
+							else
+							{
+								v = sim->GetParticleType(value.ToUtf8());
+								if (v == -1)
+								{
+									for (auto *elementTool : tool->gameModel->GetMenuList()[SC_LIFE]->GetToolList())
+									{
+										if (elementTool && elementTool->GetName() == value)
+										{
+											v = ID(elementTool->GetToolID());
+											break;
+										}
+									}
+								}
+							}
+						}
+						// Parse as plain number
+						if (v == -1)
+						{
+							v = value.ToNumber<int>();
+						}
 					}
 
 					if (properties[property->GetOption().second].Name == "type" && (v < 0 || v >= PT_NUM || !sim->elements[v].Enabled))
@@ -153,7 +222,7 @@ void PropertyWindow::SetProperty()
 				case StructProperty::UInteger:
 				{
 					unsigned int v;
-					if(value.length() > 2 && value.BeginsWith("0x"))
+					if(value.length() > 2 && value.BeginsWith("0X"))
 					{
 						//0xC0FFEE
 						v = value.Substr(2).ToNumber<unsigned int>(Format::Hex());
@@ -175,35 +244,7 @@ void PropertyWindow::SetProperty()
 				}
 				case StructProperty::Float:
 				{
-					if(properties[property->GetOption().second].Name == "temp")
-					{
-						if(value.EndsWith("F"))
-						{
-							float v = value.SubstrFromEnd(1).ToNumber<float>();
-							tool->propValue.Float = (v-32.0f)*5/9+273.15f;
-						}
-						else if (value.EndsWith("K"))
-						{
-							tool->propValue.Float = value.SubstrFromEnd(1).ToNumber<float>();
-						}
-						else if (value.EndsWith("C"))
-						{
-							float v = value.SubstrFromEnd(1).ToNumber<float>();
-							tool->propValue.Float = v + 273.15;
-						}
-						else
-						{
-							float v = value.ToNumber<float>();
-							tool->propValue.Float = v + 273.15;
-						}
-					}
-					else
-					{
-						tool->propValue.Float = value.ToNumber<float>();
-					}
-#ifdef DEBUG
-					std::cout << "Got float value " << tool->propValue.Float << std::endl;
-#endif
+					ParseFloatProperty(value, tool->propValue.Float);
 				}
 					break;
 				default:
@@ -261,7 +302,7 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 
 	if (changeType)
 	{
-		sim->part_change_type(ID(i), sim->parts[ID(i)].x+0.5f, sim->parts[ID(i)].y+0.5f, propValue.Integer);
+		sim->part_change_type(ID(i), int(sim->parts[ID(i)].x+0.5f), int(sim->parts[ID(i)].y+0.5f), propValue.Integer);
 		return;
 	}
 

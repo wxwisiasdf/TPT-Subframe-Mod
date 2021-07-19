@@ -1,5 +1,6 @@
 #ifndef GAMECONTROLLER_H
 #define GAMECONTROLLER_H
+#include "Config.h"
 
 #include <vector>
 #include <utility>
@@ -70,6 +71,7 @@ public:
 	bool MouseUp(int x, int y, unsigned button, char type);
 	bool MouseWheel(int x, int y, int d);
 	bool TextInput(String text);
+	bool TextEditing(String text);
 	bool KeyPress(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt);
 	bool KeyRelease(int key, int scan, bool repeat, bool shift, bool ctrl, bool alt);
 	void Tick();
@@ -108,6 +110,8 @@ public:
 	void ShowGravityGrid();
 	void SetHudEnable(bool hudState);
 	bool GetHudEnable();
+	void SetBrushEnable(bool brushState);
+	bool GetBrushEnable();
 	void SetDebugHUD(bool hudState);
 	bool GetDebugHUD();
     unsigned int GetDebugFlags() { return debugFlags; }
@@ -176,6 +180,7 @@ public:
 	void SwitchAir();
 	void ToggleAHeat();
 	bool GetAHeatEnable();
+	void ResetAHeat();
 	void ToggleNewtonianGravity();
 
 	bool LoadClipboard();
@@ -188,6 +193,8 @@ public:
 	void NotifyNewNotification(Client * sender, std::pair<String, ByteString> notification) override;
 	void RunUpdater();
 	bool GetMouseClickRequired();
+
+	void RemoveCustomGOLType(const ByteString &identifier);
 };
 
 #endif // GAMECONTROLLER_H
