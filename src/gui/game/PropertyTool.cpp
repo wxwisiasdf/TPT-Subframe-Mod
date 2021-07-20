@@ -141,21 +141,18 @@ void PropertyWindow::SetProperty()
 						v = value.Substr(5).ToNumber<unsigned int>();
 						v = PMAP(v, PT_FILT);
 					}
-					else if(value.length() > 1 && properties[property->GetOption().second].Name == "ctype" && value.BeginsWith("C"))
+					else if(value.length() > 2 && properties[property->GetOption().second].Name == "ctype" && value.BeginsWith("C:"))
 					{
-						int substrAmt = 1;
-						if (value.length() > 2 && value.BeginsWith("C:")) {
-							substrAmt = 2;
-						}
+						int substrAmt = 2;
 						// 30th-bit handling
 						if(value.length() > 3 && value.Substr(substrAmt).BeginsWith("0X"))
 						{
-							//c0xC0FFEE
+							//c:0xC0FFEE
 							v = value.Substr(substrAmt + 2).ToNumber<unsigned int>(Format::Hex());
 						}
 						else
 						{
-							//c-50
+							//c:-50
 							v = value.Substr(substrAmt).ToNumber<int>();
 						}
 						v = (v & 0x3FFFFFFF) | (1<<29);
