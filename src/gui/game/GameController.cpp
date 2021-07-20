@@ -1270,10 +1270,27 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 		}
 		else if (gameModel->GetSaveFile())
 		{
+			std::string filename = gameModel->GetSaveFile()->GetName();
+			if (GetAutoreloadEnabled() && Platform::FileExists(filename))
+			{
+				try
+				{
+					std::vector<char> data;
+					if (Platform::ReadFile(data, filename))
+					{
+						Platform::WriteFile(data, filename + std::string(".backup"));
+					}
+				}
+				catch(std::exception & e)
+				{
+					new ErrorMessage("Error", "Unable to make backup.");
+				}
+			}
+
 			Json::Value localSaveInfo;
 			localSaveInfo["type"] = "localsave";
 			localSaveInfo["username"] = Client::Ref().GetAuthUser().Username;
-			localSaveInfo["title"] = gameModel->GetSaveFile()->GetName();
+			localSaveInfo["title"] = filename;
 			localSaveInfo["date"] = (Json::Value::UInt64)time(NULL);
 			Client::Ref().SaveAuthorInfo(&localSaveInfo);
 			gameSave->authors = localSaveInfo;
@@ -1284,7 +1301,7 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 			(void)fromNewerVersion;
 			if (saveData.size() == 0)
 				new ErrorMessage("Error", "Unable to serialize game data.");
-			else if (!Platform::WriteFile(saveData, gameModel->GetSaveFile()->GetName()))
+			else if (!Platform::WriteFile(saveData, filename))
 				new ErrorMessage("Error", "Unable to write save file.");
 			else
 				gameModel->SetInfoTip("Saved Successfully");
