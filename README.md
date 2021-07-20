@@ -99,4 +99,5 @@ v1.9:
 - Fix pasting/stamping ID reordering bug.
 
 v1.10a:
-- Merge changes in 96.0
+- Merge changes in 96.0.
+- Fix config tool large stack crash bug.
