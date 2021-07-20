@@ -56,6 +56,7 @@ private:
 	std::vector<DebugInfo*> debugInfo;
 	std::unique_ptr<Snapshot> beforeRestore;
 	unsigned int debugFlags;
+	bool autoreloadEnabled;
 	
 	void OpenSaveDone();
 public:
@@ -126,6 +127,8 @@ public:
 	int GetTemperatureScale();
 	bool GetParticleDebugEnabled() { return debugFlags & 0x8; }
 	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
+	bool GetAutoreloadEnabled() { return autoreloadEnabled; }
+	void SetAutoreloadEnabled(bool e) { autoreloadEnabled = e; }
 	void SetActiveMenu(int menuID);
 	void RestoreLastRegularActiveTool();
 	std::vector<Menu*> GetMenuList();
