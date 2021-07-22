@@ -285,6 +285,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"screenshot",&luatpt_screenshot},
 		{"record",&luatpt_record},
 		{"record_subframe",&luatpt_record_subframe},
+		{"setrecordinterval",&luatpt_setrecordinterval},
 		{"element",&luatpt_getelement},
 		{"get_clipboard", &platform_clipboardCopy},
 		{"set_clipboard", &platform_clipboardPaste},
