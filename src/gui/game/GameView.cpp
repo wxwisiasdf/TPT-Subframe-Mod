@@ -446,11 +446,6 @@ void GameView::NotifyMenuListChanged(GameModel * sender)
 	}
 }
 
-void GameView::SetSample(SimulationSample sample)
-{
-	this->sample = sample;
-}
-
 void GameView::SetHudEnable(bool hudState)
 {
 	showHud = hudState;
@@ -2098,6 +2093,8 @@ void GameView::SetSaveButtonTooltips()
 
 void GameView::OnDraw()
 {
+	SimulationSample sample = *c->GetSample();
+
 	Graphics * g = GetGraphics();
 	if (ren)
 	{

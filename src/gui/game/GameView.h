@@ -6,7 +6,6 @@
 #include <deque>
 #include "common/String.h"
 #include "gui/interface/Window.h"
-#include "simulation/Sample.h"
 
 enum DrawMode
 {
@@ -123,8 +122,6 @@ private:
 	VideoBuffer * placeSaveThumb;
 	ui::Point placeSaveOffset;
 
-	SimulationSample sample;
-
 	void updateToolButtonScroll();
 
 	void SetSaveButtonTooltips();
@@ -143,7 +140,6 @@ public:
 
 	//Breaks MVC, but any other way is going to be more of a mess.
 	ui::Point GetMousePosition();
-	void SetSample(SimulationSample sample);
 	void SetHudEnable(bool hudState);
 	bool GetHudEnable();
 	void SetBrushEnable(bool hudState);
