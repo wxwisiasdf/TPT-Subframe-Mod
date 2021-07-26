@@ -17,7 +17,7 @@ New features:
 - (v1.1) Stack mode (shortcut: Shift-semicolon to toggle). Allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC.
 - (v1.7) Config tool (shortcut: C). Sets particle properties in a few clicks. DRAY: Sets tmp, then tmp2. CRAY: Sets tmp2, then tmp. LDTC: Sets life, then tmp. DTEC/TSNS/LSNS: Sets tmp2. FILT: Sets tmp. CONV: Sets tmp (click on another particle with the type you want to set the tmp to).
 - (v1.8) Timelapse recording (Lua: `tpt.setrecordinterval(<frames>)`). Changes the interval that frames are captured when recording. Useful when making timelapses.
-- (v1.10) Stack edit (shortcut: E and Shift-E). Config tool, property tool and ctype-draw target particles at the selected depth. When stack mode is enabled (Shift-semicolon), particles are created and deleted at the selected depth. Note that using the brush with stack edit messes with particle order, so this is best combined with automatic particle order reloading (`tpt.autoreload_enable(1)`).
+- (v1.10) Stack edit (shortcut: E and Shift-E). Config tool, property tool and ctype-draw target particles at the selected depth. When stack mode is enabled (Shift-semicolon), particles are created and deleted at the selected depth. Note that using the brush with stack edit messes with particle order, so this is best combined with automatic particle order reloading (`tpt.autoreload_enable(1)`). You can still access the element search tool with Ctrl-E.
 
 New features enabled by the Lua command `tpt.autoreload_enable(1)`:
 

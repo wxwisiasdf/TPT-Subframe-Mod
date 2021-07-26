@@ -2036,25 +2036,26 @@ void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int yoffse
 	String text = sbText.Build();
 	int textWidth = Graphics::textwidth(text);
 	int rectr = 0, rectg = 0, rectb = 0;
+	float alphamod = 1.f;
 	switch (glowType)
 	{
 	case HudParticleTextGlowType::YELLOW:
 		rectr = 0x63;
 		rectg = 0x5d;
 		rectb = 0x31;
-		alpha *= 1.3f;
+		alphamod = 1.3f;
 		break;
 	case HudParticleTextGlowType::GREEN:
 		rectr = 0x32;
 		rectg = 0x30;
 		rectb = 0x5e;
-		alpha *= 1.3f;
+		alphamod = 1.3f;
 		break;
 	default:
 		break;
 	}
-	g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 13, rectr, rectg, rectb, int(alpha*0.5f));
-	g->drawtext(XRES-16-textWidth, 15 + yoffset, text, 255, 255, 255, int(alpha*0.75f));
+	g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 13, rectr, rectg, rectb, int(alpha*alphamod*0.5f));
+	g->drawtext(XRES-16-textWidth, 15 + yoffset, text, 255, 255, 255, int(alpha*alphamod*0.75f));
 
 #ifndef OGLI
 	if (wavelengthGfx)
