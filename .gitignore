@@ -91,5 +91,4 @@ screenshot_*
 *.sdf
 /font/
 
-screenshot_*
-downloads/*
+!autorun.example.lua

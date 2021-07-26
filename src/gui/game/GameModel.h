@@ -156,7 +156,6 @@ public:
 
 	Tool * GetActiveTool(int selection);
 	void SetActiveTool(int selection, Tool * tool);
-	void ResetToolset();
 	void SetToolStrength(float value);
 	float GetToolStrength();
 	Tool * GetLastTool();
@@ -180,14 +179,14 @@ public:
 	void SetSave(SaveInfo * newSave, bool invertIncludePressure);
 	void SetSaveFile(SaveFile * newSave, bool invertIncludePressure);
 	void AddObserver(GameView * observer);
-	void ReloadParticleOrder();
+	bool AreParticlesInSubframeOrder();
 
-	bool GetSubframeMode();
-	void SetSubframeMode(bool subframeModeState);
-	bool GetPaused();
 	void SetPaused(bool pauseState);
-	bool GetDecoration();
+	bool GetPaused();
+	void SetSubframeMode(bool subframeModeState);
+	bool GetSubframeMode();
 	void SetDecoration(bool decorationState);
+	bool GetDecoration();
 	void SetAHeatEnable(bool aHeat);
 	bool GetAHeatEnable();
 	void ResetAHeat();
@@ -201,6 +200,8 @@ public:
 	void SetActiveMenu(int menuID);
 	int GetActiveMenu();
 	void FrameStep(int frames);
+	void SetSubframeFrameStep(int frames);
+	int GetSubframeFrameStep();
 	User GetUser();
 	void SetUser(User user);
 	Simulation * GetSimulation();

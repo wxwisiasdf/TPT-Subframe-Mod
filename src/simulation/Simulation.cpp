@@ -97,8 +97,6 @@ int Simulation::Load(GameSave * save, bool includePressure, int fullX, int fullY
 		}
 	}
 
-	RecalcFreeParticles(false);
-
 	int r;
 	bool doFullScan = false;
 	for (int n = 0; n < NPART && n < save->particlesCount; n++)
@@ -180,6 +178,9 @@ int Simulation::Load(GameSave * save, bool includePressure, int fullX, int fullY
 			}
 		}
 	}
+
+	parts_lastActiveIndex = NPART-1;
+	RecalcFreeParticles(false);
 
 	int i;
 	// Map of soap particles loaded into this save, old ID -> new ID
@@ -322,33 +323,10 @@ int Simulation::Load(GameSave * save, bool includePressure, int fullX, int fullY
 			break;
 		}
 	}
-	parts_lastActiveIndex = NPART-1;
 	force_stacking_check = true;
 	Element_PPIP_ppip_changed = 1;
-	RecalcFreeParticles(false);
 
-	// fix SOAP links using soapList, a map of old particle ID -> new particle ID
-	// loop through every old particle (loaded from save), and convert .tmp / .tmp2
-	for (std::map<unsigned int, unsigned int>::iterator iter = soapList.begin(), end = soapList.end(); iter != end; ++iter)
-	{
-		int i = (*iter).second;
-		if ((parts[i].ctype & 0x2) == 2)
-		{
-			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp);
-			if (n != end)
-				parts[i].tmp = n->second;
-			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
-			// so just ignore it
-		}
-		if ((parts[i].ctype & 0x4) == 4)
-		{
-			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp2);
-			if (n != end)
-				parts[i].tmp2 = n->second;
-			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
-			// so just ignore it
-		}
-	}
+	FixSoapLinks(soapList);
 
 	for (size_t i = 0; i < save->signs.size() && signs.size() < MAXSIGNS; i++)
 	{
@@ -357,8 +335,9 @@ int Simulation::Load(GameSave * save, bool includePressure, int fullX, int fullY
 			sign tempSign = save->signs[i];
 			tempSign.x += fullX;
 			tempSign.y += fullY;
-			if (InBounds(tempSign.x, tempSign.y))
-				signs.push_back(tempSign);
+			if (!InBounds(tempSign.x, tempSign.y))
+				continue;
+			signs.push_back(tempSign);
 		}
 	}
 	for(int saveBlockX = 0; saveBlockX < save->blockWidth; saveBlockX++)
@@ -601,7 +580,7 @@ void Simulation::Restore(const Snapshot & snap)
 	force_stacking_check = true;
 
 	debug_currentParticle = snap.debug_currentParticle;
-	debug_needReloadParticleOrder = true;
+	needReloadParticleOrder = true;
 
 	std::copy(snap.AirPressure.begin(), snap.AirPressure.end(), &pv[0][0]);
 	std::copy(snap.AirVelocityX.begin(), snap.AirVelocityX.end(), &vx[0][0]);
@@ -762,31 +741,50 @@ int Simulation::flood_prop(int x, int y, size_t propoffset, PropertyValue propva
 	return did_something;
 }
 
-SimulationSample Simulation::GetSample(int x, int y)
+void Simulation::UpdateSample(int x, int y)
 {
-	SimulationSample sample;
+	sample = SimulationSample();
 	sample.PositionX = x;
 	sample.PositionY = y;
 	if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 	{
-		sample.sparticle_count = 0;
-		for (int i=0; i<=parts_lastActiveIndex; i++)
+		int stackSampleX = configToolSampleActive ? configToolSampleX : x;
+		int stackSampleY = configToolSampleActive ? configToolSampleY : y;
+		sample.SParticleCount = 0;
+		int stackIds[5];
+		int maxStackSample = stackEditDepth + 3;
+		if (maxStackSample < 5)
+			maxStackSample = 5;
+		for (int i = parts_lastActiveIndex; i >= 0; i--)
 		{
-			if (parts[i].type)
-			{
-				int partx = (int)(parts[i].x+0.5f);
-				int party = (int)(parts[i].y+0.5f);
-				if (partx == x && party == y)
-				{
-					if (sample.sparticle_count < 5)
-					{
-						sample.sparticles[sample.sparticle_count] = parts[i];
-						sample.sparticleIds[sample.sparticle_count] = i;
-					}
-					sample.sparticle_count++;
-				}
-			}
+			if (!parts[i].type)
+				continue;
+			int partx = (int)(parts[i].x+0.5f);
+			int party = (int)(parts[i].y+0.5f);
+			if (partx != stackSampleX || party != stackSampleY)
+				continue;
+			if (sample.SParticleCount < maxStackSample)
+				stackIds[sample.SParticleCount % 5] = i;
+			sample.SParticleCount++;
 		}
+		sample.StackIndexEnd = sample.SParticleCount;
+		if (sample.StackIndexEnd > maxStackSample)
+			sample.StackIndexEnd = maxStackSample;
+		sample.StackIndexBegin = sample.StackIndexEnd - 5;
+		if (sample.StackIndexBegin < 0)
+			sample.StackIndexBegin = 0;
+		for (int i = sample.StackIndexBegin; i < sample.StackIndexEnd; i++)
+		{
+			int partId = stackIds[i % 5];
+			sample.SParticles[i - sample.StackIndexBegin] = parts[partId];
+			sample.SParticleIDs[i - sample.StackIndexBegin] = partId;
+		}
+
+		sample.EffectiveStackEditDepth = stackEditDepth;
+		if (sample.EffectiveStackEditDepth < 0)
+			sample.EffectiveStackEditDepth = 0;
+		if (sample.EffectiveStackEditDepth >= sample.SParticleCount)
+			sample.EffectiveStackEditDepth = sample.SParticleCount - 1;
 
 		if (photons[y][x])
 		{
@@ -814,6 +812,7 @@ SimulationSample Simulation::GetSample(int x, int y)
 			sample.GravityVelocityY = gravy[(y/CELL)*(XRES/CELL)+(x/CELL)];
 		}
 
+		// get config tool adjacency info
 		for (int i = -1; i <= 1; i++)
 		{
 			for (int j = -1; j <= 1; j++)
@@ -828,7 +827,7 @@ SimulationSample Simulation::GetSample(int x, int y)
 					partInfo |= SimulationSample::SPRK_FLAG;
 				if (type == PT_FILT)
 					partInfo |= SimulationSample::FILT_FLAG;
-				sample.adjacentPartsInfo[i+1][j+1] = partInfo;
+				sample.AdjacentPartsInfo[i+1][j+1] = partInfo;
 			}
 		}
 	}
@@ -836,7 +835,6 @@ SimulationSample Simulation::GetSample(int x, int y)
 		sample.isMouseInSim = false;
 
 	sample.NumParts = NUM_PARTS;
-	return sample;
 }
 
 int Simulation::FloodINST(int x, int y)
@@ -1440,7 +1438,7 @@ int Simulation::Tool(int x, int y, int tool, int brushX, int brushY, float stren
 		cpart = &(parts[ID(r)]);
 	else if ((r = photons[y][x]))
 		cpart = &(parts[ID(r)]);
-	debug_needReloadParticleOrder = true;
+	needReloadParticleOrder = true;
 	return tools[tool].Perform(this, cpart, x, y, brushX, brushY, strength);
 }
 
@@ -1805,6 +1803,8 @@ int Simulation::CreateParts(int x, int y, int rx, int ry, int c, int flags)
 
 void Simulation::CreateLine(int x1, int y1, int x2, int y2, int c, Brush * cBrush, int flags)
 {
+	BeforeStackEdit();
+
 	int x, y, dx, dy, sy, rx = cBrush->GetRadius().X, ry = cBrush->GetRadius().Y;
 	bool reverseXY = abs(y2-y1) > abs(x2-x1);
 	float e = 0.0f, de;
@@ -1854,6 +1854,8 @@ void Simulation::CreateLine(int x1, int y1, int x2, int y2, int c, Brush * cBrus
 			e -= 1.0f;
 		}
 	}
+
+	AfterStackEdit(c, flags);
 }
 #endif
 
@@ -1865,7 +1867,7 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 	}
 
 	if (TYP(c) != PT_SPRK)
-		debug_needReloadParticleOrder = true;
+		needReloadParticleOrder = true;
 
 	if (flags & REPLACE_MODE)
 	{
@@ -1907,6 +1909,7 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 		{
 			return 1;
 		}
+		return 0;
 	}
 	else
 	{
@@ -1981,6 +1984,8 @@ void Simulation::CreateLine(int x1, int y1, int x2, int y2, int c)
 #ifndef RENDERER
 void Simulation::CreateBox(int x1, int y1, int x2, int y2, int c, int flags)
 {
+	BeforeStackEdit();
+
 	int i, j;
 	if (x1>x2)
 	{
@@ -1997,6 +2002,8 @@ void Simulation::CreateBox(int x1, int y1, int x2, int y2, int c, int flags)
 	for (j=y2; j>=y1; j--)
 		for (i=x1; i<=x2; i++)
 			CreateParts(i, j, 0, 0, c, flags);
+
+	AfterStackEdit(c, flags);
 }
 
 int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
@@ -2046,6 +2053,7 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 	coord_stack[coord_stack_size][1] = y;
 	coord_stack_size++;
 
+	BeforeStackEdit();
 	do
 	{
 		coord_stack_size--;
@@ -2103,6 +2111,7 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 					if (coord_stack_size>=coord_stack_limit)
 					{
 						free(coord_stack);
+						AfterStackEdit(c, flags);
 						return -1;
 					}
 				}
@@ -2117,11 +2126,13 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 					if (coord_stack_size>=coord_stack_limit)
 					{
 						free(coord_stack);
+						AfterStackEdit(c, flags);
 						return -1;
 					}
 				}
 	} while (coord_stack_size>0);
 	free(coord_stack);
+	AfterStackEdit(c, flags);
 	return created_something;
 }
 #endif
@@ -2350,7 +2361,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
-	debug_needReloadParticleOrder = false;
+	needReloadParticleOrder = false;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -3344,6 +3355,11 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	parts[i].x = (float)x;
 	parts[i].y = (float)y;
 
+	if (t == PT_CRAY && (p == -2))
+	{
+		parts[i].ctype = PT_SPRK;
+	}
+
 	//and finally set the pmap/photon maps to the newly created particle
 	if (elements[t].Properties & TYPE_ENERGY)
 		photons[y][x] = PMAP(i, t);
@@ -3492,9 +3508,9 @@ void Simulation::create_cherenkov_photon(int pp)//photons from NEUT going throug
 
 void Simulation::delete_part(int x, int y)//calls kill_part with the particle located at x,y
 {
-	debug_interestingChangeOccurred = true;
-
 	unsigned i;
+
+	debug_interestingChangeOccurred = true;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
 		return;
@@ -3507,6 +3523,27 @@ void Simulation::delete_part(int x, int y)//calls kill_part with the particle lo
 	if (!i)
 		return;
 	kill_part(ID(i));
+}
+
+bool Simulation::AreParticlesInSubframeOrder()
+{
+	int cx = 0, cy = 0;
+	for (int i = 0; i < NPART; i++)
+	{
+		int x, y;
+		x = int(parts[i].x + 0.5f);
+		y = int(parts[i].y + 0.5f);
+		if (!parts[i].type)
+		{
+			continue;
+		}
+		if (y < cy || (y == cy && x < cx)) {
+			return false;
+		}
+		cx = x;
+		cy = y;
+	}
+	return true;
 }
 
 void Simulation::CompleteDebugUpdateParticles()
@@ -4891,6 +4928,152 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 		elementRecount = false;
 }
 
+void Simulation::FixSoapLinks(std::map<unsigned int, unsigned int> &soapList)
+{
+	// fix SOAP links using soapList, a map of old particle ID -> new particle ID
+	// loop through every old particle (loaded from save), and convert .tmp / .tmp2
+	for (std::map<unsigned int, unsigned int>::iterator iter = soapList.begin(), end = soapList.end(); iter != end; ++iter)
+	{
+		int i = (*iter).second;
+		if ((parts[i].ctype & 0x2) == 2)
+		{
+			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp);
+			if (n != end)
+				parts[i].tmp = n->second;
+			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
+			// so just ignore it
+		}
+		if ((parts[i].ctype & 0x4) == 4)
+		{
+			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp2);
+			if (n != end)
+				parts[i].tmp2 = n->second;
+			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
+			// so just ignore it
+		}
+	}
+}
+
+void Simulation::ReloadParticleOrder()
+{
+	CompleteDebugUpdateParticles();
+	// use pmap_count as count buffer
+	memset(pmap_count, 0, sizeof(pmap_count));
+	memset(stackReorderParts, 0, sizeof(stackReorderParts));
+	for (int i = 0; i <= parts_lastActiveIndex; i++)
+	{
+		if (!parts[i].type)
+			continue;
+		int partx = (int)(parts[i].x+0.5f);
+		int party = (int)(parts[i].y+0.5f);
+		if (partx<CELL || partx>=XRES-CELL || party<CELL || party>=YRES-CELL)
+			kill_part(i);
+		pmap_count[party][partx]++;
+	}
+	int runningCount = 0;
+	for (int y = 0; y < YRES; y++)
+	{
+		for (int x = 0; x < XRES; x++)
+		{
+			int startId = runningCount;
+			runningCount += pmap_count[y][x];
+			pmap_count[y][x] = startId;
+		}
+	}
+	std::map<unsigned int, unsigned int> soapList;
+	for (int i = 0; i <= parts_lastActiveIndex; i++)
+	{
+		if (!parts[i].type)
+			continue;
+		int partx = (int)(parts[i].x+0.5f);
+		int party = (int)(parts[i].y+0.5f);
+		int newId = pmap_count[party][partx];
+		pmap_count[party][partx] = newId + 1;
+		stackReorderParts[newId] = parts[i];
+		if (parts[i].type == PT_SOAP)
+			soapList.insert(std::pair<unsigned int, unsigned int>(i, newId));
+	}
+	memcpy(parts, stackReorderParts, sizeof(parts));
+	FixSoapLinks(soapList);
+	parts_lastActiveIndex = NPART-1;
+	RecalcFreeParticles(false);
+	needReloadParticleOrder = false;
+}
+
+void Simulation::BeforeStackEdit()
+{
+	if (stackEditDepth < 0)
+		return;
+	CompleteDebugUpdateParticles();
+	// use pmap_count as count buffer
+	memset(pmap_count, 0, sizeof(pmap_count));
+	memset(stackReorderParts, 0, sizeof(stackReorderParts));
+	int numInBack = 0;
+	for (int i = parts_lastActiveIndex; i >= 0; i--)
+	{
+		if (!parts[i].type)
+			continue;
+		int partx = (int)(parts[i].x+0.5f);
+		int party = (int)(parts[i].y+0.5f);
+		if (partx<CELL || partx>=XRES-CELL || party<CELL || party>=YRES-CELL)
+			kill_part(i);
+		if ((int)pmap_count[party][partx] <= stackEditDepth)
+			numInBack++;
+		pmap_count[party][partx]++;
+	}
+	int frontPtr = 0, backPtr = NPART - numInBack;
+	int backBegin = backPtr;
+
+	std::map<unsigned int, unsigned int> soapList;
+	for (int i = 0; i <= parts_lastActiveIndex; i++)
+	{
+		if (!parts[i].type)
+			continue;
+		int partx = (int)(parts[i].x+0.5f);
+		int party = (int)(parts[i].y+0.5f);
+		pmap_count[party][partx]--;
+		bool atFront = (int)pmap_count[party][partx] > stackEditDepth;
+		int newId = atFront ? frontPtr : backPtr;
+		if (atFront)
+			frontPtr++;
+		else
+			backPtr++;
+		stackReorderParts[newId] = parts[i];
+		if (parts[i].type == PT_SOAP)
+			soapList.insert(std::pair<unsigned int, unsigned int>(i, newId));
+	}
+	memcpy(parts, stackReorderParts, sizeof(parts));
+	FixSoapLinks(soapList);
+	parts_lastActiveIndex = NPART-1;
+	RecalcFreeParticles(false);
+
+	// set pmap to particles at stack depth for delete;
+	// we set both pmap and photons to the same particle
+	// as a HACK to force delete to target the right particle
+	memset(pmap, 0, sizeof(pmap));
+	memset(photons, 0, sizeof(photons));
+	for (int i = parts_lastActiveIndex; i >= 0; i--)
+	{
+		int t = parts[i].type;
+		if (!t)
+			continue;
+		int x = (int)(parts[i].x+0.5f);
+		int y = (int)(parts[i].y+0.5f);
+		if (i < backBegin && pmap[y][x])
+			continue;
+		pmap[y][x] = PMAP(i, t);
+		photons[y][x] = PMAP(i, t);
+	}
+	needReloadParticleOrder = true;
+}
+
+void Simulation::AfterStackEdit(int c, int flags)
+{
+	if (stackEditDepth < 0)
+		return;
+	RecalcFreeParticles(false);
+}
+
 void Simulation::SimulateGoL()
 {
 	CGOL = 0;
@@ -5331,6 +5514,15 @@ void Simulation::AfterSim()
 		Element_EMP_Trigger(this, emp_trigger_count);
 		emp_trigger_count = 0;
 	}
+
+	if (subframe_framerender)
+	{
+		subframe_framerender--;
+		if (subframe_framerender == 0)
+		{
+			subframe_mode = false;
+		}
+	}
 }
 
 Simulation::~Simulation()
@@ -5342,8 +5534,11 @@ Simulation::~Simulation()
 Simulation::Simulation():
 	replaceModeSelected(0),
 	replaceModeFlags(0),
+	stackEditDepth(-1),
+	configToolSampleActive(false),
+	stackToolNotifShown(false),
 	debug_currentParticle(0),
-	debug_needReloadParticleOrder(false),
+	needReloadParticleOrder(false),
 	ISWIRE(0),
 	force_stacking_check(false),
 	emp_decor(0),
@@ -5362,6 +5557,7 @@ Simulation::Simulation():
 	subframe_mode(false),
 	sys_pause(0),
 	framerender(0),
+	subframe_framerender(0),
 	pretty_powder(0),
 	sandcolour_frame(0),
 	deco_space(0)

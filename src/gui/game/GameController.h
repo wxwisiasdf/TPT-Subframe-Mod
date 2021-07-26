@@ -14,6 +14,7 @@
 
 #include "simulation/Sign.h"
 #include "simulation/Particle.h"
+#include "simulation/Sample.h"
 
 #include "Misc.h"
 
@@ -114,20 +115,23 @@ public:
 	bool GetBrushEnable();
 	void SetDebugHUD(bool hudState);
 	bool GetDebugHUD();
-    unsigned int GetDebugFlags() { return debugFlags; }
+	bool GetParticleDebugEnabled() { return debugFlags & 0x8; }
+	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
 	bool GetAutoreloadEnabled() { return autoreloadEnabled; }
 	void SetAutoreloadEnabled(bool e) { autoreloadEnabled = e; }
-	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
 	void SetActiveMenu(int menuID);
 	std::vector<Menu*> GetMenuList();
 	int GetNumMenus(bool onlyEnabled);
 	void RebuildFavoritesMenu();
-	ConfigTool * GetActiveConfigTool();
 	Tool * GetActiveTool(int selection);
 	void SetActiveTool(int toolSelection, Tool * tool);
 	void SetActiveTool(int toolSelection, ByteString identifier);
 	void SetLastTool(Tool * tool);
+	SimulationSample * GetSample();
+	ConfigTool * GetActiveConfigTool();
 	void ToggleConfigTool();
+	int GetStackEditDepth();
+	void SetStackEditDepth(int depth);
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
 	void SetActiveColourPreset(int preset);
@@ -161,6 +165,10 @@ public:
 	void ShowConsole();
 	void HideConsole();
 	void FrameStep();
+	void SubframeFrameStep();
+	bool IsSubframeFrameStepComplete();
+	bool IsFrameComplete();
+	bool AreParticlesInSubframeOrder();
 	void TranslateSave(ui::Point point);
 	void TransformSave(matrix2d transform);
 	bool MouseInZoom(ui::Point position);
@@ -170,7 +178,7 @@ public:
 	String BasicParticleInfo(Particle const &sample_part);
 	bool IsValidElement(int type);
 	String WallName(int type);
-	int Record(bool record, bool subframe);
+	int Record(bool record, bool subframe = false);
 	int GetRecordInterval();
 	void SetRecordInterval(int val);
 
@@ -182,6 +190,7 @@ public:
 	bool GetAHeatEnable();
 	void ResetAHeat();
 	void ToggleNewtonianGravity();
+	void ResetStackToolNotifShown();
 
 	bool LoadClipboard();
 	void LoadStamp(GameSave *stamp);

@@ -212,6 +212,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"watertest",&luatpt_togglewater},
 		{"screenshot",&luatpt_screenshot},
 		{"record",&luatpt_record},
+		{"record_subframe",&luatpt_record_subframe},
 		{"setrecordinterval",&luatpt_setrecordinterval},
 		{"element",&luatpt_getelement},
 		{"element_func",&luatpt_element_func},
@@ -2249,7 +2250,7 @@ int LuaScriptInterface::simulation_takeSnapshot(lua_State * l)
 
 int LuaScriptInterface::simulation_reloadParticleOrder(lua_State * l)
 {
-	luacon_model->ReloadParticleOrder();
+	luacon_controller->ReloadParticleOrder();
 	return 0;
 }
 

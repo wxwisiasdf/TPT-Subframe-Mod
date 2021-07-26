@@ -137,33 +137,63 @@ int ConfigTool::getDist(Particle part, int sampleX, int sampleY, int offset, boo
 	return getDist(proj, offset);
 }
 
-void ConfigTool::OnSelectFiltTmp(Simulation *sim, int tmp)
+int ConfigTool::getTargetStackEditDepth(SimulationSample *sample)
 {
-	if (!isSamePart(sim->parts[currId], configPart))
+	for (int i = sample->EffectiveStackEditDepth; i < sample->StackIndexEnd; i++)
 	{
-		Reset();
-		return;
+		int stacki = i - sample->StackIndexBegin;
+		if (IsConfigurableType(sample->SParticles[stacki].type))
+			return stacki + sample->StackIndexBegin;
 	}
-	sim->parts[currId].tmp = tmp;
+	return -1;
 }
 
-void ConfigTool::CalculatePreview(int x, int y, Particle samplePart, int sampleId)
+void ConfigTool::OnSelectFiltTmp(Simulation *sim, int tmp)
 {
-	cursorPos = ui::Point(x, y);
+	if (IsCorrupted(sim))
+	{
+		Reset(sim);
+		return;
+	}
+	sim->parts[configPartId].tmp = tmp;
+}
+
+void ConfigTool::Update(Simulation *sim)
+{
+	SimulationSample *sample = &sim->sample;
+	if (IsCorrupted(sim))
+		Reset(sim);
+	cursorPos = ui::Point(sample->PositionX, sample->PositionY);
 	bool allowDiag = !(
 		configState == ConfigState::dtecTmp2 ||
 		configState == ConfigState::tsnsTmp2 ||
 		configState == ConfigState::lsnsTmp2
 	);
-	ui::Point proj = projectPoint(configPart, x, y, allowDiag);
-	dirx = (proj.X == 0) ? 0 : ((proj.X > 0) ? 1 : -1);
-	diry = (proj.Y == 0) ? 0 : ((proj.Y > 0) ? 1 : -1);
+	ui::Point proj(0, 0);
+	if (configState != ConfigState::ready)
+	{
+		proj = projectPoint(configPart, cursorPos.X, cursorPos.Y, allowDiag);
+		dirx = (proj.X == 0) ? 0 : ((proj.X > 0) ? 1 : -1);
+		diry = (proj.Y == 0) ? 0 : ((proj.Y > 0) ? 1 : -1);
+	}
 	switch (configState)
 	{
-	case ConfigState::ready:
-		currId = sampleId;
-		configPart = samplePart;
+	case ConfigState::ready: {
+		configPartId = -1;
+		if (!sample->isMouseInSim)
+			break;
+		memcpy(lastAdjacentPartsInfo, sample->AdjacentPartsInfo, sizeof(sample->AdjacentPartsInfo));
+		int targetDepth = getTargetStackEditDepth(sample);
+		if (targetDepth == -1)
+			configPartId = -1;
+		else
+		{
+			int stacki = targetDepth - sample->StackIndexBegin;
+			configPartId = sample->SParticleIDs[stacki];
+			configPart = sample->SParticles[stacki];
+		}
 		break;
+	}
 	case ConfigState::drayTmp:
 		configPart.tmp = getDist(proj);
 		break;
@@ -188,48 +218,30 @@ void ConfigTool::CalculatePreview(int x, int y, Particle samplePart, int sampleI
 		configPart.tmp2 = getDist(proj);
 		break;
 	case ConfigState::convTmp:
-		configPart.tmp = samplePart.type;
+		configPart.tmp = sample->isMouseInSim ? sample->particle.type : 0;
 		break;
 	default:
 		break;
 	}
 }
 
-void ConfigTool::ProcessSample(SimulationSample sample)
-{
-	if (configState != ConfigState::ready)
-		return;
-
-	for (int i = (sample.sparticle_count >= 5 ? 5 : sample.sparticle_count) - 1; i >= 0; i--)
-	{
-		int type = sample.sparticles[i].type;
-		if (IsConfigurableType(type) && type != PT_CONV)
-		{
-			configPart = sample.sparticles[i];
-			currId = sample.sparticleIds[i];
-			break;
-		}
-	}
-	lastSample = sample;
-}
-
 void ConfigTool::Click(Simulation *sim, Brush *brush, ui::Point position)
 {
-	if (configState != ConfigState::ready &&
-		!isSamePart(sim->parts[currId], configPart))
+	sim->UpdateSample(position.X, position.Y);
+	Update(sim);
+	if (IsCorrupted(sim))
 	{
-		Reset();
+		Reset(sim);
+		return;
 	}
-	Particle oldPart = sim->parts[currId];
-	int oldX = int(oldPart.x + 0.5f), oldY = int(oldPart.y + 0.5f);
-	if (!oldPart.type || oldX != position.X || oldY != position.Y)
-	{
-		CalculatePreview(position.X, position.Y,
-			getPartAt(sim, position), getIdAt(sim, position));
-	}
+	Particle *pConfigPart = NULL;
+	if (configState != ConfigState::ready)
+		pConfigPart = &sim->parts[configPartId];
 	switch (configState)
 	{
 	case ConfigState::ready:
+		if (configPartId == -1)
+			break;
 		switch (configPart.type)
 		{
 		case PT_DRAY:
@@ -259,49 +271,69 @@ void ConfigTool::Click(Simulation *sim, Brush *brush, ui::Point position)
 		default:
 			break;
 		}
+		if (configState != ConfigState::ready)
+		{
+			sim->configToolSampleActive = true;
+			sim->configToolSampleX = cursorPos.X;
+			sim->configToolSampleY = cursorPos.Y;
+		}
 		break;
 	case ConfigState::drayTmp:
-		sim->parts[currId].tmp = configPart.tmp;
+		pConfigPart->tmp = configPart.tmp;
 		configState = ConfigState::drayTmp2;
 		break;
 	case ConfigState::drayTmp2:
-		sim->parts[currId].tmp2 = configPart.tmp2;
-		configState = ConfigState::ready;
+		pConfigPart->tmp2 = configPart.tmp2;
+		Reset(sim);
 		break;
 	case ConfigState::crayTmp2:
-		sim->parts[currId].tmp2 = configPart.tmp2;
+		pConfigPart->tmp2 = configPart.tmp2;
 		configState = ConfigState::crayTmp;
 		break;
 	case ConfigState::crayTmp:
-		sim->parts[currId].tmp = configPart.tmp;
-		configState = ConfigState::ready;
+		pConfigPart->tmp = configPart.tmp;
+		Reset(sim);
 		break;
 	case ConfigState::ldtcLife:
-		sim->parts[currId].life = configPart.life;
+		pConfigPart->life = configPart.life;
 		configState = ConfigState::ldtcTmp;
 		break;
 	case ConfigState::ldtcTmp:
-		sim->parts[currId].tmp = configPart.tmp;
-		configState = ConfigState::ready;
+		pConfigPart->tmp = configPart.tmp;
+		Reset(sim);
 		break;
 	case ConfigState::dtecTmp2:
 	case ConfigState::tsnsTmp2:
 	case ConfigState::lsnsTmp2:
-		sim->parts[currId].tmp2 = configPart.tmp2;
-		configState = ConfigState::ready;
+		pConfigPart->tmp2 = configPart.tmp2;
+		Reset(sim);
 		break;
 	case ConfigState::convTmp:
-		sim->parts[currId].tmp = configPart.tmp;
-		configState = ConfigState::ready;
+		pConfigPart->tmp = configPart.tmp;
+		Reset(sim);
 		break;
 	default:
 		break;
 	}
 }
 
-void ConfigTool::Reset()
+bool ConfigTool::IsCorrupted(Simulation *sim)
+{
+	if (configState == ConfigState::ready)
+		return false;
+	if (!isSamePart(sim->parts[configPartId], configPart))
+		return true;
+	int targetDepth = getTargetStackEditDepth(&sim->sample);
+	if (targetDepth == -1)
+		return configPartId != -1;
+	int stacki = targetDepth - sim->sample.StackIndexBegin;
+	return sim->sample.SParticleIDs[stacki] != configPartId;
+}
+
+void ConfigTool::Reset(Simulation *sim)
 {
 	configState = ConfigState::ready;
+	sim->configToolSampleActive = false;
 }
 
 Particle ConfigTool::GetPart()
@@ -311,7 +343,7 @@ Particle ConfigTool::GetPart()
 
 int ConfigTool::GetId()
 {
-	return currId;
+	return configPartId;
 }
 
 bool ConfigTool::IsConfigurableType(int type)
@@ -388,7 +420,7 @@ void ConfigTool::DrawHUD(Renderer *ren)
 	{
 	case ConfigState::ready:
 		ren->xor_line(cursorPos.X, cursorPos.Y, cursorPos.X, cursorPos.Y);
-		if (currId == -1)
+		if (configPartId == -1)
 			break;
 		switch (configPart.type)
 		{
@@ -407,10 +439,10 @@ void ConfigTool::DrawHUD(Renderer *ren)
 					if (!(dirx || diry))
 						continue;
 					bool hasConductor =
-						(lastSample.adjacentPartsInfo[-diry+1][-dirx+1] &
+						(lastAdjacentPartsInfo[-diry+1][-dirx+1] &
 						SimulationSample::SPRK_FLAG) != 0;
 					bool hasFilt =
-						(lastSample.adjacentPartsInfo[-diry+1][-dirx+1] &
+						(lastAdjacentPartsInfo[-diry+1][-dirx+1] &
 						SimulationSample::FILT_FLAG) != 0;
 					if (!hasConductor &&
 						!(configPart.type == PT_LDTC && hasFilt))
@@ -470,7 +502,7 @@ void ConfigTool::DrawHUD(Renderer *ren)
 void ConfigTool::ReleaseTool::Click(Simulation *sim, Brush *brush, ui::Point position)
 {
 	if (configTool->IsConfiguring())
-		configTool->Reset();
+		configTool->Reset(sim);
 	else
 	{
 		ui::Point oldSize = brush->GetRadius();

@@ -6,7 +6,7 @@ void Element::Element_DRAY()
 {
 	Identifier = "DEFAULT_PT_DRAY";
 	Name = "DRAY";
-	Colour = PIXPACK(0xFFFF00);//PIXPACK(0xFFAA22);
+	Colour = PIXPACK(0xFFAA22);
 	MenuVisible = 1;
 	MenuSection = SC_ELEC;
 	Enabled = 1;

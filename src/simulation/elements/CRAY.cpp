@@ -44,8 +44,6 @@ void Element::Element_CRAY()
 	HighTemperature = ITH;
 	HighTemperatureTransition = NT;
 
-	DefaultProperties.ctype = PT_SPRK;
-
 	Update = &update;
 	CtypeDraw = &ctypeDraw;
 }

@@ -2,17 +2,14 @@
 #define TOOL_H_
 #include "Config.h"
 
-#include <vector>
-
 #include "common/String.h"
 #include "gui/interface/Point.h"
 #include "simulation/StructProperty.h"
 #include "simulation/Particle.h"
 #include "simulation/Sample.h"
+#include "graphics/Renderer.h"
 
 class Simulation;
-class GameController;
-class Renderer;
 class Brush;
 class VideoBuffer;
 
@@ -95,15 +92,12 @@ public:
 	{
 	}
 	virtual ~StackTool() {}
-	void ProcessParts(Simulation * sim, std::vector<int> &parts);
+	void ProcessParts(Simulation * sim, std::vector<int> &parts, ui::Point position);
 	virtual void Click(Simulation * sim, Brush * brush, ui::Point position) { }
 	virtual void Draw(Simulation * sim, Brush * brush, ui::Point position);
 	virtual void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false);
 	virtual void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2);
 	virtual void DrawFill(Simulation * sim, Brush * brush, ui::Point position) { }
-private:
-	static bool comparePoints(ui::Point a, ui::Point b);
-	static bool compareParts(Particle a, Particle b);
 };
 
 class ConfigTool: public Tool
@@ -143,16 +137,16 @@ class ConfigTool: public Tool
 		ldtcLife
 	};
 	GameModel * gameModel;
-	int currId;
+	int configPartId;
 	Particle configPart;
-	SimulationSample lastSample;
+	int lastAdjacentPartsInfo[3][3];
 	int dirx, diry;
 	ui::Point cursorPos;
 	ConfigState configState;
 public:
 	ReleaseTool releaseTool;
 	ConfigTool(GameModel *model):
-	Tool(0, "CNFG", "Configurator.", 0xff, 0xcc, 0, "DEFAULT_UI_CONFIG", NULL),
+	Tool(0, "CNFG", "Quickly configure particle properties.", 0xff, 0xcc, 0, "DEFAULT_UI_CONFIG", NULL),
 	gameModel(model),
 	cursorPos(0, 0),
 	configState(ConfigState::ready),
@@ -161,7 +155,8 @@ public:
 	}
 	virtual ~ConfigTool() {}
 	void SetClearTool(Tool *clearTool) { releaseTool.SetClearTool(clearTool); }
-	void Reset();
+	bool IsCorrupted(Simulation * sim); // check if configPart moved or disappeared
+	void Reset(Simulation * sim);
 	Particle GetPart();
 	int GetId();
 	static bool IsConfigurableType(int type);
@@ -170,8 +165,7 @@ public:
 	bool IsConfiguringLife();
 	bool IsConfiguringTmp();
 	bool IsConfiguringTmp2();
-	void CalculatePreview(int x, int y, Particle samplePart, int sampleId);
-	void ProcessSample(SimulationSample sample);
+	void Update(Simulation *sim);
 	void DrawHUD(Renderer *ren);
 	void OnSelectFiltTmp(Simulation *sim, int tmp);
 	virtual void Click(Simulation * sim, Brush * brush, ui::Point position);
@@ -186,6 +180,7 @@ private:
 	ui::Point projectPoint(Particle part, int sampleX, int sampleY, bool allowDiag = true);
 	int getDist(ui::Point relPos, int offset = 0);
 	int getDist(Particle part, int sampleX, int sampleY, int offset = 0, bool allowDiag = true);
+	int getTargetStackEditDepth(SimulationSample *sample);
 	void drawRedLine(Renderer *ren, int startx, int starty, int endx, int endy);
 	void drawWhiteLine(Renderer *ren, int startx, int starty, int endx, int endy);
 	void drawTripleLine(Renderer *ren, int firstLineLen, int midLineLen, bool drawFirstLine = true, bool drawThirdLine = true);

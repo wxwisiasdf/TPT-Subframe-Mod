@@ -9,20 +9,20 @@
 
 #include "simulation/Simulation.h"
 
-bool StackTool::comparePoints(ui::Point a, ui::Point b)
+static bool comparePoints(ui::Point a, ui::Point b)
 {
 	if (a.Y == b.Y) return a.X < b.X;
 	else return a.Y < b.Y;
 }
 
-bool StackTool::compareParts(Particle a, Particle b)
+static bool compareParts(Particle a, Particle b)
 {
 	if (a.y == b.y) return a.x < b.x;
 	else return a.y < b.y;
 }
 
 // parts must be sorted!
-void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
+void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts, ui::Point position)
 {
 	if (parts.empty()) return;
 	bool samePos = true;
@@ -48,7 +48,13 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 				sim->photons[party + i][partx])
 			{
 				unstackLimit = i;
-				gameModel->Log("Warning: Not enough space to unstack fully.", false);
+				if (!sim->stackToolNotifShown || !(sim->stackToolNotifShownX == position.X && sim->stackToolNotifShownY == position.Y))
+				{
+					gameModel->Log("Warning: Not enough space to unstack fully.", false);
+					sim->stackToolNotifShown = true;
+					sim->stackToolNotifShownX = position.X;
+					sim->stackToolNotifShownY = position.Y;
+				}
 				break;
 			}
 		}
@@ -63,7 +69,6 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 			else
 				sim->pmap[ny][nx] = PMAP(partID, t);
 		}
-		sim->debug_needReloadParticleOrder = true;
 	}
 	else
 	{
@@ -74,7 +79,7 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 		Particle *partobjs = new Particle[parts.size()];
 		for (size_t i = 0; i < parts.size(); i++)
 			partobjs[i] = sim->parts[parts[i]];
-		std::sort(partobjs, partobjs + parts.size(), StackTool::compareParts);
+		std::sort(partobjs, partobjs + parts.size(), compareParts);
 		for (size_t i = 0; i < parts.size(); i++)
 			sim->parts[parts[i]] = partobjs[i];
 		for (size_t i = 0; i < parts.size(); i++)
@@ -83,7 +88,6 @@ void StackTool::ProcessParts(Simulation *sim, std::vector<int> &parts)
 			sim->parts[parts[i]].y = toplefty;
 		}
 		delete partobjs;
-		sim->debug_needReloadParticleOrder = true;
 	}
 }
 
@@ -106,7 +110,7 @@ void StackTool::Draw(Simulation *sim, Brush *cBrush, ui::Point position)
 					parts.push_back(i);
 			}
 		}
-		ProcessParts(sim, parts);
+		ProcessParts(sim, parts, position);
 	}
 }
 
@@ -163,7 +167,7 @@ void StackTool::DrawLine(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 			e -= 1.0f;
 		}
 	}
-	std::sort(points.begin(), points.end(), StackTool::comparePoints);
+	std::sort(points.begin(), points.end(), comparePoints);
 	std::vector<int> parts;
 	for (int i=0; i<=sim->parts_lastActiveIndex; i++)
 	{
@@ -172,12 +176,12 @@ void StackTool::DrawLine(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 			int partx = (int)(sim->parts[i].x+0.5f);
 			int party = (int)(sim->parts[i].y+0.5f);
 			ui::Point partpos(partx, party);
-			std::vector<ui::Point>::iterator it = std::lower_bound(points.begin(), points.end(), partpos, StackTool::comparePoints);
+			std::vector<ui::Point>::iterator it = std::lower_bound(points.begin(), points.end(), partpos, comparePoints);
 			if (it != points.end() && *it == partpos)
 				parts.push_back(i);
 		}
 	}
-	ProcessParts(sim, parts);
+	ProcessParts(sim, parts, position);
 }
 
 void StackTool::DrawRect(Simulation *sim, Brush *cBrush, ui::Point position, ui::Point position2)
@@ -207,5 +211,5 @@ void StackTool::DrawRect(Simulation *sim, Brush *cBrush, ui::Point position, ui:
 				parts.push_back(i);
 		}
 	}
-	ProcessParts(sim, parts);
+	ProcessParts(sim, parts, ui::Point(x1, y1));
 }

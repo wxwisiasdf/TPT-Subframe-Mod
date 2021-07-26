@@ -12,38 +12,50 @@ ParticleDebug::ParticleDebug(unsigned int id, Simulation * sim, GameModel * mode
 
 }
 
+void ParticleDebug::updateSimUpTo(int i)
+{
+	if (sim->debug_currentParticle == 0)
+	{
+		sim->framerender = 1;
+		sim->BeforeSim();
+		sim->framerender = 0;
+	}
+	sim->UpdateParticles(sim->debug_currentParticle, i);
+	if (i < NPART-1)
+		sim->debug_currentParticle = i+1;
+	else
+	{
+		sim->AfterSim();
+		sim->debug_currentParticle = 0;
+	}
+}
+
 void ParticleDebug::Debug(int mode, int x, int y)
 {
 	int debug_currentParticle = sim->debug_currentParticle;
 	int i = 0;
 	String logmessage;
 
-	if (sim->debug_currentParticle == 0 && sim->debug_needReloadParticleOrder)
+	if (sim->debug_currentParticle == 0 && sim->needReloadParticleOrder)
 	{
-		model->ReloadParticleOrder();
-		sim->debug_needReloadParticleOrder = false;
+		sim->ReloadParticleOrder();
+
+		logmessage = "Particle order reloaded.";
+		model->Log(logmessage, false);
 	}
-	
-	if (mode == 0)
+
+	if (mode == 0 || mode == 0xf)
 	{
 		if (!sim->NUM_PARTS)
 			return;
 
-		if (sim->debug_currentParticle == 0)
-		{
-			sim->framerender = 1;
-			sim->BeforeSim();
-			sim->framerender = 0;
-		}
-		int rangeStart = debug_currentParticle;
 		do
 		{
-			i = rangeStart;
+			i = sim->debug_currentParticle;
 			while (i < NPART && !sim->parts[i].type)
 				i++;
 
-			sim->UpdateParticles(rangeStart, i);
-			rangeStart = i+1;
+			updateSimUpTo(i);
 		}
 		while(i < NPART && !sim->debug_interestingChangeOccurred);
 
@@ -52,39 +64,29 @@ void ParticleDebug::Debug(int mode, int x, int y)
 			logmessage = "End of particles reached, updated sim";
 			model->Log(logmessage, false);
 		}
-
-		//else
-		//	logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
-	}
-	else{
-		if (sim->debug_currentParticle == 0)
+		else if (mode != 0xf)
 		{
-			sim->framerender = 1;
-			sim->BeforeSim();
-			sim->framerender = 0;
-		}
-
-		if (mode == 1)
-		{
-			if (x < 0 || x >= XRES || y < 0 || y >= YRES || !sim->pmap[y][x] || (i = ID(sim->pmap[y][x])) < debug_currentParticle)
-			{
-				i = NPART;
-				logmessage = String::Build("Updated particles from #", debug_currentParticle, " to end, updated sim");
-			}
-			else
-				logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
+			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
 			model->Log(logmessage, false);
 		}
-
-		sim->UpdateParticles(debug_currentParticle, i);
 	}
+	else if (mode == 1)
+	{
+		if (x < 0 || x >= XRES || y < 0 || y >= YRES || !sim->pmap[y][x] || (i = ID(sim->pmap[y][x])) < debug_currentParticle)
+		{
+			i = NPART;
+			logmessage = String::Build("Updated particles from #", debug_currentParticle, " to end, updated sim");
+		}
+		else
+			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
 
-	if (i < NPART-1)
-		sim->debug_currentParticle = i+1;
+		model->Log(logmessage, false);
+
+		updateSimUpTo(i);
+	}
 	else
 	{
-		sim->AfterSim();
-		sim->debug_currentParticle = 0;
+		printf("BUG: SetDebug called with unknown mode");
 	}
 }
 
@@ -118,9 +120,8 @@ bool ParticleDebug::KeyPress(int key, int scan, bool shift, bool ctrl, bool alt,
 				return true;
 			if (sim->debug_currentParticle > 0)
 			{
-				sim->CompleteDebugUpdateParticles();
-
 				String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end, updated sim");
+				sim->CompleteDebugUpdateParticles();
 				model->Log(logmessage, false);
 			}
 			else

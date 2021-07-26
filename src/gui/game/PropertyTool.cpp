@@ -17,8 +17,8 @@
 #include "simulation/GOLString.h"
 #include "simulation/BuiltinGOL.h"
 #include "simulation/Simulation.h"
-#include "simulation/ElementClasses.h"
 #include "simulation/SimulationData.h"
+#include "simulation/ElementClasses.h"
 
 #include "graphics/Graphics.h"
 
@@ -36,10 +36,6 @@ void ParseFloatProperty(String value, float &out)
 		float v = value.SubstrFromEnd(1).ToNumber<float>();
 		out = (v-32.0f)*5/9+273.15f;
 	}
-	else if (value.EndsWith("K"))
-	{
-		out = value.SubstrFromEnd(1).ToNumber<float>();
-	}
 	else
 	{
 		out = value.ToNumber<float>();
@@ -47,6 +43,23 @@ void ParseFloatProperty(String value, float &out)
 #ifdef DEBUG
 	std::cout << "Got float value " << out << std::endl;
 #endif
+}
+
+bool TryParseHexProperty(String value, int &out)
+{
+	if(value.length() > 2 && value.BeginsWith("0X"))
+	{
+		//0xC0FFEE
+		out = value.Substr(2).ToNumber<unsigned int>(Format::Hex());
+		return true;
+	}
+	else if(value.length() > 1 && value.BeginsWith("#"))
+	{
+		//#C0FFEE
+		out = value.Substr(1).ToNumber<unsigned int>(Format::Hex());
+		return true;
+	}
+	return false;
 }
 
 class PropertyWindow: public ui::Window
@@ -124,36 +137,26 @@ void PropertyWindow::SetProperty()
 				case StructProperty::ParticleType:
 				{
 					int v;
-					int type;
-					if(value.length() > 2 && value.BeginsWith("0X"))
+					if (TryParseHexProperty(value, v))
 					{
-						//0xC0FFEE
-						v = value.Substr(2).ToNumber<unsigned int>(Format::Hex());
-					}
-					else if(value.length() > 1 && value.BeginsWith("#"))
-					{
-						//#C0FFEE
-						v = value.Substr(1).ToNumber<unsigned int>(Format::Hex());
+						// found value, nothing to do
 					}
 					else if(value.length() > 5 && value.BeginsWith("FILT:"))
 					{
-						//filt:5
+						// CRAY(FILT), e.g. filt:5
 						v = value.Substr(5).ToNumber<unsigned int>();
 						v = PMAP(v, PT_FILT);
 					}
 					else if(value.length() > 2 && properties[property->GetOption().second].Name == "ctype" && value.BeginsWith("C:"))
 					{
-						int substrAmt = 2;
-						// 30th-bit handling
-						if(value.length() > 3 && value.Substr(substrAmt).BeginsWith("0X"))
+						// 30th-bit handling, e.g. C:100
+						if (TryParseHexProperty(value.Substr(2), v))
 						{
-							//c:0xC0FFEE
-							v = value.Substr(substrAmt + 2).ToNumber<unsigned int>(Format::Hex());
+							// found value, nothing to do
 						}
 						else
 						{
-							//c:-50
-							v = value.Substr(substrAmt).ToNumber<int>();
+							v = value.Substr(2).ToNumber<int>();
 						}
 						v = (v & 0x3FFFFFFF) | (1<<29);
 					}
@@ -192,6 +195,7 @@ void PropertyWindow::SetProperty()
 								}
 							}
 						}
+
 						// Parse as plain number
 						if (v == -1)
 						{
@@ -285,13 +289,11 @@ void PropertyTool::OpenWindow(Simulation *sim)
 
 void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 {
-	if(position.X<0 || position.X>XRES || position.Y<0 || position.Y>YRES)
+	int partId = sim->sample.GetStackEditPartId();
+	if (partId == -1)
 		return;
-	int i = sim->pmap[position.Y][position.X];
-	if(!i)
-		i = sim->photons[position.Y][position.X];
-	if(!i)
-		return;
+	// make a fake pmap structure for mergeability
+	int i = PMAP(partId, sim->parts[partId].type);
 
 	if (changeType)
 	{
@@ -303,9 +305,10 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 	{
 		case StructProperty::Float:
 			*((float*)(((char*)&sim->parts[ID(i)])+propOffset)) = propValue.Float;
+			break;
 		case StructProperty::ParticleType:
 		case StructProperty::Integer:
-			if(propOffset == offsetof(Particle, ctype) && (sim->parts[ID(i)].type == PT_FILT || sim->parts[ID(i)].type == PT_BRAY || sim->parts[ID(i)].type == PT_PHOT))
+			if (propOffset == offsetof(Particle, ctype) && (sim->parts[ID(i)].type == PT_FILT || sim->parts[ID(i)].type == PT_BRAY || sim->parts[ID(i)].type == PT_PHOT))
 			{
 				propValue.Integer &= 0x3FFFFFFF;
 			}

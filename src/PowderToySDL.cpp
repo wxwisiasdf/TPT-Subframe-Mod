@@ -419,7 +419,7 @@ void EventProcess(SDL_Event event)
 			break;
 		}
 		if (!event.key.repeat && event.key.keysym.sym == 'q' && (event.key.keysym.mod&KMOD_CTRL))
-			engine->ConfirmExit(false);
+			engine->ConfirmExit();
 		else
 			engine->onKeyPress(event.key.keysym.sym, event.key.keysym.scancode, event.key.repeat, event.key.keysym.mod&KMOD_SHIFT, event.key.keysym.mod&KMOD_CTRL, event.key.keysym.mod&KMOD_ALT);
 		break;
@@ -914,19 +914,18 @@ int main(int argc, char * argv[])
 #ifdef DEBUG
 			std::cout << "Loading " << filename << std::endl;
 #endif
-			if(Platform::FileExists(filename))
+			if (Platform::FileExists(filename))
 			{
 				try
 				{
-					std::vector<unsigned char> gameSaveData = Client::Ref().ReadFile(arguments["open"]);
-					if(!gameSaveData.size())
+					std::vector<unsigned char> gameSaveData = Client::Ref().ReadFile(filename);
+					if (!gameSaveData.size())
 					{
 						new ErrorMessage("Error", "Could not read file");
 					}
 					else
 					{
-						SaveFile * newFile = new SaveFile(filename);
-						newFile->SetDisplayName(arguments["open"].FromAscii());
+						SaveFile * newFile = new SaveFile(arguments["open"]);
 						GameSave * newSave = new GameSave(gameSaveData);
 						newFile->SetGameSave(newSave);
 						gameController->LoadSaveFile(newFile);

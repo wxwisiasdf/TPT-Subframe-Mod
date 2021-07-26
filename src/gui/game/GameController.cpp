@@ -83,7 +83,6 @@ GameController::GameController():
 	localBrowser(NULL),
 	options(NULL),
 	debugFlags(0),
-	autoreloadEnabled(false),
 	HasDone(false)
 {
 	gameView = new GameView();
@@ -278,8 +277,8 @@ void GameController::PlaceSave(ui::Point position)
 	if (placeSave)
 	{
 		HistorySnapshot();
-		gameModel->SetWasModified(true);
-		gameModel->GetSimulation()->debug_needReloadParticleOrder = true;
+		SetWasModified(true);
+		gameModel->GetSimulation()->needReloadParticleOrder = true;
 		if (!gameModel->GetSimulation()->Load(placeSave, !gameView->ShiftBehaviour(), position.X, position.Y))
 		{
 			gameModel->SetPaused(placeSave->paused | gameModel->GetPaused());
@@ -450,16 +449,17 @@ void GameController::DrawPoints(int toolSelection, ui::Point oldPos, ui::Point n
 	gameModel->SetLastTool(activeTool);
 	Brush * cBrush = gameModel->GetBrush();
 	if (!activeTool || !cBrush)
+	{
 		return;
+	}
 
 	activeTool->SetStrength(gameModel->GetToolStrength());
-	if ((GetReplaceModeFlags()&STACK_MODE) && held)
+	if ((GetReplaceModeFlags() & STACK_MODE) && held)
 	{
 		if (oldPos != newPos)
 			activeTool->Draw(sim, cBrush, newPos);
 		return;
 	}
-
 	if (!held)
 		activeTool->Draw(sim, cBrush, newPos);
 	else
@@ -718,9 +718,11 @@ bool GameController::KeyPress(int key, int scan, bool repeat, bool shift, bool c
 				break;
 			case SDL_SCANCODE_S:
 				if (shift)
+				{
 					SetActiveTool(0, "DEFAULT_UI_STACK");
-				else
-					gameView->BeginStampSelection();
+					break;
+				}
+				gameView->BeginStampSelection();
 				break;
 			}
 		}
@@ -912,6 +914,11 @@ void GameController::ToggleNewtonianGravity()
 	gameModel->SetNewtonianGravity(!gameModel->GetNewtonianGrvity());
 }
 
+void GameController::ResetStackToolNotifShown()
+{
+	gameModel->GetSimulation()->stackToolNotifShown = false;
+}
+
 void GameController::LoadRenderPreset(int presetNum)
 {
 	Renderer * renderer = gameModel->GetRenderer();
@@ -924,44 +931,38 @@ void GameController::LoadRenderPreset(int presetNum)
 
 void GameController::Update()
 {
-	ui::Point pos = gameView->GetMousePosition();
-	gameModel->GetRenderer()->mousePos = PointTranslate(pos);
-	if (pos.X < XRES && pos.Y < YRES)
-		gameView->SetSample(gameModel->GetSimulation()->GetSample(PointTranslate(pos).X, PointTranslate(pos).Y));
-	else
-		gameView->SetSample(gameModel->GetSimulation()->GetSample(pos.X, pos.Y));
-
 	Simulation * sim = gameModel->GetSimulation();
 
-	if(!sim->sys_pause || sim->framerender || sim->subframe_mode)
+	if (!sim->sys_pause || sim->framerender)
 	{
-		if(GetAutoreloadEnabled() && sim->debug_needReloadParticleOrder)
+		if (GetAutoreloadEnabled() && sim->needReloadParticleOrder)
 		{
-			gameModel->ReloadParticleOrder();
-			sim->debug_needReloadParticleOrder = false;
+			ReloadParticleOrder();
 		}
 	}
-	
+
 	sim->BeforeSim();
 	if (!sim->sys_pause || sim->framerender)
 	{
 		sim->UpdateParticles(0, NPART);
 		sim->AfterSim();
+		sim->subframe_mode = false;
 	}
-	else if (sim->subframe_mode)
+	if (sim->subframe_mode)
 	{
-		for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
+		for (std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
 		{
 			if ((*iter)->debugID == 0x8)
-				((ParticleDebug*)*iter)->Debug(0, 0, 0);
-		}
-
-		if(gameView->GetRecordingSubframe() && sim->debug_currentParticle == 0)
-		{
-			gameView->Record(false, true);
-			sim->subframe_mode = false;
+				((ParticleDebug*)*iter)->Debug(0xf, 0, 0);
 		}
 	}
+
+	ui::Point pos = gameView->GetMousePosition();
+	gameModel->GetRenderer()->mousePos = PointTranslate(pos);
+	if (pos.X < XRES && pos.Y < YRES)
+		sim->UpdateSample(PointTranslate(pos).X, PointTranslate(pos).Y);
+	else
+		sim->UpdateSample(pos.X, pos.Y);
 
 	//if either STKM or STK2 isn't out, reset it's selected element. Defaults to PT_DUST unless right selected is something else
 	//This won't run if the stickmen dies in a frame, since it respawns instantly
@@ -982,6 +983,11 @@ void GameController::Update()
 		if (!sim->player2.spwn)
 			Element_STKM_set_element(sim, &sim->player2, rightSelected);
 	}
+
+	ConfigTool * configTool = GetActiveConfigTool();
+	if (configTool)
+		configTool->Update(sim);
+
 	if(renderOptions && renderOptions->HasExited)
 	{
 		delete renderOptions;
@@ -1030,7 +1036,7 @@ bool GameController::GetHasUnsavedChanges()
 
 void GameController::SetWasModified(bool value)
 {
-	gameModel->SetWasModified(true);
+	gameModel->SetWasModified(value);
 }
 
 void GameController::SetZoomPosition(ui::Point position)
@@ -1055,21 +1061,12 @@ void GameController::SetZoomPosition(ui::Point position)
 
 void GameController::SetPaused(bool pauseState)
 {
-	if(!pauseState)
-	{
-		gameModel->GetSimulation()->CompleteDebugUpdateParticles();
-		gameModel->SetSubframeMode(false);
-	}
-
 	gameModel->SetPaused(pauseState);
 }
 
 void GameController::SetPaused()
 {
-	if(gameModel->GetSubframeMode())
-		gameModel->SetSubframeMode(false);
-	else
-		SetPaused(!gameModel->GetPaused());
+	gameModel->SetPaused(!gameModel->GetPaused());
 }
 
 void GameController::SetSubframeMode(bool subframeModeState)
@@ -1173,14 +1170,6 @@ void GameController::RebuildFavoritesMenu()
 	gameModel->BuildFavoritesMenu();
 }
 
-ConfigTool * GameController::GetActiveConfigTool()
-{
-	Tool * t = GetActiveTool(0);
-	if(t->GetIdentifier() == "DEFAULT_UI_CONFIG")
-		return (ConfigTool*)t;
-	else return NULL;
-}
-
 Tool * GameController::GetActiveTool(int selection)
 {
 	return gameModel->GetActiveTool(selection);
@@ -1190,7 +1179,7 @@ void GameController::SetActiveTool(int toolSelection, Tool * tool)
 {
 	if(tool->GetIdentifier() == "DEFAULT_UI_CONFIG")
 	{
-		((ConfigTool *)tool)->Reset();
+		((ConfigTool *)tool)->Reset(gameModel->GetSimulation());
 		toolSelection = 0;
 	}
 	if (gameModel->GetActiveMenu() == SC_DECO && toolSelection == 2)
@@ -1226,12 +1215,36 @@ void GameController::SetLastTool(Tool * tool)
 	gameModel->SetLastTool(tool);
 }
 
+SimulationSample * GameController::GetSample()
+{
+	return &gameModel->GetSimulation()->sample;
+}
+
+ConfigTool * GameController::GetActiveConfigTool()
+{
+	Tool * t = GetActiveTool(0);
+	if(t->GetIdentifier() == "DEFAULT_UI_CONFIG")
+		return (ConfigTool*)t;
+	else return NULL;
+}
+
 void GameController::ToggleConfigTool()
 {
 	if (GetActiveConfigTool())
-		gameModel->ResetToolset();
+		// reset toolset
+		gameModel->SetActiveMenu(gameModel->GetActiveMenu());
 	else
 		SetActiveTool(0, "DEFAULT_UI_CONFIG");
+}
+
+int GameController::GetStackEditDepth()
+{
+	return gameModel->GetSimulation()->stackEditDepth;
+}
+
+void GameController::SetStackEditDepth(int depth)
+{
+	gameModel->GetSimulation()->stackEditDepth = depth;
 }
 
 int GameController::GetReplaceModeFlags()
@@ -1285,7 +1298,6 @@ void GameController::OpenSearch(String searchText)
 
 void GameController::OpenLocalSaveWindow(bool asCurrent)
 {
-	ReloadParticleOrder();
 	Simulation * sim = gameModel->GetSimulation();
 	GameSave * gameSave = sim->Save(gameModel->GetIncludePressure() != gameView->ShiftBehaviour());
 	if(!gameSave)
@@ -1318,11 +1330,14 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 				try
 				{
 					std::vector<unsigned char> data = Client::Ref().ReadFile(filename);
-					Client::Ref().WriteFile(data, filename + std::string(".backup"));
+					if (data.size() > 0)
+					{
+						Client::Ref().WriteFile(data, filename + std::string(".backup"));
+					}
 				}
 				catch(std::exception & e)
 				{
-					// Don't make a backup.
+					new ErrorMessage("Error", "Unable to make backup.");
 				}
 			}
 
@@ -1593,6 +1608,27 @@ void GameController::FrameStep()
 	gameModel->SetPaused(true);
 }
 
+void GameController::SubframeFrameStep()
+{
+	gameModel->SetSubframeFrameStep(1);
+	gameModel->SetSubframeMode(true);
+}
+
+bool GameController::IsSubframeFrameStepComplete()
+{
+	return gameModel->GetSubframeFrameStep() == 0;
+}
+
+bool GameController::IsFrameComplete()
+{
+	return gameModel->GetSimulation()->debug_currentParticle == 0;
+}
+
+bool GameController::AreParticlesInSubframeOrder()
+{
+	return gameModel->AreParticlesInSubframeOrder();
+}
+
 void GameController::Vote(int direction)
 {
 	if(gameModel->GetSave() && gameModel->GetUser().UserID && gameModel->GetSave()->GetID() && gameModel->GetSave()->GetVote()==0)
@@ -1643,11 +1679,6 @@ String GameController::BasicParticleInfo(Particle const &sample_part)
 	return "";
 }
 
-void GameController::ReloadParticleOrder()
-{
-	gameModel->ReloadParticleOrder();
-}
-
 void GameController::ReloadSim()
 {
 	if(gameModel->GetSave() && gameModel->GetSave()->GetGameSave())
@@ -1660,6 +1691,14 @@ void GameController::ReloadSim()
 		HistorySnapshot();
 		gameModel->SetSaveFile(gameModel->GetSaveFile(), gameView->ShiftBehaviour());
 	}
+}
+
+void GameController::ReloadParticleOrder()
+{
+	gameModel->GetSimulation()->ReloadParticleOrder();
+
+	String logmessage = String::Build("Particle order reloaded");
+	gameModel->Log(logmessage, false);
 }
 
 bool GameController::IsValidElement(int type)

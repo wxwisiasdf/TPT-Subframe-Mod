@@ -197,7 +197,6 @@ GameView::GameView():
 	screenshotIndex(0),
 	recording(false),
 	recordingFolder(0),
-	recordingIndex(0),
 	recordingSubframe(false),
 	recordInterval(1),
 	recordIntervalIndex(0),
@@ -258,18 +257,35 @@ GameView::GameView():
 	saveSimulationButton->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
 	saveSimulationButton->SetIcon(IconSave);
 	currentX+=151;
+	auto confirmCleanState = [this](std::function<void (bool)> callback, bool isLocal) {
+		if (!c->IsFrameComplete() && !ConfirmPrompt::Blocking("Save incomplete frame", "You're in the middle of a frame. Are you sure you want to save?"))
+		{
+				return;
+		}
+		if (!c->AreParticlesInSubframeOrder() && !ConfirmPrompt::Blocking("Particles not in order", "The particles are not in subframe order. Are you sure you want to save?"))
+		{
+				return;
+		}
+		callback(isLocal);
+	};
 	saveSimulationButton->SetSplitActionCallback({
-		[this] {
-			if (CtrlBehaviour() || !Client::Ref().GetAuthUser().UserID)
-				c->OpenLocalSaveWindow(true);
-			else
-				c->SaveAsCurrent();
+		[this, confirmCleanState] {
+			bool isLocal = CtrlBehaviour();
+			confirmCleanState([this](bool isLocal) {
+				if (isLocal || !Client::Ref().GetAuthUser().UserID)
+					c->OpenLocalSaveWindow(true);
+				else
+					c->SaveAsCurrent();
+			}, isLocal);
 		},
-		[this] {
-			if (CtrlBehaviour() || !Client::Ref().GetAuthUser().UserID)
-				c->OpenLocalSaveWindow(false);
-			else
-				c->OpenSaveWindow();
+		[this, confirmCleanState] {
+			bool isLocal = CtrlBehaviour();
+			confirmCleanState([this](bool isLocal) {
+				if (isLocal || !Client::Ref().GetAuthUser().UserID)
+					c->OpenLocalSaveWindow(false);
+				else
+					c->OpenSaveWindow();
+			}, isLocal);
 		}
 	});
 	SetSaveButtonTooltips();
@@ -454,11 +470,6 @@ void GameView::NotifyMenuListChanged(GameModel * sender)
 			menuButtons.push_back(tempButton);
 		}
 	}
-}
-
-void GameView::SetSample(SimulationSample sample)
-{
-	this->sample = sample;
 }
 
 void GameView::SetHudEnable(bool hudState)
@@ -911,11 +922,10 @@ int GameView::Record(bool record, bool subframe)
 {
 	if (!record)
 	{
-		recordingSubframe = false;
 		recording = false;
-		recordingIndex = 0;
-		recordIntervalIndex = 0;
 		recordingFolder = 0;
+		recordingSubframe = false;
+		recordIntervalIndex = 0;
 	}
 	else if (recording && subframe && !recordingSubframe)
 	{
@@ -927,20 +937,19 @@ int GameView::Record(bool record, bool subframe)
 		// block so that the return value is correct
 		String subframeRecordConfirmMessage = "You're about to start recording all remaining particle updates in this frame. This may use a load of disk space.";
 		String nonSubframeRecordConfirmMessage = "You're about to start recording all drawn frames. This will use a load of disk space.";
-		bool recordConfirm = ConfirmPrompt::Blocking("Recording", String(subframe ? subframeRecordConfirmMessage : nonSubframeRecordConfirmMessage));
-		if (recordConfirm)
+		bool record = ConfirmPrompt::Blocking("Recording", subframe ? subframeRecordConfirmMessage : nonSubframeRecordConfirmMessage);
+		if (record)
 		{
 			time_t startTime = time(NULL);
 			recordingFolder = startTime;
 			Platform::MakeDirectory("recordings");
 			Platform::MakeDirectory(ByteString::Build("recordings", PATH_SEP, recordingFolder).c_str());
 			recording = true;
-			recordingIndex = 0;
 			recordIntervalIndex = 0;
 
 			if (subframe)
 			{
-				c->SetSubframeMode(true);
+				c->SubframeFrameStep();
 				recordingSubframe = true;
 			}
 		}
@@ -1189,6 +1198,7 @@ void GameView::OnMouseUp(int x, int y, unsigned button)
 	// update the drawing mode for the next line
 	// since ctrl/shift state may have changed since we started drawing
 	UpdateDrawMode();
+	c->ResetStackToolNotifShown();
 }
 
 void GameView::ToolTip(ui::Point senderPosition, String toolTip)
@@ -1304,14 +1314,12 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		c->ShowConsole();
 		break;
 	case SDL_SCANCODE_SPACE: //Space
-		if (shift)
+		if (shift && c->GetParticleDebugEnabled())
 		{
 			c->SetSubframeMode();
+			break;
 		}
-		else
-		{
-			c->SetPaused();
-		}
+		c->SetPaused();
 		break;
 	case SDL_SCANCODE_Z:
 		if (selectMode != SelectNone && isMouseDown)
@@ -1331,13 +1339,8 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		}
 		break;
 	case SDL_SCANCODE_P:
-		if (shift)
-			c->SetActiveTool(1, "DEFAULT_UI_PROPERTY");
-		else
-			c->SetActiveTool(0, "DEFAULT_UI_PROPERTY");
-		break;
 	case SDL_SCANCODE_F2:
-		if (ctrl)
+		if (ctrl || scan == SDL_SCANCODE_P)
 		{
 			if (shift)
 				c->SetActiveTool(1, "DEFAULT_UI_PROPERTY");
@@ -1352,28 +1355,40 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		break;
 	case SDL_SCANCODE_F5:
 		if (shift)
+		{
 			c->ReloadParticleOrder();
-		else
-			c->ReloadSim();
+			break;
+		}
+		c->ReloadSim();
 		break;
 	case SDL_SCANCODE_A:
 		if ((Client::Ref().GetAuthUser().UserElevation == User::ElevationModerator
-			 || Client::Ref().GetAuthUser().UserElevation == User::ElevationAdmin
-			 || Client::Ref().GetAuthUser().Username == "Mrprocom") && ctrl)
+		     || Client::Ref().GetAuthUser().UserElevation == User::ElevationAdmin) && ctrl)
 		{
 			ByteString authorString = Client::Ref().GetAuthorInfo().toStyledString();
 			new InformationMessage("Save authorship info", authorString.FromUtf8(), true);
 		}
 		break;
 	case SDL_SCANCODE_R:
-		if (ctrl && shift)
-			Record(!recording, false);
-		else if (ctrl)
+		if (ctrl)
 			c->ReloadSim();
-		else if (shift)
-			Record(!recording, true);
 		break;
 	case SDL_SCANCODE_E:
+		if (!ctrl)
+		{
+			if (shift)
+			{
+				int newDepth = c->GetStackEditDepth() - 1;
+				if (newDepth < -1)
+					newDepth = -1;
+				c->SetStackEditDepth(newDepth);
+			}
+			else
+			{
+				c->SetStackEditDepth(c->GetStackEditDepth() + 1);
+			}
+			break;
+		}
 		c->OpenElementSearch();
 		break;
 	case SDL_SCANCODE_F:
@@ -1566,7 +1581,8 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		switch (key)
 		{
 		case SDLK_TAB: //Tab
-			c->ChangeBrush();
+			if (shift)
+				c->ChangeBrush();
 			break;
 		case SDLK_INSERT:
 			if (ctrl)
@@ -2015,9 +2031,72 @@ void GameView::SetSaveButtonTooltips()
 		saveSimulationButton->SetToolTips("Re-upload the current simulation", "Upload a new simulation. Hold Ctrl to save offline.");
 }
 
+void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int yoffset, int alpha, int wavelengthGfx, HudParticleTextGlowType glowType)
+{
+	String text = sbText.Build();
+	int textWidth = Graphics::textwidth(text);
+	int rectr = 0, rectg = 0, rectb = 0;
+	switch (glowType)
+	{
+	case HudParticleTextGlowType::YELLOW:
+		rectr = 0x63;
+		rectg = 0x5d;
+		rectb = 0x31;
+		alpha *= 1.3f;
+		break;
+	case HudParticleTextGlowType::GREEN:
+		rectr = 0x32;
+		rectg = 0x30;
+		rectb = 0x5e;
+		alpha *= 1.3f;
+		break;
+	default:
+		break;
+	}
+	g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 13, rectr, rectg, rectb, int(alpha*0.5f));
+	g->drawtext(XRES-16-textWidth, 15 + yoffset, text, 255, 255, 255, int(alpha*0.75f));
+
+#ifndef OGLI
+	if (wavelengthGfx)
+	{
+		int i, cr, cg, cb, j, h = 3, x = XRES-19-textWidth, y = 11+yoffset;
+		int tmp;
+		g->fillrect(x, y, 30, h, 64, 64, 64, alpha); // coords -1 size +1 to work around bug in fillrect - TODO: fix fillrect
+		for (i = 0; i < 30; i++)
+		{
+			if ((wavelengthGfx >> i)&1)
+			{
+				// Need a spread of wavelengths to get a smooth spectrum, 5 bits seems to work reasonably well
+				if (i>2) tmp = 0x1F << (i-2);
+				else tmp = 0x1F >> (2-i);
+
+				cg = 0;
+				cb = 0;
+				cr = 0;
+
+				for (j=0; j<12; j++)
+				{
+					cr += (tmp >> (j+18)) & 1;
+					cb += (tmp >> j) & 1;
+				}
+				for (j=0; j<13; j++)
+					cg += (tmp >> (j+9)) & 1;
+
+				tmp = 624/(cr+cg+cb+1);
+				cr *= tmp;
+				cg *= tmp;
+				cb *= tmp;
+				for (j=0; j<h; j++)
+					g->blendpixel(x+29-i, y+j, cr>255?255:cr, cg>255?255:cg, cb>255?255:cb, alpha);
+			}
+		}
+	}
+#endif
+}
+
 void GameView::writeWavelength(StringBuilder *str, int wavelengthGfx)
 {
-	switch(wavelengthGfxMode)
+	switch (wavelengthGfxMode)
 	{
 	case 0:
 		(*str) << "0x" << Format::Uppercase() << Format::Hex() << wavelengthGfx << Format::NoUppercase() << Format::Dec();
@@ -2033,12 +2112,9 @@ void GameView::writeWavelength(StringBuilder *str, int wavelengthGfx)
 
 void GameView::OnDraw()
 {
+	SimulationSample sample = *c->GetSample();
 	ConfigTool * configTool = c->GetActiveConfigTool();
-	if(configTool)
-	{
-		configTool->CalculatePreview(sample.PositionX, sample.PositionY, sample.particle, sample.ParticleID);
-		configTool->ProcessSample(sample);
-	}
+
 	Graphics * g = GetGraphics();
 	if (ren)
 	{
@@ -2100,7 +2176,7 @@ void GameView::OnDraw()
 					ren->xor_line(finalCurrentMouse.X-finalBrushRadius.X, finalCurrentMouse.Y-finalBrushRadius.Y+1, finalCurrentMouse.X-finalBrushRadius.X, finalCurrentMouse.Y+finalBrushRadius.Y+CELL-2);
 					ren->xor_line(finalCurrentMouse.X+finalBrushRadius.X+CELL-1, finalCurrentMouse.Y-finalBrushRadius.Y+1, finalCurrentMouse.X+finalBrushRadius.X+CELL-1, finalCurrentMouse.Y+finalBrushRadius.Y+CELL-2);
 				}
-				else if(configTool)
+				else if (configTool)
 				{
 					configTool->DrawHUD(ren);
 				}
@@ -2125,7 +2201,6 @@ void GameView::OnDraw()
 					ren->draw_image(placeSaveThumb, thumbPos.X, thumbPos.Y, 128);
 
 					// Don't show xor-rect when placing save
-					// ren->xor_rect(thumbPos.X, thumbPos.Y, placeSaveThumb->Width, placeSaveThumb->Height);
 				}
 			}
 			else
@@ -2170,22 +2245,26 @@ void GameView::OnDraw()
 			doScreenshot = false;
 		}
 
-		if(recording)
+		if (recording && recordIntervalIndex == 0)
+		{
+			VideoBuffer screenshot(ren->DumpFrame());
+			std::vector<char> data = format::VideoBufferToPPM(screenshot);
+
+			ByteString filename = ByteString::Build("recordings", PATH_SEP, recordingFolder, PATH_SEP, "frame_", Format::Width(screenshotIndex++, 6), ".ppm");
+
+			Client::Ref().WriteFile(data, filename);
+		}
+
+		if (recording)
 		{
 			recordIntervalIndex++;
 			if (recordIntervalIndex >= recordInterval) {
 				recordIntervalIndex = 0;
 			}
+		}
 
-			if (recordingSubframe || recordIntervalIndex == 0) {
-				VideoBuffer screenshot(ren->DumpFrame());
-				std::vector<char> data = format::VideoBufferToPPM(screenshot);
-
-				ByteString filename = ByteString::Build("recordings", PATH_SEP, recordingFolder, PATH_SEP, "frame_", Format::Width(screenshotIndex++, 6), ".ppm");
-
-				Client::Ref().WriteFile(data, filename);
-				recordingIndex++;
-			}
+		if (recordingSubframe && c->IsSubframeFrameStepComplete()) {
+			Record(false);
 		}
 
 		if (logEntries.size())
@@ -2228,232 +2307,193 @@ void GameView::OnDraw()
 			alpha = 50;
 		int yoffset = 0;
 
-		bool isConfiguring = configTool && configTool->IsConfiguring();
-		int sparticleCount = isConfiguring ? 1 : sample.sparticle_count;
+		bool omitBegin = sample.StackIndexBegin != 0;
+		bool omitEnd = sample.StackIndexEnd != sample.SParticleCount;
+		int stackShowBegin = omitBegin ? (sample.StackIndexBegin + 1) : sample.StackIndexBegin;
+		int stackShowEnd = omitEnd ? (sample.StackIndexEnd - 1) : sample.StackIndexEnd;
 
-		if (sparticleCount)
+		if (showDebug && omitEnd)
 		{
-			for (int i = 0; i < sparticleCount; i++)
-			{
-				if (i >= 5) break;
-
-				int wavelengthGfx = 0;
-				StringBuilder sampleInfo;
-				sampleInfo << Format::Precision(2);
-
-				Particle sparticle = isConfiguring ?
-					configTool->GetPart() : sample.sparticles[i];
-
-				int type = sparticle.type;
-				if (type)
-				{
-					int ctype = sparticle.ctype;
-
-					if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
-						wavelengthGfx = (ctype&0x3FFFFFFF);
-
-					if (showDebug || configTool)
-					{
-						String lbrace = String::Build("["),
-							rbrace = String::Build("]"),
-							noneString = String::Build("");
-						bool isConfigurable =
-							(configTool && configTool->GetId() == sample.sparticleIds[i] && ConfigTool::IsConfigurableType(type))
-							|| isConfiguring;
-						if (isConfigurable)
-							sampleInfo << lbrace;
-						if (type == PT_LAVA && c->IsValidElement(ctype))
-						{
-							sampleInfo << "Molten " << c->ElementResolve(ctype, -1);
-						}
-						else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
-						{
-							if (ctype == PT_LAVA && c->IsValidElement((int)sparticle.pavg[1]))
-							{
-								sampleInfo << c->ElementResolve(type, -1) << " with molten " << c->ElementResolve((int)sparticle.pavg[1], -1);
-							}
-							else
-							{
-								sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sparticle.pavg[1]);
-							}
-						}
-						else if (type == PT_LIFE)
-						{
-							sampleInfo << c->ElementResolve(type, ctype);
-						}
-						else if (type == PT_FILT)
-						{
-							sampleInfo << c->ElementResolve(type, ctype);
-							if (sparticle.tmp >= 0 && sparticle.tmp < FILT_NUM_MODES)
-								sampleInfo << " (" << FILT_MODES[sparticle.tmp];
-							else
-								sampleInfo << " (unknown mode";
-
-							sampleInfo << ", ";
-							writeWavelength(&sampleInfo, wavelengthGfx);
-							sampleInfo << ")";
-						}
-						else
-						{
-							sampleInfo << c->ElementResolve(type, ctype);
-							if (wavelengthGfx)
-							{
-								sampleInfo << " (";
-								writeWavelength(&sampleInfo, wavelengthGfx);
-								sampleInfo << ")";
-							}
-							// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
-							else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
-								sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)) << ")";
-							else if (c->IsValidElement(ctype))
-								sampleInfo << " (" << c->ElementResolve(ctype, -1) << ")";
-							else if (c->IsValidElement(ctype) && type != PT_GLOW && type != PT_WIRE && type != PT_SOAP && type != PT_LITH)
-								sampleInfo << " (" << c->ElementResolve(ctype, 0) << ")";
-							else
-								sampleInfo << " ()";
-						}
-						if (isConfigurable)
-							sampleInfo << rbrace;
-						bool isConfiguringTemp = configTool &&
-							configTool->IsConfiguringTemp();
-						bool isConfiguringLife = configTool &&
-							configTool->IsConfiguringLife();
-						bool isConfiguringTmp = configTool &&
-							configTool->IsConfiguringTmp();
-						bool isConfiguringTmp2 = configTool &&
-							configTool->IsConfiguringTmp2();
-						sampleInfo << ", " <<
-							(isConfiguringTemp ? lbrace : noneString) <<
-							"Temp" <<
-							(isConfiguringTemp ? rbrace : noneString) <<
-							": " << (sparticle.temp - 273.15f) << " C";
-						sampleInfo << ", " <<
-							(isConfiguringLife ? lbrace : noneString) <<
-							"Life" <<
-							(isConfiguringLife ? rbrace : noneString) <<
-							": " << sparticle.life;
-						if (sparticle.type != PT_RFRG && sparticle.type != PT_RFGL)
-						{
-							sampleInfo << ", " <<
-								(isConfiguringTmp ? lbrace : noneString) <<
-								"Tmp" <<
-								(isConfiguringTmp ? rbrace : noneString) <<
-								": ";
-							if (sparticle.type == PT_CONV)
-							{
-								String elemName = c->ElementResolve(
-									TYP(sparticle.tmp),
-									ID(sparticle.tmp));
-								if (elemName == "")
-									sampleInfo << sparticle.tmp;
-								else
-									sampleInfo << elemName;
-							}
-							else
-								sampleInfo << sparticle.tmp;
-						}
-
-						// only elements that use .tmp2 show it in the debug HUD
-						if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC || type == PT_VSNS || type == PT_LITH)
-						{
-							sampleInfo << ", " <<
-								(isConfiguringTmp2 ? lbrace : noneString) <<
-								"Tmp2" <<
-								(isConfiguringTmp2 ? rbrace : noneString) <<
-								": " << sparticle.tmp2;
-						}
-
-						sampleInfo << ", Pressure: " << sample.AirPressure;
-					}
-					else
-					{
-						sampleInfo << c->BasicParticleInfo(sparticle);
-						sampleInfo << ", Temp: " << sparticle.temp - 273.15f << " C";
-						sampleInfo << ", Pressure: " << sample.AirPressure;
-					}
-				}
-
-				int textWidth = Graphics::textwidth(sampleInfo.Build());
-				g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 15, 0, 0, 0, int(alpha*0.5f));
-				g->drawtext(XRES-16-textWidth, 16 + yoffset, sampleInfo.Build(), 255, 255, 255, int(alpha*0.75f));
-
-#ifndef OGLI
-				if (wavelengthGfx)
-				{
-					int i, cr, cg, cb, j, h = 3, x = XRES-19-textWidth, y = 10 + yoffset;
-					int tmp;
-					g->fillrect(x, y, 30, h, 64, 64, 64, alpha); // coords -1 size +1 to work around bug in fillrect - TODO: fix fillrect
-					for (i = 0; i < 30; i++)
-					{
-						if ((wavelengthGfx >> i)&1)
-						{
-							// Need a spread of wavelengths to get a smooth spectrum, 5 bits seems to work reasonably well
-							if (i>2) tmp = 0x1F << (i-2);
-							else tmp = 0x1F >> (2-i);
-
-							cg = 0;
-							cb = 0;
-							cr = 0;
-
-							for (j=0; j<12; j++)
-							{
-								cr += (tmp >> (j+18)) & 1;
-								cb += (tmp >> j) & 1;
-							}
-							for (j=0; j<13; j++)
-								cg += (tmp >> (j+9)) & 1;
-
-							tmp = 624/(cr+cg+cb+1);
-							cr *= tmp;
-							cg *= tmp;
-							cb *= tmp;
-							for (j=0; j<h; j++)
-								g->blendpixel(x+29-i, y+j, cr>255?255:cr, cg>255?255:cg, cb>255?255:cb, alpha);
-						}
-					}
-				}
-#endif
-
-				yoffset += 16;
-			}
-
-			if (sparticleCount > 5)
-			{
-				StringBuilder infoStr;
-				int excessParts = sparticleCount - 5;
-				infoStr << "... " << excessParts << " particle";
-				if (excessParts != 1)
-					infoStr << "s";
-				infoStr << " omitted ...";
-				int textWidth = Graphics::textwidth(infoStr.Build());
-				g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 15, 0, 0, 0, int(alpha*0.5f));
-				g->drawtext(XRES-16-textWidth, 16 + yoffset, infoStr.Build().c_str(), 255, 255, 255, int(alpha*0.75f));
-				yoffset += 16;
-			}
+			StringBuilder infoStr;
+			int excessParts = sample.SParticleCount - stackShowEnd;
+			infoStr << "... " << excessParts << " particle";
+			if (excessParts != 1)
+				infoStr << "s";
+			infoStr << " omitted ...";
+			drawHudParticleText(g, infoStr, yoffset, alpha);
+			yoffset += 13;
 		}
-		else
+
+		for (int i = stackShowEnd - 1; i >= stackShowBegin; i--)
 		{
 			StringBuilder sampleInfo;
 			sampleInfo << Format::Precision(2);
+
+			int stacki = i - sample.StackIndexBegin;
+			bool isConfigToolTarget =
+				configTool && configTool->GetId() == sample.SParticleIDs[stacki];
+			Particle sparticle = isConfigToolTarget ?
+				configTool->GetPart() : sample.SParticles[stacki];
+			int wavelengthGfx = 0;
+			int type = sparticle.type;
+			int ctype = sparticle.ctype;
+
+			if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
+				wavelengthGfx = (ctype&0x3FFFFFFF);
+
+			if (showDebug || configTool)
+			{
+				String lbrace = String::Build("["),
+					rbrace = String::Build("]"),
+					noneString = String::Build("");
+
+				if (type == PT_LAVA && c->IsValidElement(ctype))
+				{
+					sampleInfo << "Molten " << c->ElementResolve(ctype, 0);
+				}
+				else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
+				{
+					if (ctype == PT_LAVA && c->IsValidElement((int)sparticle.pavg[1]))
+					{
+						sampleInfo << c->ElementResolve(type, 0) << " with molten " << c->ElementResolve((int)sparticle.pavg[1], -1);
+					}
+					else
+					{
+						sampleInfo << c->ElementResolve(type, 0) << " with " << c->ElementResolve(ctype, (int)sparticle.pavg[1]);
+					}
+				}
+				else if (type == PT_LIFE)
+				{
+					sampleInfo << c->ElementResolve(type, ctype);
+				}
+				else if (type == PT_FILT)
+				{
+					sampleInfo << c->ElementResolve(type, ctype);
+					if (sparticle.tmp >= 0 && sparticle.tmp < FILT_NUM_MODES)
+						sampleInfo << " (" << FILT_MODES[sparticle.tmp] << ", ";
+					else
+						sampleInfo << " (unknown mode, ";
+					writeWavelength(&sampleInfo, wavelengthGfx);
+					sampleInfo << ")";
+				}
+				else
+				{
+					sampleInfo << c->ElementResolve(type, ctype);
+					if (type == PT_EMBR || type == PT_PRTI || type == PT_PRTO)
+					{
+						// Do nothing, ctype is meaningless for these elements
+					}
+					else if (wavelengthGfx)
+					{
+						sampleInfo << " (";
+						writeWavelength(&sampleInfo, wavelengthGfx);
+						sampleInfo << ")";
+					}
+					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
+					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == PT_LDTC)
+						sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)) << ")";
+					else if (type == PT_CLNE || type == PT_BCLN || type == PT_PCLN || type == PT_PBCN || type == PT_DTEC)
+						sampleInfo << " (" << c->ElementResolve(ctype, sparticle.tmp) << ")";
+					else if (c->IsValidElement(ctype) && type != PT_GLOW && type != PT_WIRE && type != PT_SOAP && type != PT_LITH)
+						sampleInfo << " (" << c->ElementResolve(ctype, 0) << ")";
+					else if (ctype)
+						sampleInfo << " (" << ctype << ")";
+				}
+
+				bool isConfiguringTemp = isConfigToolTarget &&
+					configTool->IsConfiguringTemp();
+				bool isConfiguringLife = isConfigToolTarget &&
+					configTool->IsConfiguringLife();
+				bool isConfiguringTmp = isConfigToolTarget &&
+					configTool->IsConfiguringTmp();
+				bool isConfiguringTmp2 = isConfigToolTarget &&
+					configTool->IsConfiguringTmp2();
+				sampleInfo << ", " <<
+					(isConfiguringTemp ? lbrace : noneString) <<
+					(sparticle.temp - 273.15f) << " C" <<
+					(isConfiguringTemp ? rbrace : noneString);
+				sampleInfo << ", " <<
+					(isConfiguringLife ? lbrace : noneString) <<
+					"Life" <<
+					(isConfiguringLife ? rbrace : noneString) <<
+					": " << sparticle.life;
+				if (type != PT_RFRG && type != PT_RFGL && type != PT_LIFE)
+				{
+					sampleInfo << ", " <<
+						(isConfiguringTmp ? lbrace : noneString) <<
+						"Tmp" <<
+						(isConfiguringTmp ? rbrace : noneString) <<
+						": ";
+					if (type == PT_CONV)
+					{
+						String elemName = c->ElementResolve(
+							TYP(sparticle.tmp),
+							ID(sparticle.tmp));
+						if (elemName == "")
+							sampleInfo << sparticle.tmp;
+						else
+							sampleInfo << elemName;
+					}
+					else
+						sampleInfo << sparticle.tmp;
+				}
+
+				// only elements that use .tmp2 show it in the debug HUD
+				if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON
+						|| type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS
+						|| type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC || type == PT_VSNS || type == PT_LITH)
+				{
+					sampleInfo << ", " <<
+						(isConfiguringTmp2 ? lbrace : noneString) <<
+						"Tmp2" <<
+						(isConfiguringTmp2 ? rbrace : noneString) <<
+						": " << sparticle.tmp2;
+				}
+			}
+			else
+			{
+				sampleInfo << c->BasicParticleInfo(sparticle);
+				sampleInfo << ", Temp: " << sparticle.temp - 273.15f << " C";
+				sampleInfo << ", Pressure: " << sample.AirPressure;
+			}
+
+			HudParticleTextGlowType glowType = HudParticleTextGlowType::NONE;
+			if (c->GetStackEditDepth() >= 0 && i == sample.EffectiveStackEditDepth)
+				glowType = HudParticleTextGlowType::YELLOW;
+			else if (isConfigToolTarget)
+				glowType = HudParticleTextGlowType::GREEN;
+			drawHudParticleText(g, sampleInfo, yoffset, alpha, wavelengthGfx, glowType);
+			yoffset += 13;
+		}
+
+		if (showDebug && omitBegin)
+		{
+			StringBuilder infoStr;
+			int excessParts = stackShowBegin;
+			infoStr << "... " << excessParts << " particle";
+			if (excessParts != 1)
+				infoStr << "s";
+			infoStr << " omitted ...";
+			drawHudParticleText(g, infoStr, yoffset, alpha);
+			yoffset += 13;
+		}
+
+		if (!sample.SParticleCount)
+		{
+			StringBuilder sampleInfo;
+			sampleInfo << Format::Precision(2);
+
 			if (sample.WallType)
 			{
 				sampleInfo << c->WallName(sample.WallType);
-				sampleInfo << ", Pressure: " << sample.AirPressure;
-			}
-			else if (sample.isMouseInSim)
-			{
-				sampleInfo << "Empty, Pressure: " << sample.AirPressure;
 			}
 			else
 			{
 				sampleInfo << "Empty";
 			}
 
-			int textWidth = Graphics::textwidth(sampleInfo.Build());
-			g->fillrect(XRES-20-textWidth, 12, textWidth+8, 15, 0, 0, 0, int(alpha*0.5f));
-			g->drawtext(XRES-16-textWidth, 16, sampleInfo.Build(), 255, 255, 255, int(alpha*0.75f));
-
-			yoffset += 16;
+			drawHudParticleText(g, sampleInfo, yoffset, alpha);
+			yoffset += 13;
 		}
 
 
@@ -2465,17 +2505,17 @@ void GameView::OnDraw()
 			if (sample.particle.type)
 				sampleInfo << "#" << sample.ParticleID << ", ";
 
-			sampleInfo << "X:" << sample.PositionX << " Y:" << sample.PositionY;
+			sampleInfo << "(" << sample.PositionX << " " << sample.PositionY << ")";
 
 			if (sample.Gravity)
 				sampleInfo << ", GX: " << sample.GravityVelocityX << " GY: " << sample.GravityVelocityY;
 
 			if (c->GetAHeatEnable())
 				sampleInfo << ", AHeat: " << sample.AirTemperature - 273.15f << " C";
+			if (sample.isMouseInSim)
+				sampleInfo << ", " << sample.AirPressure << " Pa";
 
-			int textWidth = Graphics::textwidth(sampleInfo.Build());
-			g->fillrect(XRES-20-textWidth, 11 + yoffset, textWidth+8, 14, 0, 0, 0, int(alpha*0.5f));
-			g->drawtext(XRES-16-textWidth, 14 + yoffset, sampleInfo.Build(), 255, 255, 255, int(alpha*0.75f));
+			drawHudParticleText(g, sampleInfo, yoffset, alpha);
 		}
 	}
 
@@ -2492,18 +2532,20 @@ void GameView::OnDraw()
 			else
 				fpsInfo << " Parts: " << sample.NumParts;
 		}
+		if (c->GetStackEditDepth() >= 0)
+			fpsInfo << " [StackE: " << c->GetStackEditDepth() << "]";
 		if (configTool)
-			fpsInfo << " [CONFIG TOOL]";
+			fpsInfo << " [Config]";
 		if (c->GetReplaceModeFlags()&REPLACE_MODE)
-			fpsInfo << " [REPLACE MODE]";
+			fpsInfo << " [Repl]";
 		if (c->GetReplaceModeFlags()&SPECIFIC_DELETE)
-			fpsInfo << " [SPECIFIC DELETE]";
+			fpsInfo << " [Spec Del]";
 		if (c->GetReplaceModeFlags()&STACK_MODE)
-			fpsInfo << " [STACK MODE]";
+			fpsInfo << " [Stack]";
 		if (ren && ren->GetGridSize())
-			fpsInfo << " [GRID: " << ren->GetGridSize() << "]";
+			fpsInfo << " [Gr: " << ren->GetGridSize() << "]";
 		if (ren && ren->findingElement)
-			fpsInfo << " [FIND]";
+			fpsInfo << " [Find]";
 
 		int textWidth = Graphics::textwidth(fpsInfo.Build());
 		int alpha = 255-introText*5;

@@ -5,7 +5,6 @@
 #include <deque>
 #include "common/String.h"
 #include "gui/interface/Window.h"
-#include "simulation/Sample.h"
 
 enum DrawMode
 {
@@ -15,6 +14,11 @@ enum DrawMode
 enum SelectMode
 {
 	SelectNone, SelectStamp, SelectCopy, SelectCut, PlaceSave
+};
+
+enum HudParticleTextGlowType
+{
+	NONE, YELLOW, GREEN
 };
 
 namespace ui
@@ -74,8 +78,7 @@ private:
 	int screenshotIndex;
 	bool recording;
 	int recordingFolder;
-	int recordingIndex;
-	bool recordingSubframe; 
+	bool recordingSubframe;
 	int recordInterval;
 	int recordIntervalIndex;
 
@@ -123,13 +126,13 @@ private:
 	VideoBuffer * placeSaveThumb;
 	ui::Point placeSaveOffset;
 
-	SimulationSample sample;
-
 	void updateToolButtonScroll();
 
 	void SetSaveButtonTooltips();
 
 	void screenshot();
+
+	void drawHudParticleText(Graphics *g, StringBuilder text, int yoffset, int alpha, int wavelengthGfx = 0, HudParticleTextGlowType glowType = HudParticleTextGlowType::NONE);
 
 	void enableShiftBehaviour();
 	void disableShiftBehaviour();
@@ -147,7 +150,6 @@ public:
 
 	//Breaks MVC, but any other way is going to be more of a mess.
 	ui::Point GetMousePosition();
-	void SetSample(SimulationSample sample);
 	void SetHudEnable(bool hudState);
 	bool GetHudEnable();
 	void SetBrushEnable(bool hudState);
@@ -164,7 +166,7 @@ public:
 	void BeginStampSelection();
 	ui::Point GetPlaceSaveOffset() { return placeSaveOffset; }
 	void SetPlaceSaveOffset(ui::Point offset) { placeSaveOffset = offset; }
-	int Record(bool record, bool subframe);
+	int Record(bool record, bool subframe = false);
 	bool GetRecordingSubframe(){ return recordingSubframe; }
 	int GetRecordInterval() { return recordInterval; }
 	void SetRecordInterval(int val) { recordInterval = val; }

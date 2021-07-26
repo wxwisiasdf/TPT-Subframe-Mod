@@ -58,7 +58,6 @@ GameModel::GameModel():
 	activeTools = regularToolset;
 
 	std::fill(decoToolset, decoToolset+4, (Tool*)NULL);
-	std::fill(configToolset, configToolset+4, (Tool*)NULL);
 	std::fill(regularToolset, regularToolset+4, (Tool*)NULL);
 
 	//Default render prefs
@@ -402,6 +401,7 @@ void GameModel::BuildMenus()
 	decoToolset[1] = GetToolFromIdentifier("DEFAULT_DECOR_CLR");
 	decoToolset[2] = GetToolFromIdentifier("DEFAULT_UI_SAMPLE");
 	decoToolset[3] = GetToolFromIdentifier("DEFAULT_PT_NONE");
+
 	ConfigTool *configTool = (ConfigTool*)GetToolFromIdentifier("DEFAULT_UI_CONFIG");
 	configTool->SetClearTool(GetToolFromIdentifier("DEFAULT_PT_NONE"));
 	configToolset[0] = configTool;
@@ -648,7 +648,7 @@ bool GameModel::GetWasModified()
 
 void GameModel::SetWasModified(bool value)
 {
-	wasModified = true;
+	wasModified = value;
 }
 
 void GameModel::AddObserver(GameView * observer){
@@ -688,6 +688,7 @@ void GameModel::SetActiveMenu(int menuID)
 	toolList = menuList[menuID]->GetToolList();
 	notifyToolListChanged();
 
+	sim->configToolSampleActive = false;
 	if(menuID == SC_DECO)
 	{
 		if(activeTools != decoToolset)
@@ -696,7 +697,7 @@ void GameModel::SetActiveMenu(int menuID)
 			notifyActiveToolsChanged();
 		}
 	}
-	else if(activeTools != configToolset)
+	else
 	{
 		if(activeTools != regularToolset)
 		{
@@ -739,17 +740,12 @@ Tool * GameModel::GetActiveTool(int selection)
 
 void GameModel::SetActiveTool(int selection, Tool * tool)
 {
+	sim->configToolSampleActive = false;
 	if (tool->GetIdentifier() == "DEFAULT_UI_CONFIG")
 		activeTools = configToolset;
 	else if (activeTools == configToolset)
 		activeTools = regularToolset;
 	activeTools[selection] = tool;
-	notifyActiveToolsChanged();
-}
-
-void GameModel::ResetToolset()
-{
-	activeTools = regularToolset;
 	notifyActiveToolsChanged();
 }
 
@@ -868,32 +864,16 @@ void GameModel::SetSaveFile(SaveFile * newSave, bool invertIncludePressure)
 		{
 			Client::Ref().OverwriteAuthorInfo(saveData->authors);
 		}
-		wasModified = false;
+		SetWasModified(false);
 	}
 
 	notifySaveChanged();
 	UpdateQuickOptions();
 }
 
-void GameModel::ReloadParticleOrder()
+bool GameModel::AreParticlesInSubframeOrder()
 {
-	sim->CompleteDebugUpdateParticles();
-
-	GameSave * gameSave = sim->Save(true);
-	sim->SaveSimOptions(gameSave);
-	gameSave->paused = GetPaused();
-
-	GameSave * newSave = new GameSave(gameSave->Serialise());
-	//SetSaveFile(&tempSave);
-	sim->clear_sim();
-	ren->ClearAccumulation();
-	sim->Load(newSave, true);
-	delete gameSave;
-	delete newSave;
-
-#ifdef DEBUG
-	std::cout << "Particle order reloaded." << std::endl;
-#endif
+	return sim->AreParticlesInSubframeOrder();
 }
 
 Simulation * GameModel::GetSimulation()
@@ -1083,15 +1063,18 @@ void GameModel::SetUser(User user)
 
 void GameModel::SetPaused(bool pauseState)
 {
-	if (!pauseState && sim->debug_currentParticle > 0)
+	if (!pauseState)
 	{
-		String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end due to unpause");
-		sim->UpdateParticles(sim->debug_currentParticle, NPART);
-		sim->AfterSim();
-		sim->debug_currentParticle = 0;
-		Log(logmessage, false);
+		if (sim->debug_currentParticle > 0)
+		{
+			String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end due to unpause");
+			Log(logmessage, false);
+
+			sim->CompleteDebugUpdateParticles();
+		}
 	}
 
+	sim->subframe_mode = false;
 	sim->sys_pause = pauseState?1:0;
 	notifyPausedChanged();
 }
@@ -1108,8 +1091,9 @@ bool GameModel::GetSubframeMode()
 
 void GameModel::SetSubframeMode(bool subframeModeState)
 {
-	if(!GetPaused())
+	if (subframeModeState && !GetPaused())
 		SetPaused(true);
+
 	sim->subframe_mode = subframeModeState;
 	notifyPausedChanged();
 }
@@ -1190,6 +1174,16 @@ bool GameModel::GetGravityGrid()
 void GameModel::FrameStep(int frames)
 {
 	sim->framerender += frames;
+}
+
+void GameModel::SetSubframeFrameStep(int frames)
+{
+	sim->subframe_framerender = frames;
+}
+
+int GameModel::GetSubframeFrameStep()
+{
+	return sim->subframe_framerender;
 }
 
 void GameModel::ClearSimulation()
