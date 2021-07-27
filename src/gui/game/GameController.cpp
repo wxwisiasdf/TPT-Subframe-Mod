@@ -105,7 +105,7 @@ GameController::GameController():
 	debugInfo.push_back(new DebugParts(0x1, gameModel->GetSimulation()));
 	debugInfo.push_back(new ElementPopulationDebug(0x2, gameModel->GetSimulation()));
 	debugInfo.push_back(new DebugLines(0x4, gameView, this));
-	debugInfo.push_back(new ParticleDebug(0x8, gameModel->GetSimulation(), gameModel));
+	debugInfo.push_back(new ParticleDebug(0x8, gameModel->GetSimulation(), gameModel, this));
 }
 
 GameController::~GameController()

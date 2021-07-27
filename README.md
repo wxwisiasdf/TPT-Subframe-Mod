@@ -41,8 +41,8 @@ Other quality-of-life changes:
 - You can paste and place stamps outside the simulation boundary.
 - When pasting or placing stamps, the white dotted paste boundary is not shown.
 - If you attempt to open a save or close the window with the ESC button (the case for closing with the 'X' button has not been implemented) when there are unsaved changes, a confirmation warning is displayed.
-- If you attempt to save when you're in the middle of a frame or your particles are not in subframe order, a confirmation warning is displayed.
-- Saving completes the frame and reloads particle order, so you don't get surprised by corrupted saves.
+- If you attempt to save when you're in the middle of a frame, a confirmation warning is displayed.
+- If you attempt to save when your particles are not in subframe order (and automatic particle order reloading is disabled), a confirmation warning is displayed.
 - The position in frame is saved into undo history during subframe debugging, so you can undo into the middle of a frame without destroying everything.
 - Applying deco to a stack applies it preferentially to energy particles.
 - (v1.1) Creating CRAY with the brush gives it a ctype of SPRK automatically. If you want to create a ctype-less CRAY, use the property tool.

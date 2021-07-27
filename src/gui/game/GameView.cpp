@@ -259,13 +259,11 @@ GameView::GameView():
 	currentX+=151;
 	auto confirmCleanState = [this](std::function<void (bool)> callback, bool isLocal) {
 		if (!c->IsFrameComplete() && !ConfirmPrompt::Blocking("Save incomplete frame", "You're in the middle of a frame. Are you sure you want to save?"))
-		{
 				return;
-		}
-		if (!c->AreParticlesInSubframeOrder() && !ConfirmPrompt::Blocking("Particles not in order", "The particles are not in subframe order. Are you sure you want to save?"))
-		{
+		if (c->GetAutoreloadEnabled())
+			c->ReloadParticleOrder();
+		if (!c->AreParticlesInSubframeOrder() && !c->AreParticlesInSubframeOrder() && !ConfirmPrompt::Blocking("Particles not in order", "The particles are not in subframe order. Are you sure you want to save?"))
 				return;
-		}
 		callback(isLocal);
 	};
 	saveSimulationButton->SetSplitActionCallback({
