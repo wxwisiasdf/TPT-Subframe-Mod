@@ -1,4 +1,7 @@
 v1.10 (patch 1):
-- Fix stack edit ctype display bug.
+- Show subframe debugging position in HUD.
 - Autoreload (if enabled) when attempting to save with particles out of order.
 - If disabled, prevent autoreload when subframe debugging.
+- Fix stack edit ctype display bug.
+- Fix save location on command line open.
+- Fix property tool rect/line bug.
