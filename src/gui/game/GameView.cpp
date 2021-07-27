@@ -2531,6 +2531,8 @@ void GameView::OnDraw()
 			else
 				fpsInfo << " Parts: " << sample.NumParts;
 		}
+		if (c->GetParticleDebugPosition() != 0)
+			fpsInfo << " [Subf: #" << c->GetParticleDebugPosition() << "]";
 		if (c->GetStackEditDepth() >= 0)
 			fpsInfo << " [StackE: " << c->GetStackEditDepth() << "]";
 		if (configTool)

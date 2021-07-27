@@ -128,6 +128,7 @@ public:
 	void SetActiveTool(int toolSelection, ByteString identifier);
 	void SetLastTool(Tool * tool);
 	SimulationSample * GetSample();
+	int GetParticleDebugPosition();
 	ConfigTool * GetActiveConfigTool();
 	void ToggleConfigTool();
 	int GetStackEditDepth();

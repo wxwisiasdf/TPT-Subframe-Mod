@@ -190,7 +190,7 @@ public:
 	// run AfterStackEdit when done
 	// (don't rely on autoreload since pmap and photons are corrupted)
 	void BeforeStackEdit();
-	void AfterStackEdit(int c, int flags = -1);
+	void AfterStackEdit();
 	void CheckStacking();
 	void BeforeSim();
 	void AfterSim();

@@ -56,9 +56,7 @@ ElementTool::ElementTool(int id, String name, String description, int r, int g, 
 }
 ElementTool::~ElementTool() {}
 void ElementTool::Draw(Simulation * sim, Brush * brush, ui::Point position){
-	sim->BeforeStackEdit();
 	sim->CreateParts(position.X, position.Y, toolID, brush);
-	sim->AfterStackEdit(toolID);
 }
 void ElementTool::DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging) {
 	sim->CreateLine(position1.X, position1.Y, position2.X, position2.Y, toolID, brush);
@@ -149,11 +147,7 @@ void WindTool::DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui
 void Element_LIGH_Tool::DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging)
 {
 	if (dragging)
-	{
-		sim->BeforeStackEdit();
 		sim->CreateParts(position1.X, position1.Y, brush->GetRadius().X, brush->GetRadius().Y, PT_LIGH);
-		sim->AfterStackEdit(PT_LIGH);
-	}
 }
 
 

@@ -1803,8 +1803,6 @@ int Simulation::CreateParts(int x, int y, int rx, int ry, int c, int flags)
 
 void Simulation::CreateLine(int x1, int y1, int x2, int y2, int c, Brush * cBrush, int flags)
 {
-	BeforeStackEdit();
-
 	int x, y, dx, dy, sy, rx = cBrush->GetRadius().X, ry = cBrush->GetRadius().Y;
 	bool reverseXY = abs(y2-y1) > abs(x2-x1);
 	float e = 0.0f, de;
@@ -1854,8 +1852,6 @@ void Simulation::CreateLine(int x1, int y1, int x2, int y2, int c, Brush * cBrus
 			e -= 1.0f;
 		}
 	}
-
-	AfterStackEdit(c, flags);
 }
 #endif
 
@@ -1984,8 +1980,6 @@ void Simulation::CreateLine(int x1, int y1, int x2, int y2, int c)
 #ifndef RENDERER
 void Simulation::CreateBox(int x1, int y1, int x2, int y2, int c, int flags)
 {
-	BeforeStackEdit();
-
 	int i, j;
 	if (x1>x2)
 	{
@@ -2002,8 +1996,6 @@ void Simulation::CreateBox(int x1, int y1, int x2, int y2, int c, int flags)
 	for (j=y2; j>=y1; j--)
 		for (i=x1; i<=x2; i++)
 			CreateParts(i, j, 0, 0, c, flags);
-
-	AfterStackEdit(c, flags);
 }
 
 int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
@@ -2053,7 +2045,6 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 	coord_stack[coord_stack_size][1] = y;
 	coord_stack_size++;
 
-	BeforeStackEdit();
 	do
 	{
 		coord_stack_size--;
@@ -2111,7 +2102,6 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 					if (coord_stack_size>=coord_stack_limit)
 					{
 						free(coord_stack);
-						AfterStackEdit(c, flags);
 						return -1;
 					}
 				}
@@ -2126,13 +2116,11 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 					if (coord_stack_size>=coord_stack_limit)
 					{
 						free(coord_stack);
-						AfterStackEdit(c, flags);
 						return -1;
 					}
 				}
 	} while (coord_stack_size>0);
 	free(coord_stack);
-	AfterStackEdit(c, flags);
 	return created_something;
 }
 #endif
@@ -5067,7 +5055,7 @@ void Simulation::BeforeStackEdit()
 	needReloadParticleOrder = true;
 }
 
-void Simulation::AfterStackEdit(int c, int flags)
+void Simulation::AfterStackEdit()
 {
 	if (stackEditDepth < 0)
 		return;

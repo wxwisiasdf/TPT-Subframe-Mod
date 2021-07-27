@@ -289,11 +289,13 @@ void PropertyTool::OpenWindow(Simulation *sim)
 
 void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 {
-	int partId = sim->sample.GetStackEditPartId();
-	if (partId == -1)
+	if(position.X<0 || position.X>XRES || position.Y<0 || position.Y>YRES)
 		return;
-	// make a fake pmap structure for mergeability
-	int i = PMAP(partId, sim->parts[partId].type);
+	int i = sim->pmap[position.Y][position.X];
+	if(!i)
+		i = sim->photons[position.Y][position.X];
+	if(!i)
+		return;
 
 	if (changeType)
 	{

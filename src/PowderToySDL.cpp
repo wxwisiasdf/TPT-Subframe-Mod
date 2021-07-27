@@ -925,8 +925,9 @@ int main(int argc, char * argv[])
 					}
 					else
 					{
-						SaveFile * newFile = new SaveFile(arguments["open"]);
+						SaveFile * newFile = new SaveFile(filename);
 						GameSave * newSave = new GameSave(gameSaveData);
+						newFile->SetDisplayName(arguments["open"].FromUtf8());
 						newFile->SetGameSave(newSave);
 						gameController->LoadSaveFile(newFile);
 						delete newFile;
