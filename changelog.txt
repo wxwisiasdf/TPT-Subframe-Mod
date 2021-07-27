@@ -1,2 +1,4 @@
 v1.10 (patch 1):
 - Fix stack edit ctype display bug.
+- Autoreload (if enabled) when attempting to save with particles out of order.
+- If disabled, prevent autoreload when subframe debugging.
