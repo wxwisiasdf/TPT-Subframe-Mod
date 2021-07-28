@@ -3157,6 +3157,8 @@ void Simulation::kill_part(int i)//kills particle number i
 {
 	if (i < 0 || i >= NPART)
 		return;
+
+	debug_interestingChangeOccurred = true;
 	
 	int x = (int)(parts[i].x + 0.5f);
 	int y = (int)(parts[i].y + 0.5f);
@@ -3497,8 +3499,6 @@ void Simulation::create_cherenkov_photon(int pp)//photons from NEUT going throug
 void Simulation::delete_part(int x, int y)//calls kill_part with the particle located at x,y
 {
 	unsigned i;
-
-	debug_interestingChangeOccurred = true;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
 		return;
