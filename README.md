@@ -36,6 +36,7 @@ HUD changes:
 - (v1.6) Ctype display modes (shortcut: Ctrl-J to cycle). This changes how the ctype of a colored particle is displayed in the debug HUD. The ctype is displayed in hex by default, but you can switch it back to decimal. For decimal, you can choose to enable 30th-bit handling. This ignores the 30th bit and, if the 29th bit is set, displays the ctype as a negative number.
 - (v1.10) The HUD is slightly more compact.
 - (v1.10) The subframe debugging position is shown in the HUD.
+- (v1.10) CRAY FILT mode is shown in the debug HUD.
 
 Other quality-of-life changes:
 - Alt-F continues updating particles until it encouters an "interesting" update (create\_part, delete\_part or part\_change\_type called), and does not display any log messages until the frame is completed.
@@ -127,3 +128,4 @@ v1.10:
 - Only show stack tool warning once when holding down on stack.
 - Add stack edit feature.
 - Show subframe debug position in the HUD.
+- Show CRAY FILT mode in the debug HUD.

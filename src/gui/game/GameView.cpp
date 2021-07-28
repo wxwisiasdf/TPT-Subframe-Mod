@@ -2368,7 +2368,7 @@ void GameView::OnDraw()
 				else if (type == PT_FILT)
 				{
 					sampleInfo << c->ElementResolve(type, ctype);
-					if (sparticle.tmp >= 0 && sparticle.tmp < FILT_NUM_MODES)
+					if (sparticle.tmp>=0 && sparticle.tmp < FILT_NUM_MODES)
 						sampleInfo << " (" << FILT_MODES[sparticle.tmp] << ", ";
 					else
 						sampleInfo << " (unknown mode, ";
@@ -2388,6 +2388,8 @@ void GameView::OnDraw()
 						writeWavelength(&sampleInfo, wavelengthGfx);
 						sampleInfo << ")";
 					}
+					else if (type == PT_CRAY && TYP(ctype) == PT_FILT && ID(ctype) < FILT_NUM_MODES)
+						sampleInfo << " (FILT, " << FILT_MODES[ID(ctype)] << ")";
 					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == PT_LDTC)
 						sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)) << ")";
