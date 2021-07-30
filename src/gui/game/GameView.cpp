@@ -1504,7 +1504,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		}
 		else
 		{
-			c->ToggleConfigTool();
+			c->SetActiveTool(0, "DEFAULT_UI_CONFIG");
 		}
 		break;
 	case SDL_SCANCODE_X:

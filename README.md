@@ -130,3 +130,4 @@ v1.10:
 - Show subframe debug position in the HUD.
 - Show CRAY FILT mode in the debug HUD.
 - Change stack mode shortcut to Shift-D.
+- Prevent C from switching out of config tool.

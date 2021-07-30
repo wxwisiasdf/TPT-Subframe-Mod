@@ -1,5 +1,6 @@
 v1.10 (patch 1):
 - Change stack mode shortcut to Shift-D.
+- C no longer switches out of config tool.
 - Show subframe debugging position in the HUD.
 - Show CRAY FILT mode in the debug HUD.
 - Autoreload (if enabled) when attempting to save with particles out of order.

@@ -1250,15 +1250,6 @@ ConfigTool * GameController::GetActiveConfigTool()
 	else return NULL;
 }
 
-void GameController::ToggleConfigTool()
-{
-	if (GetActiveConfigTool())
-		// reset toolset
-		gameModel->SetActiveMenu(gameModel->GetActiveMenu());
-	else
-		SetActiveTool(0, "DEFAULT_UI_CONFIG");
-}
-
 int GameController::GetStackEditDepth()
 {
 	return gameModel->GetSimulation()->stackEditDepth;
