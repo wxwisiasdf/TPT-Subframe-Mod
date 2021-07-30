@@ -260,9 +260,8 @@ GameView::GameView():
 	auto confirmCleanState = [this](std::function<void (bool)> callback, bool isLocal) {
 		if (!c->IsFrameComplete() && !ConfirmPrompt::Blocking("Save incomplete frame", "You're in the middle of a frame. Are you sure you want to save?"))
 				return;
-		if (c->GetAutoreloadEnabled())
-			c->ReloadParticleOrder();
-		if (!c->AreParticlesInSubframeOrder() && !c->AreParticlesInSubframeOrder() && !ConfirmPrompt::Blocking("Particles not in order", "The particles are not in subframe order. Are you sure you want to save?"))
+		c->ReloadParticleOrderIfNeeded();
+		if (!c->AreParticlesInSubframeOrder() && !ConfirmPrompt::Blocking("Particles not in order", "The particles are not in subframe order. Are you sure you want to save?"))
 				return;
 		callback(isLocal);
 	};
@@ -515,6 +514,12 @@ bool GameView::GetPlacingSave()
 bool GameView::GetPlacingZoom()
 {
 	return zoomEnabled && !zoomCursorFixed;
+}
+
+void GameView::ToggleStackMode()
+{
+	c->ReloadParticleOrderIfNeeded();
+	c->SetReplaceModeFlags(c->GetReplaceModeFlags()^STACK_MODE);
 }
 
 void GameView::NotifyActiveToolsChanged(GameModel * sender)
@@ -1563,11 +1568,6 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 	case SDL_SCANCODE_SEMICOLON:
 		if (ctrl)
 			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^SPECIFIC_DELETE);
-		else if (shift)
-		{
-			c->ReloadParticleOrder();
-			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^STACK_MODE);
-		}
 		else
 			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^REPLACE_MODE);
 		break;

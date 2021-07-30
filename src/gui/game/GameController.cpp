@@ -726,6 +726,11 @@ bool GameController::KeyPress(int key, int scan, bool repeat, bool shift, bool c
 				SwitchGravity();
 				break;
 			case SDL_SCANCODE_D:
+				if (shift)
+				{
+					gameView->ToggleStackMode();
+					break;
+				}
 				gameView->SetDebugHUD(!gameView->GetDebugHUD());
 				break;
 			case SDL_SCANCODE_S:
@@ -1716,6 +1721,12 @@ void GameController::ReloadParticleOrder()
 
 	String logmessage = String::Build("Particle order reloaded");
 	gameModel->Log(logmessage, false);
+}
+
+void GameController::ReloadParticleOrderIfNeeded()
+{
+	if (!IsFrameComplete() || !AreParticlesInSubframeOrder())
+		ReloadParticleOrder();
 }
 
 bool GameController::IsValidElement(int type)

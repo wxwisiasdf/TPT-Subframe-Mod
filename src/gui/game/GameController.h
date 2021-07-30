@@ -161,6 +161,7 @@ public:
 	void ClearSim();
 	void ReloadSim();
 	void ReloadParticleOrder();
+	void ReloadParticleOrderIfNeeded();
 	void Vote(int direction);
 	void ChangeBrush();
 	void ShowConsole();
