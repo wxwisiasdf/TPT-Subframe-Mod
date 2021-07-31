@@ -28,7 +28,8 @@ Property tool changes:
 - P opens the property tool window rather than takes a screenshot. You can still take screenshots with F2.
 - (v1.3) "filt:v" in property tool translates into (v<<8) + 125, to aid the configuration of CRAY that creates FILT with a preset tmp.
 - (v1.6) 30th-bit handling. Adding "c:" before typing in a number into the property tool when setting ctype sets the 30th bit. For example, "c:50" sets the ctype to (50 | 0x20000000). Works with hex too -- just add "0x", like in "c:0xC0FFEE". (This used to be "c", but was changed due to collisions with element names.)
-- (v1.10) Properties in property tool are rearranged so that electronic properties are more conveniently accessible when using arrow keys.
+- (v1.11) Properties in property tool are rearranged so that electronic properties are more conveniently accessible when using arrow keys.
+- (v1.12) Property tool stays on the selected property when an invalid value is entered.
 
 HUD changes:
 - Stacked particles are shown in the HUD.
@@ -36,8 +37,8 @@ HUD changes:
 - (v1.6) The property tool no longer sets the 31st and 32nd bits of colored particle ctypes.
 - (v1.6) Ctype display modes (shortcut: Ctrl-J to cycle). This changes how the ctype of a colored particle is displayed in the debug HUD. The ctype is displayed in hex by default, but you can switch it back to decimal. For decimal, you can choose to enable 30th-bit handling. This ignores the 30th bit and, if the 29th bit is set, displays the ctype as a negative number.
 - (v1.10) The HUD is slightly more compact.
-- (v1.10) The subframe debugging position is shown in the HUD.
-- (v1.10) CRAY FILT mode is shown in the debug HUD.
+- (v1.11) The subframe debugging position is shown in the HUD.
+- (v1.11) CRAY FILT mode is shown in the debug HUD.
 
 Other quality-of-life changes:
 - Alt-F continues updating particles until it encouters an "interesting" update (create\_part, delete\_part or part\_change\_type called), and does not display any log messages until the frame is completed.
@@ -141,3 +142,6 @@ v1.11:
 - Fix save location on command line open.
 - Fix property tool rect/line bug.
 - Fix interesting change detection not detecting killed particles.
+
+v1.12:
+- Keep property tool on selected property when an invalid value is received.

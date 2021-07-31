@@ -1,12 +1,2 @@
-v1.11:
-- Change stack mode shortcut to Shift-D.
-- C no longer switches out of config tool.
-- Rearrange properties in property tool.
-- Show subframe debugging position in the HUD.
-- Show CRAY FILT mode in the debug HUD.
-- Autoreload (if enabled) when attempting to save with particles out of order.
-- If disabled, prevent autoreload when subframe debugging.
-- Fix stack edit ctype display bug.
-- Fix save location on command line open.
-- Fix property tool rect/line bug.
-- Fix interesting change detection not detecting killed particles.
+v1.12:
+- Keep property tool at selected property when an invalid value is received.
