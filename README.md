@@ -28,6 +28,7 @@ Property tool changes:
 - P opens the property tool window rather than takes a screenshot. You can still take screenshots with F2.
 - (v1.3) "filt:v" in property tool translates into (v<<8) + 125, to aid the configuration of CRAY that creates FILT with a preset tmp.
 - (v1.6) 30th-bit handling. Adding "c:" before typing in a number into the property tool when setting ctype sets the 30th bit. For example, "c:50" sets the ctype to (50 | 0x20000000). Works with hex too -- just add "0x", like in "c:0xC0FFEE". (This used to be "c", but was changed due to collisions with element names.)
+- (v1.10) Properties in property tool are rearranged so that electronic properties are more conveniently accessible when using arrow keys.
 
 HUD changes:
 - Stacked particles are shown in the HUD.
@@ -127,7 +128,16 @@ v1.10:
 - Confirm when saving unclean state instead of reloading particle order.
 - Only show stack tool warning once when holding down on stack.
 - Add stack edit feature.
-- Show subframe debug position in the HUD.
+
+v1.11:
+- Show subframe debugging position in the HUD.
 - Show CRAY FILT mode in the debug HUD.
 - Change stack mode shortcut to Shift-D.
 - Prevent C from switching out of config tool.
+- Rearrange properties in property tool.
+- Re-enable autoreload when saving.
+- If disabled, prevent autoreload when subframe debugging.
+- Fix stack edit ctype display bug.
+- Fix save location on command line open.
+- Fix property tool rect/line bug.
+- Fix interesting change detection not detecting killed particles.
