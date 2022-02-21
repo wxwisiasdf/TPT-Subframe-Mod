@@ -1509,7 +1509,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		}
 		else
 		{
-			c->SetActiveTool(0, "DEFAULT_UI_CONFIG");
+			c->ToggleConfigTool();
 		}
 		break;
 	case SDL_SCANCODE_HOME:
@@ -2353,9 +2353,22 @@ void GameView::OnDraw()
 
 			if (showDebug || configTool)
 			{
-				String lbrace = String::Build("["),
-					rbrace = String::Build("]"),
+				String highlightColor = String::Build("\x0F\xFF\x77\x77"),
+					plainColor = String::Build("\x0F\xFF\xFF\xFF"),
 					noneString = String::Build("");
+
+				bool isConfiguring = isConfigToolTarget &&
+					configTool->IsConfiguring();
+				bool isConfiguringTemp = isConfigToolTarget &&
+					configTool->IsConfiguringTemp();
+				bool isConfiguringLife = isConfigToolTarget &&
+					configTool->IsConfiguringLife();
+				bool isConfiguringTmp = isConfigToolTarget &&
+					configTool->IsConfiguringTmp();
+				bool isConfiguringTmp2 = isConfigToolTarget &&
+					configTool->IsConfiguringTmp2();
+
+				sampleInfo << (isConfiguring ? highlightColor : noneString);
 
 				if (type == PT_LAVA && c->IsValidElement(ctype))
 				{
@@ -2406,12 +2419,17 @@ void GameView::OnDraw()
 						sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)) << ")";
 					else if (type == PT_CONV)
 					{
-						sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype));
+						sampleInfo << " (";
 						String tmpElemName = c->ElementResolve(
 							TYP(sparticle.tmp), ID(sparticle.tmp)
 						);
 						if (tmpElemName != "")
-							sampleInfo << " > " << tmpElemName;
+							sampleInfo <<
+								(isConfiguringTmp ? plainColor : noneString) <<
+								tmpElemName <<
+								(isConfiguringTmp ? highlightColor : noneString) <<
+								" < ";
+						sampleInfo << c->ElementResolve(TYP(ctype), ID(ctype));
 						sampleInfo << ")";
 					}
 					else if (type == PT_CLNE || type == PT_BCLN || type == PT_PCLN || type == PT_PBCN || type == PT_DTEC)
@@ -2422,36 +2440,20 @@ void GameView::OnDraw()
 						sampleInfo << " (" << ctype << ")";
 				}
 
-				bool isConfiguringTemp = isConfigToolTarget &&
-					configTool->IsConfiguringTemp();
-				bool isConfiguringLife = isConfigToolTarget &&
-					configTool->IsConfiguringLife();
-				bool isConfiguringTmp = isConfigToolTarget &&
-					configTool->IsConfiguringTmp();
-				bool isConfiguringTmp2 = isConfigToolTarget &&
-					configTool->IsConfiguringTmp2();
 				sampleInfo << ", " <<
-					(isConfiguringTemp ? lbrace : noneString) <<
+					(isConfiguringTemp ? plainColor : noneString) <<
 					(sparticle.temp - 273.15f) << " C" <<
-					(isConfiguringTemp ? rbrace : noneString);
+					(isConfiguringTemp ? highlightColor : noneString);
 				sampleInfo << ", " <<
-					(isConfiguringLife ? lbrace : noneString) <<
-					"Life" <<
-					(isConfiguringLife ? rbrace : noneString) <<
-					": " << sparticle.life;
+					(isConfiguringLife ? plainColor : noneString) <<
+					"Life" << ": " << sparticle.life <<
+					(isConfiguringLife ? highlightColor : noneString);
 				if (type != PT_RFRG && type != PT_RFGL && type != PT_LIFE)
 				{
 					sampleInfo << ", " <<
-						(isConfiguringTmp ? lbrace : noneString) <<
-						"Tmp" <<
-						(isConfiguringTmp ? rbrace : noneString) <<
-						": ";
-					if (type == PT_CONV)
-					{
-						sampleInfo << sparticle.tmp;
-					}
-					else
-						sampleInfo << sparticle.tmp;
+						(isConfiguringTmp ? plainColor : noneString) <<
+						"Tmp: " << sparticle.tmp <<
+						(isConfiguringTmp ? highlightColor : noneString);
 				}
 
 				// only elements that use .tmp2 show it in the debug HUD
@@ -2460,10 +2462,9 @@ void GameView::OnDraw()
 						|| type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC || type == PT_VSNS || type == PT_LITH)
 				{
 					sampleInfo << ", " <<
-						(isConfiguringTmp2 ? lbrace : noneString) <<
-						"Tmp2" <<
-						(isConfiguringTmp2 ? rbrace : noneString) <<
-						": " << sparticle.tmp2;
+						(isConfiguringTmp2 ? plainColor : noneString) <<
+						"Tmp2: " << sparticle.tmp2 <<
+						(isConfiguringTmp2 ? highlightColor : noneString);
 				}
 			}
 			else
