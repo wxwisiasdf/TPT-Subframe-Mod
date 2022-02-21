@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstddef>
 #include <vector>
+#include <map>
 #include <array>
 #include <memory>
 
