@@ -90,5 +90,5 @@ screenshot_*
 *.opensdf
 *.sdf
 /font/
-
-!autorun.example.lua
+compile_commands.json
+ignore/

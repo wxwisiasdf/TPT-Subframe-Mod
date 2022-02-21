@@ -1,11 +1,12 @@
 project('the-powder-toy', [ 'c', 'cpp' ], version: 'the.cake.is.a.lie', default_options: [
-	'cpp_std=c++11',
+	'cpp_std=c++17',
+	'build.cpp_std=c++17', # used when cross-compiling
 ])
 
 to_array = generator(
-	import('python').find_installation('python3'),
+	executable('toarray', sources: 'data/ToArray.cpp', native: true),
 	output: [ '@PLAINNAME@.cpp', '@PLAINNAME@.h' ],
-	arguments: [ join_paths(meson.current_source_dir(), 'to_array.py'), '@BUILD_DIR@', '@OUTPUT0@', '@OUTPUT1@', '@INPUT@', '@EXTRA_ARGS@' ]
+	arguments: [ '@OUTPUT0@', '@OUTPUT1@', '@INPUT@', '@EXTRA_ARGS@' ]
 )
 
 cpp_compiler = meson.get_compiler('cpp')
@@ -31,6 +32,8 @@ if host_machine.cpu_family() in [ 'x86_64' ]
 	copt_architecture = 'x86_64'
 elif host_machine.cpu_family() in [ 'x86' ]
 	copt_architecture = 'i686'
+elif host_machine.cpu_family() in [ 'aarch64' ]
+	copt_architecture = 'arm64'
 else
 	warning('unsupported architecture: ' + host_machine.cpu_family() + '; you are on your own')
 	copt_architecture = 'i686'
@@ -53,7 +56,7 @@ endif
 
 uopt_static = get_option('static')
 use_tpt_libs = 'no'
-tpt_libs_vtag = 'v20210822114001'
+tpt_libs_vtag = 'v20220217170412'
 if uopt_static == 'system'
 	if copt_platform == 'win'
 		error('no way to find static system libraries on windows')
@@ -67,22 +70,24 @@ else
 endif
 if use_tpt_libs != 'no'
 	nope = false
-	if copt_architecture == 'i686' and (copt_platform != 'win' or copt_compiler != 'msvc')
+	if copt_architecture == 'i686' and not copt_msvc
 		nope = true
 	endif
 	if copt_architecture == 'x86_64' and (copt_platform == 'lin' or copt_platform == 'mac') and copt_compiler != 'gcc'
 		nope = true
 	endif
-	if copt_architecture == 'x86_64' and copt_platform == 'win' and copt_compiler == 'gcc'
+	if copt_architecture == 'arm64' and copt_platform != 'mac'
 		nope = true
 	endif
-	if nope
-		error('no prebuilt @0@-@1@-@2@-@3@ libraries are currently provided'.format(copt_architecture, copt_platform, copt_compiler, use_tpt_libs))
-	endif
 	quad_compiler = copt_compiler
-	if use_tpt_libs == 'dynamic' and copt_platform == 'win'
-		# DLLs should be compatible with anything, right?
-		quad_compiler = 'msvc'
+	if copt_platform == 'win' and copt_compiler == 'gcc'
+		quad_compiler = 'mingw'
+		if get_option('b_lto')
+			error('mingw does not like static + lto, you will have to disable this error if you want to proceed')
+		endif
+	endif
+	if nope
+		error('no prebuilt @0@-@1@-@2@-@3@ libraries are currently provided'.format(copt_architecture, copt_platform, quad_compiler, use_tpt_libs))
 	endif
 	tpt_libs = subproject('tpt-libs-prebuilt-@0@-@1@-@2@-@3@-@4@'.format(copt_architecture, copt_platform, quad_compiler, use_tpt_libs, tpt_libs_vtag))
 endif
@@ -148,6 +153,8 @@ if copt_msvc
 	args_msvc = [
 		'/GS',
 		'-D_SCL_SECURE_NO_WARNINGS',
+		'-DUNICODE',
+		'-D_UNICODE',
 	]
 	if copt_64bit
 		message('SSE explicitly configured but unavailable in msvc targeting 64-bit machines')
@@ -199,6 +206,15 @@ else
 			args_ccomp += [ '-march=native' ]
 		endif
 	endif
+	if copt_platform == 'win'
+		args_ccomp += [
+			'-DUNICODE',
+			'-D_UNICODE',
+		]
+		if uopt_static != 'none'
+			project_link_args += [ '-static', '-static-libgcc', '-static-libstdc++' ]
+		endif
+	endif
 	if not get_option('debug')
 		args_ccomp += [
 			'-ftree-vectorize',
@@ -211,8 +227,12 @@ else
 		args_ccomp += [ '-mmacosx-version-min=10.9' ]
 		project_link_args += [ '-mmacosx-version-min=10.9' ]
 	endif
-	if copt_platform == 'lin' and not get_option('b_pie') and get_option('workaround_gcc_no_pie') # nice one, meson
-		project_link_args += [ '-no-pie' ]
+	if not get_option('b_pie') and get_option('workaround_gcc_no_pie') # nice one, meson
+		if cpp_compiler.get_id() in [ 'clang' ]
+			project_link_args += [ '-Wl,-no_pie' ]
+		else
+			project_link_args += [ '-no-pie' ]
+		endif
 	endif
 	project_c_args += args_ccomp
 	project_cpp_args += args_ccomp + [ '-Wno-invalid-offsetof' ]
@@ -236,11 +256,11 @@ if copt_platform == 'win'
 	endif
 elif copt_platform == 'lin'
 	if uopt_static != 'none'
-		project_link_args = [ '-static-libgcc', '-static-libstdc++' ]
+		project_link_args += [ '-static-libgcc', '-static-libstdc++' ]
 	endif
 endif
 
-if copt_platform == 'mac' and uopt_lua == 'luajit'
+if copt_platform == 'mac' and uopt_lua == 'luajit' and copt_architecture != 'arm64'
 	project_link_args += [
 		'-pagezero_size', '10000',
 		'-image_base', '100000000',
@@ -300,8 +320,7 @@ if get_option('build_powder')
 		include_directories: [ project_inc, powder_inc ],
 		c_args: project_c_args,
 		cpp_args: project_cpp_args,
-		cpp_pch: 'pch/pch_cpp.h',
-		gui_app: true,
+		gui_app: not get_option('debug'),
 		link_args: project_link_args,
 		dependencies: powder_deps,
 	)
@@ -318,7 +337,6 @@ if get_option('build_render')
 		include_directories: [ project_inc, render_inc ],
 		c_args: project_c_args,
 		cpp_args: project_cpp_args,
-		cpp_pch: 'pch/pch_cpp.h',
 		link_args: project_link_args,
 		dependencies: render_deps,
 	)
@@ -339,8 +357,6 @@ if get_option('build_font')
 		include_directories: [ project_inc, font_inc ],
 		c_args: project_c_args,
 		cpp_args: project_cpp_args,
-		cpp_pch: 'pch/pch_cpp.h',
-		gui_app: true,
 		link_args: project_link_args,
 		dependencies: font_deps,
 	)
