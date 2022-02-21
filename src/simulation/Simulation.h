@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <vector>
 #include <array>
+#include <memory>
 
 #include "Particle.h"
 #include "Stickman.h"
@@ -141,8 +142,8 @@ public:
 	void UpdateSample(int x, int y);
 	int GetStackEditPartId(); // returns -1 if no particles exist in sample
 
-	Snapshot * CreateSnapshot();
-	void Restore(const Snapshot & snap);
+	std::unique_ptr<Snapshot> CreateSnapshot();
+	void Restore(const Snapshot &snap);
 
 	int is_blocking(int t, int x, int y);
 	int is_boundary(int pt, int x, int y);
@@ -269,6 +270,7 @@ private:
 
 public:
 	const CustomGOLData *GetCustomGOLByRule(int rule) const;
+	const std::vector<CustomGOLData> GetCustomGol() { return customGol; }
 	void SetCustomGOL(std::vector<CustomGOLData> newCustomGol);
 
 private:

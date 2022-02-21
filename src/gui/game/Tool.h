@@ -200,6 +200,7 @@ public:
 	PropertyValue propValue;
 	bool changeType;
 	size_t propOffset;
+	bool validProperty;
 
 	void OpenWindow(Simulation *sim);
 	virtual ~PropertyTool() {}
