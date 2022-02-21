@@ -568,6 +568,7 @@ std::unique_ptr<Snapshot> Simulation::CreateSnapshot()
 	snap->stickmen       .push_back(player2);
 	snap->stickmen       .push_back(player);
 	snap->signs = signs;
+	snap->debug_currentParticle = debug_currentParticle;
 	return snap;
 }
 
@@ -607,6 +608,8 @@ void Simulation::Restore(const Snapshot &snap)
 	air->RecalculateBlockAirMaps();
 	RecalcFreeParticles(false);
 	gravWallChanged = true;
+	debug_currentParticle = snap.debug_currentParticle;
+	needReloadParticleOrder = true;
 }
 
 void Simulation::clear_area(int area_x, int area_y, int area_w, int area_h)
@@ -5056,6 +5059,26 @@ void Simulation::AfterStackEdit()
 	if (stackEditDepth < 0)
 		return;
 	RecalcFreeParticles(false);
+}
+
+int Simulation::GetStackEditParticleId(int x, int y)
+{
+	int stackCnt = 0;
+	int latesti = NPART;
+	for (int i = parts_lastActiveIndex; i >= 0; i--)
+	{
+		if (!parts[i].type)
+			continue;
+		int partx = (int)(parts[i].x+0.5f);
+		int party = (int)(parts[i].y+0.5f);
+		if (partx != x || party != y)
+			continue;
+		latesti = i;
+		if (stackCnt >= stackEditDepth)
+			break;
+		stackCnt++;
+	}
+	return latesti;
 }
 
 void Simulation::SimulateGoL()

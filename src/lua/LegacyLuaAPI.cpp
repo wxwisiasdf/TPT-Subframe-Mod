@@ -1548,4 +1548,29 @@ int luatpt_perfectCircle(lua_State* l)
 	return 0;
 }
 
+int luatpt_record_subframe(lua_State* l)
+{
+	if (!lua_isboolean(l, -1))
+		return luaL_typerror(l, 1, lua_typename(l, LUA_TBOOLEAN));
+	bool record = lua_toboolean(l, -1);
+	int recordingFolder = luacon_controller->Record(record, true);
+	lua_pushinteger(l, recordingFolder);
+	return 1;
+}
+
+int luatpt_setrecordinterval(lua_State* l)
+{
+	int acount = lua_gettop(l);
+	if (acount == 0)
+	{
+		lua_pushinteger(l, luacon_controller->GetRecordInterval());
+		return 1;
+	}
+	int recordinterval = luaL_checkint(l, 1);
+	if (recordinterval < 1)
+		return luaL_error(l, "record interval too small");
+	luacon_controller->SetRecordInterval(recordinterval);
+	return 0;
+}
+
 #endif

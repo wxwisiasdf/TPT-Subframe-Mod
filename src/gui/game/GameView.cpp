@@ -1274,15 +1274,19 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			switch (key)
 			{
 			case SDLK_RIGHT:
+			case SDLK_d:
 				c->TranslateSave(ui::Point(1, 0));
 				return;
 			case SDLK_LEFT:
+			case SDLK_a:
 				c->TranslateSave(ui::Point(-1, 0));
 				return;
 			case SDLK_UP:
+			case SDLK_w:
 				c->TranslateSave(ui::Point(0, -1));
 				return;
 			case SDLK_DOWN:
+			case SDLK_s:
 				c->TranslateSave(ui::Point(0, 1));
 				return;
 			}
@@ -1305,6 +1309,22 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 				}
 				return;
 			}
+		}
+	}
+
+	switch(scan)
+	{
+	case SDL_SCANCODE_PAGEUP:
+		c->AdjustStackEditDepth(1);
+		return;
+	case SDL_SCANCODE_PAGEDOWN:
+		c->AdjustStackEditDepth(-1);
+		return;
+	case SDL_SCANCODE_X:
+		if (!ctrl)
+		{
+			c->AdjustStackEditDepth(shift ? -1 : 1);
+			return;
 		}
 	}
 
@@ -1377,21 +1397,6 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			c->ReloadSim();
 		break;
 	case SDL_SCANCODE_E:
-		if (!ctrl)
-		{
-			if (shift)
-			{
-				int newDepth = c->GetStackEditDepth() - 1;
-				if (newDepth < -1)
-					newDepth = -1;
-				c->SetStackEditDepth(newDepth);
-			}
-			else
-			{
-				c->SetStackEditDepth(c->GetStackEditDepth() + 1);
-			}
-			break;
-		}
 		c->OpenElementSearch();
 		break;
 	case SDL_SCANCODE_F:
@@ -1506,6 +1511,12 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		{
 			c->SetActiveTool(0, "DEFAULT_UI_CONFIG");
 		}
+		break;
+	case SDL_SCANCODE_HOME:
+		c->SetStackEditDepth(0);
+		break;
+	case SDL_SCANCODE_END:
+		c->SetStackEditDepth(c->GetSample()->SParticleCount - 1);
 		break;
 	case SDL_SCANCODE_X:
 		if(ctrl)
@@ -2043,7 +2054,7 @@ void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int yoffse
 		rectb = 0x31;
 		alphamod = 1.3f;
 		break;
-	case HudParticleTextGlowType::GREEN:
+	case HudParticleTextGlowType::BLUE:
 		rectr = 0x32;
 		rectg = 0x30;
 		rectb = 0x5e;
@@ -2391,8 +2402,18 @@ void GameView::OnDraw()
 					else if (type == PT_CRAY && TYP(ctype) == PT_FILT && ID(ctype) < FILT_NUM_MODES)
 						sampleInfo << " (FILT, " << FILT_MODES[ID(ctype)] << ")";
 					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
-					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == PT_LDTC)
+					else if (type == PT_CRAY || type == PT_DRAY || type == PT_LDTC)
 						sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)) << ")";
+					else if (type == PT_CONV)
+					{
+						sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype));
+						String tmpElemName = c->ElementResolve(
+							TYP(sparticle.tmp), ID(sparticle.tmp)
+						);
+						if (tmpElemName != "")
+							sampleInfo << " > " << tmpElemName;
+						sampleInfo << ")";
+					}
 					else if (type == PT_CLNE || type == PT_BCLN || type == PT_PCLN || type == PT_PBCN || type == PT_DTEC)
 						sampleInfo << " (" << c->ElementResolve(ctype, sparticle.tmp) << ")";
 					else if (c->IsValidElement(ctype) && type != PT_GLOW && type != PT_WIRE && type != PT_SOAP && type != PT_LITH)
@@ -2427,13 +2448,7 @@ void GameView::OnDraw()
 						": ";
 					if (type == PT_CONV)
 					{
-						String elemName = c->ElementResolve(
-							TYP(sparticle.tmp),
-							ID(sparticle.tmp));
-						if (elemName == "")
-							sampleInfo << sparticle.tmp;
-						else
-							sampleInfo << elemName;
+						sampleInfo << sparticle.tmp;
 					}
 					else
 						sampleInfo << sparticle.tmp;
@@ -2459,10 +2474,15 @@ void GameView::OnDraw()
 			}
 
 			HudParticleTextGlowType glowType = HudParticleTextGlowType::NONE;
+			if (isConfigToolTarget)
+			{
+				sampleInfo << " \x0F\x01\x01\xEE<";
+				glowType = HudParticleTextGlowType::BLUE;
+			}
 			if (c->GetStackEditDepth() >= 0 && i == sample.EffectiveStackEditDepth)
-				glowType = HudParticleTextGlowType::YELLOW;
-			else if (isConfigToolTarget)
-				glowType = HudParticleTextGlowType::GREEN;
+			{
+				sampleInfo << " \x0F\xFF\xEE\x01<";
+			}
 			drawHudParticleText(g, sampleInfo, yoffset, alpha, wavelengthGfx, glowType);
 			yoffset += 13;
 		}

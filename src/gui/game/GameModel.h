@@ -77,6 +77,7 @@ private:
 	float toolStrength;
 	std::deque<HistoryEntry> history;
 	std::unique_ptr<Snapshot> historyCurrent;
+	bool wasModified;
 	unsigned int historyPosition;
 	unsigned int undoHistoryLimit;
 	bool mouseClickRequired;

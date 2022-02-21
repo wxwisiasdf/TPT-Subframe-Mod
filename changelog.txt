@@ -1,2 +1,12 @@
 v1.12:
-- Keep property tool at selected property when an invalid value is received.
+- Make stack edit snap to current stack when scrolling out of bounds.
+- Change stack edit shortcut to X and Shift-X.
+- Scroll through the stack when X/Shift-X is held down.
+- Add Home, End, PageUp and PageDown shortcuts for stack edit.
+- Make subframe debugging stop on particle selected by stack edit.
+- Make stack tool stack and unstack based on cursor drag direction.
+- Make BRAY visible even when its life is low.
+- Display CONV's tmp as an element name next to its ctype in the debug HUD.
+- Indicate config tool and stack edit selections with a colored pointer.
+- Keep property tool on selected property when an invalid value is received.
+- Fix CRAY overlay color scheme in the config tool.

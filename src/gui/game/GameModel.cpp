@@ -50,6 +50,7 @@ GameModel::GameModel():
 	currentFile(NULL),
 	currentUser(0, ""),
 	toolStrength(1.0f),
+	wasModified(false),
 	historyPosition(0),
 	activeColourPreset(0),
 	colourSelector(false),
