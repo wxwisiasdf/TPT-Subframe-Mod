@@ -2363,13 +2363,13 @@ void GameView::OnDraw()
 				}
 				else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
 				{
-					if (ctype == PT_LAVA && c->IsValidElement(sample.particle.tmp4))
+					if (ctype == PT_LAVA && c->IsValidElement(sparticle.tmp4))
 					{
-						sampleInfo << c->ElementResolve(type, 0) << " with molten " << c->ElementResolve(sample.particle.tmp4, -1);
+						sampleInfo << c->ElementResolve(type, 0) << " with molten " << c->ElementResolve(sparticle.tmp4, -1);
 					}
 					else
 					{
-						sampleInfo << c->ElementResolve(type, 0) << " with " << c->ElementResolve(ctype, sample.particle.tmp4);
+						sampleInfo << c->ElementResolve(type, 0) << " with " << c->ElementResolve(ctype, sparticle.tmp4);
 					}
 				}
 				else if (type == PT_LIFE)

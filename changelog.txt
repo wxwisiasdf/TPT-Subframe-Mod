@@ -1,4 +1,5 @@
 v1.12:
+- Merge changes in 96.2.
 - Make stack edit snap to current stack when scrolling out of bounds.
 - Change stack edit shortcut to X and Shift-X.
 - Scroll through the stack when X/Shift-X is held down.
