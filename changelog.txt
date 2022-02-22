@@ -1,4 +1,2 @@
-v1.12.1:
-- Make C switch out of config tool to the previously selected tool.
-- Fix bug in CONV's HUD display.
-- Highlight currently configured property with colors instead of brackets.
+v1.12.2:
+- Fix another bug in CONV's HUD display.

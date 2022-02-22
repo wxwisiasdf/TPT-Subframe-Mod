@@ -2428,7 +2428,7 @@ void GameView::OnDraw()
 								(isConfiguringTmp ? plainColor : noneString) <<
 								tmpElemName <<
 								(isConfiguringTmp ? highlightColor : noneString) <<
-								" < ";
+								" > ";
 						sampleInfo << c->ElementResolve(TYP(ctype), ID(ctype));
 						sampleInfo << ")";
 					}
