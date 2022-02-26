@@ -2628,6 +2628,8 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		return 0;
 	}
 
+	debug_interestingChangeOccurred = true;
+
 	int Element_FILT_interactWavelengths(Particle* cpart, int origWl);
 	if (e == 2) //if occupy same space
 	{
