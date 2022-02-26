@@ -12,6 +12,24 @@ ParticleDebug::ParticleDebug(unsigned int id, Simulation * sim, GameModel * mode
 
 }
 
+void ParticleDebug::updateSimUpTo(int i)
+{
+	if (sim->debug_currentParticle == 0)
+	{
+		sim->framerender = 1;
+		sim->BeforeSim();
+		sim->framerender = 0;
+	}
+	sim->UpdateParticles(sim->debug_currentParticle, i);
+	if (i < NPART-1)
+		sim->debug_currentParticle = i+1;
+	else
+	{
+		sim->AfterSim();
+		sim->debug_currentParticle = 0;
+	}
+}
+
 void ParticleDebug::Debug(int mode, int x, int y)
 {
 	int debug_currentParticle = sim->debug_currentParticle;
@@ -22,13 +40,16 @@ void ParticleDebug::Debug(int mode, int x, int y)
 	{
 		if (!sim->NUM_PARTS)
 			return;
+
 		i = debug_currentParticle;
 		while (i < NPART - 1 && !sim->parts[i].type)
 			i++;
+		updateSimUpTo(i);
+
 		if (i == NPART - 1)
 			logmessage = "End of particles reached, updated sim";
 		else
-			logmessage = String::Build("Updated particle #", i);
+			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
 	}
 	else if (mode == 1)
 	{
@@ -39,23 +60,10 @@ void ParticleDebug::Debug(int mode, int x, int y)
 		}
 		else
 			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
+
+		updateSimUpTo(i);
 	}
 	model->Log(logmessage, false);
-
-	if (sim->debug_currentParticle == 0)
-	{
-		sim->framerender = 1;
-		sim->BeforeSim();
-		sim->framerender = 0;
-	}
-	sim->UpdateParticles(debug_currentParticle, i);
-	if (i < NPART-1)
-		sim->debug_currentParticle = i+1;
-	else
-	{
-		sim->AfterSim();
-		sim->debug_currentParticle = 0;
-	}
 }
 
 bool ParticleDebug::KeyPress(int key, int scan, bool shift, bool ctrl, bool alt, ui::Point currentMouse)
