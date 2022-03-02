@@ -1,2 +1,4 @@
-v1.12.2:
-- Fix another bug in CONV's HUD display.
+v1.12.3:
+- Fix automatic particle order reloading initialization bug.
+- Prevent Alt-F from skipping uninteresting updates.
+- Add Lua hook to set BRAY life brightness threshold.

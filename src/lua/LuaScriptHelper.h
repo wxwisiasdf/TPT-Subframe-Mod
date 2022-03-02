@@ -140,4 +140,6 @@ int luatpt_setrecordinterval(lua_State* l);
 
 int luatpt_perfectCircle(lua_State* l);
 
+int luatpt_set_bray_life_brightness_threshold(lua_State* l);
+
 #endif /* LUASCRIPTHELPER_H_ */

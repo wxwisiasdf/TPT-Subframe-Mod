@@ -32,6 +32,27 @@ void ParticleDebug::updateSimUpTo(int i)
 	}
 }
 
+int ParticleDebug::updateSimOneParticle()
+{
+	int i = sim->debug_currentParticle;
+	while (i < NPART && !sim->parts[i].type)
+		i++;
+
+	updateSimUpTo(i);
+	return i;
+}
+
+int ParticleDebug::UpdateSimUpToInterestingChange()
+{
+	int i;
+	do
+	{
+		i = updateSimOneParticle();
+	}
+	while(i < NPART && !sim->debug_interestingChangeOccurred);
+	return i;
+}
+
 void ParticleDebug::Debug(int mode, int x, int y)
 {
 	int debug_currentParticle = sim->debug_currentParticle;
@@ -46,31 +67,18 @@ void ParticleDebug::Debug(int mode, int x, int y)
 		model->Log(logmessage, false);
 	}
 
-	if (mode == 0 || mode == 0xf)
+	if (mode == 0)
 	{
 		if (!sim->NUM_PARTS)
 			return;
 
-		do
-		{
-			i = sim->debug_currentParticle;
-			while (i < NPART && !sim->parts[i].type)
-				i++;
-
-			updateSimUpTo(i);
-		}
-		while(i < NPART && !sim->debug_interestingChangeOccurred);
+		i = updateSimOneParticle();
 
 		if (i == NPART)
-		{
 			logmessage = "End of particles reached, updated sim";
-			model->Log(logmessage, false);
-		}
-		else if (mode != 0xf)
-		{
+		else
 			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
-			model->Log(logmessage, false);
-		}
+		model->Log(logmessage, false);
 	}
 	else if (mode == 1)
 	{
@@ -82,9 +90,9 @@ void ParticleDebug::Debug(int mode, int x, int y)
 		else
 			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
 
-		model->Log(logmessage, false);
-
 		updateSimUpTo(i);
+
+		model->Log(logmessage, false);
 	}
 	else
 	{

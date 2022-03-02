@@ -161,3 +161,8 @@ v1.12:
 - Highlight currently configured property with colors instead of brackets.
 - Keep property tool on selected property when an invalid value is received.
 - Fix CRAY overlay color scheme in the config tool.
+
+v1.13:
+- Fix automatic particle order reloading initialization bug.
+- Prevent Alt-F from skipping uninteresting updates.
+- Add Lua hook to set BRAY life brightness threshold.

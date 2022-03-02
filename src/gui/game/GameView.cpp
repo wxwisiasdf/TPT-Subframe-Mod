@@ -2452,7 +2452,20 @@ void GameView::OnDraw()
 				{
 					sampleInfo << ", " <<
 						(isConfiguringTmp ? plainColor : noneString) <<
-						"Tmp: " << sparticle.tmp <<
+						"Tmp: ";
+					if (type == PT_CONV)
+					{
+						String elemName = c->ElementResolve(
+							TYP(sparticle.tmp),
+							ID(sparticle.tmp));
+						if (elemName == "")
+							sampleInfo << sparticle.tmp;
+						else
+							sampleInfo << elemName;
+					}
+					else
+						sampleInfo << sparticle.tmp;
+					sampleInfo <<
 						(isConfiguringTmp ? highlightColor : noneString);
 				}
 

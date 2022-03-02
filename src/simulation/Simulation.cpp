@@ -2340,6 +2340,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
+	debug_interestingChangeOccurred = false;
 	needReloadParticleOrder = false;
 	emp_decor = 0;
 	emp_trigger_count = 0;
@@ -2695,6 +2696,8 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		}
 		return 0;
 	}
+
+	debug_interestingChangeOccurred = true;
 
 	int Element_FILT_interactWavelengths(Particle* cpart, int origWl);
 	if (e == 2) //if occupy same space
@@ -5539,6 +5542,7 @@ Simulation::Simulation():
 	configToolSampleActive(false),
 	stackToolNotifShown(false),
 	debug_currentParticle(0),
+	debug_interestingChangeOccurred(false),
 	needReloadParticleOrder(false),
 	ISWIRE(0),
 	force_stacking_check(false),
