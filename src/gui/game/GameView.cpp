@@ -1610,6 +1610,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 	else if (key >= '0' && key <= '9')
 	{
 		c->LoadRenderPreset(key-'0');
+		if (selectMode == PlaceSave) c->ReRenderSave();
 	}
 }
 
