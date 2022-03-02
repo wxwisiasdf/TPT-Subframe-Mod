@@ -1468,6 +1468,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 				c->SetPaused(true);
 				c->SetActiveMenu(SC_DECO);
 			}
+		if (selectMode == PlaceSave) c->ReRenderSave();
 		break;
 	case SDL_SCANCODE_Y:
 		if (ctrl)
@@ -1902,7 +1903,7 @@ void GameView::NotifyPlaceSaveChanged(GameModel * sender)
 	placeSaveOffset = ui::Point(0, 0);
 	if(sender->GetPlaceSave())
 	{
-		placeSaveThumb = SaveRenderer::Ref().Render(sender->GetPlaceSave(), true, true, sender->GetRenderer());
+		placeSaveThumb = SaveRenderer::Ref().Render(sender->GetPlaceSave(), sender->GetRenderer()->decorations_enable, true, sender->GetRenderer());
 		selectMode = PlaceSave;
 		selectPoint2 = mousePosition;
 	}
