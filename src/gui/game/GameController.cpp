@@ -484,7 +484,8 @@ void GameController::TransformSave(matrix2d transform)
 
 void GameController::ReRenderSave()
 {
-	gameModel->SetPlaceSave(gameModel->GetPlaceSave());
+	if (gameView->GetSelectMode() == SelectMode::PlaceSave)
+		gameView->NotifyPlaceSaveChanged(gameModel);
 }
 
 void GameController::ToolClick(int toolSelection, ui::Point point)

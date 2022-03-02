@@ -1468,7 +1468,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 				c->SetPaused(true);
 				c->SetActiveMenu(SC_DECO);
 			}
-		if (selectMode == PlaceSave) c->ReRenderSave();
+		c->ReRenderSave();
 		break;
 	case SDL_SCANCODE_Y:
 		if (ctrl)
@@ -1611,7 +1611,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 	else if (key >= '0' && key <= '9')
 	{
 		c->LoadRenderPreset(key-'0');
-		if (selectMode == PlaceSave) c->ReRenderSave();
+		c->ReRenderSave();
 	}
 }
 
