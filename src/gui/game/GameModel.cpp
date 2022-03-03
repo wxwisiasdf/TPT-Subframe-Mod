@@ -856,6 +856,7 @@ void GameModel::AddObserver(GameView * observer){
 	observer->NotifySimulationChanged(this);
 	observer->NotifyRendererChanged(this);
 	observer->NotifyPausedChanged(this);
+	observer->NotifyDecorationChanged(this);
 	observer->NotifySaveChanged(this);
 	observer->NotifyBrushChanged(this);
 	observer->NotifyMenuListChanged(this);
@@ -1262,15 +1263,12 @@ void GameModel::SetUser(User user)
 
 void GameModel::SetPaused(bool pauseState)
 {
-	if (!pauseState)
+	if (!pauseState && sim->debug_currentParticle > 0)
 	{
-		if (sim->debug_currentParticle > 0)
-		{
-			String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end due to unpause");
-			Log(logmessage, false);
+		String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end due to unpause");
+		Log(logmessage, false);
 
-			sim->CompleteDebugUpdateParticles();
-		}
+		sim->CompleteDebugUpdateParticles();
 	}
 
 	sim->subframe_mode = false;
@@ -1570,7 +1568,7 @@ void GameModel::notifyDecorationChanged()
 {
 	for (size_t i = 0; i < observers.size(); i++)
 	{
-		//observers[i]->NotifyPausedChanged(this);
+		observers[i]->NotifyDecorationChanged(this);
 	}
 }
 

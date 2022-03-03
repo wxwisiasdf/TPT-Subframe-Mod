@@ -916,6 +916,7 @@ void GameController::LoadRenderPreset(int presetNum)
 	renderer->SetRenderMode(preset.RenderModes);
 	renderer->SetDisplayMode(preset.DisplayModes);
 	renderer->SetColourMode(preset.ColourMode);
+	ReRenderSave();
 }
 
 void GameController::Update()

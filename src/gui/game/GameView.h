@@ -185,6 +185,7 @@ public:
 	void NotifyRendererChanged(GameModel * sender);
 	void NotifySimulationChanged(GameModel * sender);
 	void NotifyPausedChanged(GameModel * sender);
+	void NotifyDecorationChanged(GameModel * sender);
 	void NotifySaveChanged(GameModel * sender);
 	void NotifyBrushChanged(GameModel * sender);
 	void NotifyMenuListChanged(GameModel * sender);

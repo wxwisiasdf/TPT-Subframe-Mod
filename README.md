@@ -54,6 +54,7 @@ Other quality-of-life changes:
 - (v1.10) Tab no longer changes the brush, since it conflicts with Alt-Tab. You can still change the brush with Shift-Tab.
 - (v1.12) When pasting or placing stamps, you may use the WASD keys to adjust its position instead of the arrow keys.
 - (v1.12) BRAY is visible even when its life is low.
+- (v1.13) Paste and stamp previews respect changes to render options, including whether decorations are enabled.
 
 Note that the original game already supports the following subframe debugging features (enable with the Lua command `tpt.setdebug(0x8)`):
 
@@ -166,3 +167,4 @@ v1.13:
 - Fix automatic particle order reloading initialization bug.
 - Prevent Alt-F from skipping uninteresting updates.
 - Add Lua hook to set BRAY life brightness threshold.
+- Make stamp previews aware of render settings.

@@ -797,6 +797,11 @@ void GameView::NotifyPausedChanged(GameModel * sender)
 	pauseButton->SetToggleState(sender->GetPaused() && !(sender->GetSubframeMode()));
 }
 
+void GameView::NotifyDecorationChanged(GameModel * sender)
+{
+	c->ReRenderSave();
+}
+
 void GameView::NotifyToolTipChanged(GameModel * sender)
 {
 	toolTip = sender->GetToolTip();
@@ -1468,7 +1473,6 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 				c->SetPaused(true);
 				c->SetActiveMenu(SC_DECO);
 			}
-		c->ReRenderSave();
 		break;
 	case SDL_SCANCODE_Y:
 		if (ctrl)
@@ -1611,7 +1615,6 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 	else if (key >= '0' && key <= '9')
 	{
 		c->LoadRenderPreset(key-'0');
-		c->ReRenderSave();
 	}
 }
 
