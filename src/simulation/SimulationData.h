@@ -25,6 +25,10 @@
 #define SC_CRACKER2 17
 #define SC_TOTAL 16
 
+#define TS_REGULAR 0
+#define TS_DECO 1
+#define TS_TOTAL 2
+
 #define O_WL_WALLELEC	122
 #define O_WL_EWALL		123
 #define O_WL_DETECT		124
