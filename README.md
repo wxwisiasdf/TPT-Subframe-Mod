@@ -168,3 +168,6 @@ v1.13:
 - Prevent Alt-F from skipping uninteresting updates.
 - Add Lua hook to set BRAY life brightness threshold.
 - Make stamp previews aware of render settings.
+
+v1.14:
+- Fix menu glitch when toggling config tool from deco menu.

@@ -1130,9 +1130,21 @@ void GameController::SetActiveMenu(int menuID)
 {
 	gameModel->SetActiveMenu(menuID);
 	if(menuID == SC_DECO)
-		gameModel->SetColourSelectorVisibility(true);
+	{
+		gameModel->SetActiveToolset(TS_DECO);
+	}
 	else
-		gameModel->SetColourSelectorVisibility(false);
+	{
+		if (gameModel->GetActiveToolset() == TS_DECO)
+			gameModel->SetActiveToolset(TS_REGULAR);
+	}
+	gameModel->UpdateLastRegularMenu();
+}
+
+void GameController::RestoreLastRegularActiveTool()
+{
+	gameModel->SetActiveToolset(TS_REGULAR);
+	gameModel->RestoreLastRegularMenu();
 }
 
 std::vector<Menu*> GameController::GetMenuList()
@@ -1171,7 +1183,10 @@ void GameController::SetActiveTool(int toolSelection, Tool * tool)
 	{
 		((ConfigTool *)tool)->Reset(gameModel->GetSimulation());
 		toolSelection = 0;
+		gameModel->SetActiveMenu(SC_TOOL);
 	}
+	if (tool->GetIdentifier() == "DEFAULT_UI_STACK")
+		SetActiveMenu(SC_TOOL);
 	if (gameModel->GetActiveMenu() == SC_DECO && toolSelection == 2)
 		toolSelection = 0;
 	gameModel->SetActiveTool(toolSelection, tool);
@@ -1225,8 +1240,8 @@ ConfigTool * GameController::GetActiveConfigTool()
 
 void GameController::ToggleConfigTool()
 {
-	if (GetActiveConfigTool())
-		SetActiveMenu(gameModel->GetActiveMenu());
+	if (gameModel->GetActiveToolset() == TS_CONFIG)
+		RestoreLastRegularActiveTool();
 	else
 		SetActiveTool(0, "DEFAULT_UI_CONFIG");
 }

@@ -123,6 +123,7 @@ public:
 	bool GetAutoreloadEnabled() { return autoreloadEnabled; }
 	void SetAutoreloadEnabled(bool e) { autoreloadEnabled = e; }
 	void SetActiveMenu(int menuID);
+	void RestoreLastRegularActiveTool();
 	std::vector<Menu*> GetMenuList();
 	int GetNumMenus(bool onlyEnabled);
 	void RebuildFavoritesMenu();

@@ -1,6 +1,7 @@
 #ifndef GAMEMODEL_H
 #define GAMEMODEL_H
 #include "Config.h"
+#include "simulation/SimulationData.h"
 
 #include <vector>
 #include <deque>
@@ -64,15 +65,14 @@ private:
 	std::vector<Menu*> menuList;
 	std::vector<QuickOption*> quickOptions;
 	int activeMenu;
+	int lastRegularMenu;
 	int currentBrush;
 	std::vector<Brush *> brushList;
 	SaveInfo * currentSave;
 	SaveFile * currentFile;
 	Tool * lastTool;
-	Tool ** activeTools;
-	Tool * decoToolset[4];
-	Tool * regularToolset[4];
-	Tool * configToolset[4];
+	int activeToolset;
+	Tool * toolsets[TS_TOTAL][4];
 	User currentUser;
 	float toolStrength;
 	std::deque<HistoryEntry> history;
@@ -209,6 +209,10 @@ public:
 	std::vector<QuickOption*> GetQuickOptions();
 	void SetActiveMenu(int menuID);
 	int GetActiveMenu();
+	void UpdateLastRegularMenu();
+	void RestoreLastRegularMenu();
+	void SetActiveToolset(int toolsetID);
+	int GetActiveToolset();
 	void FrameStep(int frames);
 	void SetSubframeFrameStep(int frames);
 	int GetSubframeFrameStep();
