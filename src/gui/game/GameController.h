@@ -123,6 +123,7 @@ public:
 	int GetTemperatureScale();
 	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
 	void SetActiveMenu(int menuID);
+	void RestoreLastRegularActiveTool();
 	std::vector<Menu*> GetMenuList();
 	int GetNumMenus(bool onlyEnabled);
 	void RebuildFavoritesMenu();

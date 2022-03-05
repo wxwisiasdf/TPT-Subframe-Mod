@@ -179,7 +179,6 @@ GameView::GameView():
 	windTool(false),
 	toolIndex(0),
 	currentSaveType(0),
-	lastMenu(-1),
 
 	toolTipPresence(0),
 	toolTip(""),
@@ -658,8 +657,6 @@ void GameView::NotifyToolListChanged(GameModel * sender)
 		AddComponent(tempButton);
 		toolButtons.push_back(tempButton);
 	}
-	if (sender->GetActiveMenu() != SC_DECO)
-		lastMenu = sender->GetActiveMenu();
 
 	updateToolButtonScroll();
 }
@@ -1484,7 +1481,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			c->SetDecoration();
 		else
 			if (colourPicker->GetParentWindow())
-				c->SetActiveMenu(lastMenu);
+				c->RestoreLastRegularActiveTool();
 			else
 			{
 				c->SetDecoration(true);
