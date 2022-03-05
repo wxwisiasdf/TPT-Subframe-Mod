@@ -239,10 +239,6 @@ void GameModel::BuildQuickOptionMenu(GameController * controller)
 
 void GameModel::BuildMenus()
 {
-	int lastMenu = -1;
-	if(activeMenu != -1)
-		lastMenu = activeMenu;
-
 	ByteString activeToolIdentifiers[4];
 	if(toolsets[TS_REGULAR][0])
 		activeToolIdentifiers[0] = toolsets[TS_REGULAR][0]->GetIdentifier();
@@ -425,15 +421,10 @@ void GameModel::BuildMenus()
 	lastTool = toolsets[activeToolset][0];
 
 	//Set default menu
-	activeMenu = SC_POWDERS;
+	if (activeMenu == -1)
+		activeMenu = SC_POWDERS;
 
-	if(lastMenu != -1)
-		activeMenu = lastMenu;
-
-	if(activeMenu != -1)
-		toolList = menuList[activeMenu]->GetToolList();
-	else
-		toolList = std::vector<Tool*>();
+	toolList = menuList[activeMenu]->GetToolList();
 
 	notifyMenuListChanged();
 	notifyToolListChanged();
