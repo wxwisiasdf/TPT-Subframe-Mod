@@ -171,3 +171,4 @@ v1.13:
 
 v1.14:
 - Fix menu glitch when toggling config tool from deco menu.
+- Make BRAY life brightness offset also affect tmp=1 BRAY.

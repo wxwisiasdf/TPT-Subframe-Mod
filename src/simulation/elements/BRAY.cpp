@@ -72,7 +72,7 @@ static int graphics(GRAPHICS_FUNC_ARGS)
 	}
 	else if(cpart->tmp==1)
 	{
-		trans = cpart->life/4;
+		trans = cpart->life/4 + ren->bray_life_brightness_threshold;
 		if (trans>255) trans = 255;
 		if (cpart->ctype&0x3FFFFFFF) {
 			*colg = 0;
