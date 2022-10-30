@@ -13,7 +13,7 @@ New features:
 - Subframe animation (shortcut: Shift-Space). Runs the simulation particle-by-particle rather than frame-by-frame.
 - Subframe recording (Lua: `tpt.record_subframe(true)`). Starts a recording of particle-by-particle simulation and automatically stops recording at the end of the frame. You can stop the recording with `tpt.record_subframe(false)` without stopping particle-by-particle simulation.
 - (v1.1) Stack tool (shortcut: Shift-S). Dragging on a stack of particles unstacks them; selecting multiple particles in different positions stacks them in order of their positions.
-- (v1.1) Stack mode (shortcut: Shift-D to toggle). Allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC.
+- (v1.1) Stack mode (shortcut: Shift-D to toggle). Allows you to draw or paste over existing particles, and makes right-click delete one stacked particle at a time. This helps to make things like transparent DTEC.
 - (v1.7) Config tool (shortcut: C). Sets particle properties in a few clicks. DRAY: Sets tmp, then tmp2. CRAY: Sets tmp2, then tmp. LDTC: Sets life, then tmp. DTEC/TSNS/LSNS/VSNS: Sets tmp2. FILT: Sets tmp. CONV: Sets tmp (click on another particle with the type you want to set the tmp to).
 - (v1.8) Timelapse recording (Lua: `tpt.setrecordinterval(<frames>)`). Changes the interval that frames are captured when recording. Useful when making timelapses.
 - (v1.10) Stack edit (shortcut: X, Shift-X, PageUp, PageDown, Home, End). Config tool, property tool, ctype-draw and subframe debugging (Shift-F) target particles at the selected depth. When stack mode is enabled (Shift-D), particles are created and deleted at the selected depth. Note that using the brush with stack edit messes with particle order, so this is best combined with automatic particle order reloading (`tpt.autoreload_enable(1)`).
@@ -179,6 +179,7 @@ v1.13:
 v1.14:
 - Allow stack tool to unstack to box.
 - Extend config tool to VSNS tmp2.
+- Extend stack mode to pasting and placing stamps.
 - Extend ruler tool to show box dimensions.
 - Put HUD particle info below the zoom window.
 - Always show wall type in HUD.

@@ -1,11 +1,3 @@
-v1.14:
-- Allow stack tool to unstack to box.
-- Extend config tool to VSNS tmp2.
-- Extend ruler tool to show box dimensions.
-- Put HUD particle info below the zoom window.
-- Always show wall type in HUD.
-- Show particle IDs in HUD when zoomed.
-- Add Lua event that triggers before the HUD is drawn.
-- Make BRAY life brightness offset also affect tmp=1 BRAY.
-- Fix menu glitch when toggling config tool from deco menu.
-- Fix vanilla file brower search query change bug.
+v1.14.1:
+- Extend stack mode to pasting and placing stamps.
+- Remove particle type from default top right HUD.

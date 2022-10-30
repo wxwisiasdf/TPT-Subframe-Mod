@@ -2534,10 +2534,7 @@ void GameView::OnDraw()
 						(isConfiguringTmp2 ? highlightColor : noneString);
 				}
 
-				if (zoomEnabled)
-				{
-					sampleInfo << ", #" << sparticleId;
-				}
+				sampleInfo << ", #" << sparticleId;
 			}
 			else
 			{
@@ -2575,28 +2572,24 @@ void GameView::OnDraw()
 		{
 			StringBuilder sampleInfo;
 			sampleInfo << Format::Precision(2);
+			bool needComma = false;
 
 			if (sample.WallType)
 			{
 				sampleInfo << c->WallName(sample.WallType);
+				needComma = true;
 			}
-			else if (sample.particle.type)
-			{
-				int type = sample.particle.type;
-				int ctype = sample.particle.ctype;
-				sampleInfo << c->ElementResolve(type, ctype);
-			}
-			else
+			else if (!sample.particle.type)
 			{
 				sampleInfo << "Empty";
+				needComma = true;
 			}
 
 			if (showDebug)
 			{
-				if (!zoomEnabled && sample.particle.type)
-					sampleInfo << ", #" << sample.ParticleID;
-
-				sampleInfo << ", (" << sample.PositionX << " " << sample.PositionY << ")";
+				if (needComma)
+					sampleInfo << ", ";
+				sampleInfo << "(" << sample.PositionX << " " << sample.PositionY << ")";
 
 				if (sample.Gravity)
 					sampleInfo << ", GX: " << sample.GravityVelocityX << " GY: " << sample.GravityVelocityY;
