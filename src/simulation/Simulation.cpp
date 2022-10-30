@@ -133,7 +133,11 @@ int Simulation::Load(const GameSave * originalSave, bool includePressure, int fu
 			continue;
 		}
 
-		if ((r = pmap[y][x]))
+		if (replaceModeFlags&STACK_MODE)
+		{
+			// Allow pasting stacks under stack mode, so don't do anything.
+		}
+		else if ((r = pmap[y][x]))
 		{
 			// Particle already exists in this location. Set pmap to 0, then kill it and all stacked particles in the loop below
 			pmap[y][x] = 0;
@@ -4932,7 +4936,7 @@ void Simulation::ReloadParticleOrder()
 
 void Simulation::BeforeStackEdit()
 {
-	if (stackEditDepth < 0)
+	if (stackEditDepth < 0 && !(replaceModeFlags&STACK_MODE))
 		return;
 	CompleteDebugUpdateParticles();
 	// use pmap_count as count buffer
@@ -4999,7 +5003,7 @@ void Simulation::BeforeStackEdit()
 
 void Simulation::AfterStackEdit()
 {
-	if (stackEditDepth < 0)
+	if (stackEditDepth < 0 && !(replaceModeFlags&STACK_MODE))
 		return;
 	RecalcFreeParticles(false);
 }
