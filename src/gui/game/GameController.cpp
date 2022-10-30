@@ -1902,3 +1902,8 @@ void GameController::RemoveCustomGOLType(const ByteString &identifier)
 {
 	gameModel->RemoveCustomGOLType(identifier);
 }
+
+void GameController::TriggerPreHudDraw()
+{
+	commandInterface->OnPreHudDraw();
+}
