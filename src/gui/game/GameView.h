@@ -131,7 +131,7 @@ private:
 
 	void screenshot();
 
-	void drawHudParticleText(Graphics *g, StringBuilder text, int yoffset, int alpha, int wavelengthGfx = 0, HudParticleTextGlowType glowType = HudParticleTextGlowType::NONE);
+	void drawHudParticleText(Graphics *g, StringBuilder text, int *yoffset, bool alignLeft, int alpha, int wavelengthGfx = 0, int wavelengthGfxOff = 0, HudParticleTextGlowType glowType = HudParticleTextGlowType::NONE);
 
 	void enableShiftBehaviour();
 	void disableShiftBehaviour();
@@ -174,6 +174,7 @@ public:
 	//all of these are only here for one debug lines
 	bool GetMouseDown() { return isMouseDown; }
 	bool GetDrawingLine() { return drawMode == DrawLine && isMouseDown; }
+	bool GetDrawingRect() { return drawMode == DrawRect && isMouseDown; }
 	bool GetDrawSnap() { return drawSnap; }
 	ui::Point GetLineStartCoords() { return drawPoint1; }
 	ui::Point GetLineFinishCoords() { return currentMouse; }

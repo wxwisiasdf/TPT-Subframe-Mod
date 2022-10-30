@@ -1,5 +1,11 @@
-v1.13:
-- Fix automatic particle order reloading initialization bug.
-- Prevent Alt-F from skipping uninteresting updates.
-- Add Lua hook to set BRAY life brightness threshold.
-- Make stamp previews aware of render settings.
+v1.14:
+- Allow stack tool to unstack to box.
+- Extend config tool to VSNS tmp2.
+- Extend ruler tool to show box dimensions.
+- Put HUD particle info below the zoom window.
+- Always show wall type in HUD.
+- Show particle IDs in HUD when zoomed.
+- Add Lua event that triggers before the HUD is drawn.
+- Make BRAY life brightness offset also affect tmp=1 BRAY.
+- Fix menu glitch when toggling config tool from deco menu.
+- Fix vanilla file brower search query change bug.
