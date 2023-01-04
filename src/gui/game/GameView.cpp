@@ -36,6 +36,7 @@
 #include "gui/interface/Engine.h"
 
 #include <cstring>
+#include <iostream>
 
 #ifdef GetUserName
 # undef GetUserName // dammit windows
@@ -193,7 +194,9 @@ GameView::GameView():
 	introTextMessage(ByteString(introTextData).FromUtf8()),
 
 	doScreenshot(false),
-	screenshotIndex(0),
+	screenshotIndex(1),
+	lastScreenshotTime(0),
+	recordingIndex(0),
 	recording(false),
 	recordingFolder(0),
 	recordingSubframe(false),
@@ -292,7 +295,6 @@ GameView::GameView():
 	upVoteButton->Appearance.Margin.Top+=2;
 	upVoteButton->Appearance.Margin.Left+=2;
 	currentX+=38;
-	upVoteButton->SetActionCallback({ [this] { c->Vote(1); } });
 	AddComponent(upVoteButton);
 
 	downVoteButton = new ui::Button(ui::Point(currentX, Size.Y-16), ui::Point(15, 15), "", "Dislike this save");
@@ -300,7 +302,6 @@ GameView::GameView():
 	downVoteButton->Appearance.Margin.Bottom+=2;
 	downVoteButton->Appearance.Margin.Left+=2;
 	currentX+=16;
-	downVoteButton->SetActionCallback({ [this] { c->Vote(-1); } });
 	AddComponent(downVoteButton);
 
 	tagSimulationButton = new ui::Button(ui::Point(currentX, Size.Y-16), ui::Point(227, 15), "[no tags set]", "Add simulation tags");
@@ -600,6 +601,11 @@ void GameView::NotifyToolListChanged(GameModel * sender)
 		else
 			tempButton = new ToolButton(ui::Point(currentX, YRES+1), ui::Point(30, 18), tool->GetName(), tool->GetIdentifier(), tool->GetDescription());
 
+		tempButton->clipRectX = 1;
+		tempButton->clipRectY = YRES + 1;
+		tempButton->clipRectW = XRES - 1;
+		tempButton->clipRectH = 18;
+
 		//currentY -= 17;
 		currentX -= 31;
 		tempButton->tool = tool;
@@ -824,17 +830,33 @@ void GameView::NotifySaveChanged(GameModel * sender)
 		else
 			saveSimulationButton->SetShowSplit(false);
 		reloadButton->Enabled = true;
-		upVoteButton->Enabled = (sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==0);
+		upVoteButton->Enabled = sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetUser().Username != sender->GetSave()->GetUserName();
 		if(sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==1)
+		{
+			upVoteButton->Appearance.BackgroundHover = (ui::Colour(20, 128, 30, 255));
+			upVoteButton->Appearance.BackgroundInactive = (ui::Colour(0, 108, 10, 255));
 			upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 108, 10, 255));
+		}
 		else
+		{
+			upVoteButton->Appearance.BackgroundHover = (ui::Colour(20, 20, 20));
+			upVoteButton->Appearance.BackgroundInactive = (ui::Colour(0, 0, 0));
 			upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
+		}
 
 		downVoteButton->Enabled = upVoteButton->Enabled;
 		if (sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==-1)
+		{
+			downVoteButton->Appearance.BackgroundHover = (ui::Colour(128, 20, 30, 255));
+			downVoteButton->Appearance.BackgroundInactive = (ui::Colour(108, 0, 10, 255));
 			downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(108, 0, 10, 255));
+		}
 		else
+		{
+			downVoteButton->Appearance.BackgroundHover = (ui::Colour(20, 20, 20));
+			downVoteButton->Appearance.BackgroundInactive = (ui::Colour(0, 0, 0));
 			downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
+		}
 
 		if (sender->GetUser().UserID)
 		{
@@ -846,6 +868,16 @@ void GameView::NotifySaveChanged(GameModel * sender)
 			upVoteButton->Appearance.BorderDisabled = ui::Colour(100, 100, 100);
 			downVoteButton->Appearance.BorderDisabled = ui::Colour(100, 100, 100);
 		}
+
+		if (sender->GetSave()->GetVote() == 1)
+			upVoteButton->SetActionCallback({ [this] { c->Vote(0); } });
+		else
+			upVoteButton->SetActionCallback({ [this] { c->Vote(1); } });
+
+		if (sender->GetSave()->GetVote() == -1)
+			downVoteButton->SetActionCallback({ [this] { c->Vote(0) ;} });
+		else
+			downVoteButton->SetActionCallback({ [this] { c->Vote(-1) ;} });
 
 		tagSimulationButton->Enabled = sender->GetSave()->GetID();
 		if (sender->GetSave()->GetID())
@@ -918,9 +950,71 @@ void GameView::NotifyBrushChanged(GameModel * sender)
 	activeBrush = sender->GetBrush();
 }
 
-void GameView::screenshot()
+ByteString GameView::TakeScreenshot(int captureUI, int fileType)
 {
-	doScreenshot = true;
+	std::unique_ptr<VideoBuffer> screenshot;
+	if (captureUI)
+	{
+		screenshot = std::make_unique<VideoBuffer>(ren->DumpFrame());
+	}
+	else
+	{
+		screenshot = std::make_unique<VideoBuffer>(ui::Engine::Ref().g->DumpFrame());
+	}
+
+	ByteString filename;
+	{
+		// Optional suffix to distinguish screenshots taken at the exact same time
+		ByteString suffix = "";
+		time_t screenshotTime = time(nullptr);
+		if (screenshotTime == lastScreenshotTime)
+		{
+			screenshotIndex++;
+			suffix = ByteString::Build(" (", screenshotIndex, ")");
+		}
+		else
+		{
+			screenshotIndex = 1;
+		}
+		lastScreenshotTime = screenshotTime;
+		std::string date = format::UnixtimeToDate(screenshotTime, "%Y-%m-%d %H.%M.%S");
+		filename = ByteString::Build("screenshot ", date, suffix);
+	}
+
+	if (fileType == 1)
+	{
+		filename += ".bmp";
+		// We should be able to simply use SDL_PIXELFORMAT_XRGB8888 here with a bit depth of 32 to convert RGBA data to RGB data,
+		// and save the resulting surface directly. However, ubuntu-18.04 ships SDL2 so old that it doesn't have
+		// SDL_PIXELFORMAT_XRGB8888, so we first create an RGBA surface and then convert it.
+		auto *rgbaSurface = SDL_CreateRGBSurfaceWithFormatFrom(screenshot->Buffer, screenshot->Width, screenshot->Height, 32, screenshot->Width * sizeof(pixel), SDL_PIXELFORMAT_ARGB8888);
+		auto *rgbSurface = SDL_ConvertSurfaceFormat(rgbaSurface, SDL_PIXELFORMAT_RGB888, 0);
+		if (!rgbSurface || SDL_SaveBMP(rgbSurface, filename.c_str()))
+		{
+			std::cerr << "SDL_SaveBMP failed: " << SDL_GetError() << std::endl;
+			filename = "";
+		}
+		SDL_FreeSurface(rgbSurface);
+		SDL_FreeSurface(rgbaSurface);
+	}
+	else if (fileType == 2)
+	{
+		filename += ".ppm";
+		if (!Platform::WriteFile(format::VideoBufferToPPM(*screenshot), filename))
+		{
+			filename = "";
+		}
+	}
+	else
+	{
+		filename += ".png";
+		if (!screenshot->WritePNG(filename))
+		{
+			filename = "";
+		}
+	}
+
+	return filename;
 }
 
 int GameView::Record(bool record, bool subframe)
@@ -950,6 +1044,7 @@ int GameView::Record(bool record, bool subframe)
 			Platform::MakeDirectory("recordings");
 			Platform::MakeDirectory(ByteString::Build("recordings", PATH_SEP, recordingFolder).c_str());
 			recording = true;
+			recordingIndex = 0;
 			recordIntervalIndex = 0;
 
 			if (subframe)
@@ -964,49 +1059,62 @@ int GameView::Record(bool record, bool subframe)
 
 void GameView::updateToolButtonScroll()
 {
-	if(toolButtons.size())
+	if (toolButtons.size())
 	{
-		int x = currentMouse.X, y = currentMouse.Y;
-		int newInitialX = WINDOWW-56;
-		int totalWidth = (toolButtons[0]->Size.X+1)*toolButtons.size();
-		int scrollSize = (int)(((float)(XRES-BARSIZE))/((float)totalWidth) * ((float)XRES-BARSIZE));
-		if (scrollSize>XRES-1)
-			scrollSize = XRES-1;
-		if(totalWidth > XRES-15)
-		{
+		int x = currentMouse.X;
+		int y = currentMouse.Y;
+
+		int offsetDelta = 0;
+
+		int newInitialX = WINDOWW - 56;
+		int totalWidth = (toolButtons[0]->Size.X + 1) * toolButtons.size();
+		int scrollSize = (int)(((float)(XRES - BARSIZE))/((float)totalWidth) * ((float)XRES - BARSIZE));
+
+		if (scrollSize > XRES - 1)
+			scrollSize = XRES - 1;
+		
+		if (totalWidth > XRES - 15)
+		{			
 			int mouseX = x;
-			if(mouseX > XRES)
+
+			float overflow = 0;
+			float mouseLocation = 0;
+
+			if (mouseX > XRES)
 				mouseX = XRES;
-			//if (mouseX < 15) //makes scrolling a little nicer at edges but apparently if you put hundreds of elements in a menu it makes the end not show ...
-			//	mouseX = 15;
 
-			scrollBar->Position.X = (int)(((float)mouseX/((float)XRES))*(float)(XRES-scrollSize));
+			// if (mouseX < 15) // makes scrolling a little nicer at edges but apparently if you put hundreds of elements in a menu it makes the end not show ...
+			// 	mouseX = 15;
 
-			float overflow = float(totalWidth-(XRES-BARSIZE)), mouseLocation = float(XRES-3)/float((XRES-2)-mouseX); //mouseLocation adjusted slightly in case you have 200 elements in one menu
+			scrollBar->Visible = true;
 
-			newInitialX += int(overflow/mouseLocation);
+			scrollBar->Position.X = (int)(((float)mouseX / (float)XRES) * (float)(XRES - scrollSize)) + 1;
+
+			overflow = (float)(totalWidth - (XRES - BARSIZE));
+			mouseLocation = (float)(XRES - 3)/(float)((XRES - 2) - mouseX); // mouseLocation adjusted slightly in case you have 200 elements in one menu
+
+			newInitialX += (int)(overflow/mouseLocation);
 		}
 		else
 		{
-			scrollBar->Position.X = 1;
-		}
-		scrollBar->Size.X=scrollSize;
-		int offsetDelta = toolButtons[0]->Position.X - newInitialX;
-		for(auto *button : toolButtons)
-		{
-			button->Position.X -= offsetDelta;
-			if (button->Position.X+button->Size.X <= 0 || (button->Position.X+button->Size.X) > XRES-2)
-				button->Visible = false;
-			else
-				button->Visible = true;
+			scrollBar->Visible = false;
 		}
 
-		//Ensure that mouseLeave events are make their way to the buttons should they move from underneath the mouse pointer
-		if(toolButtons[0]->Position.Y < y && toolButtons[0]->Position.Y+toolButtons[0]->Size.Y > y)
+		scrollBar->Size.X = scrollSize - 1;
+
+		offsetDelta = toolButtons[0]->Position.X - newInitialX;
+
+		for (auto *button : toolButtons)
 		{
-			for(auto *button : toolButtons)
+			button->Position.X -= offsetDelta;
+		}
+
+		// Ensure that mouseLeave events are make their way to the buttons should they move from underneath the mouse pointer
+		if (toolButtons[0]->Position.Y < y && toolButtons[0]->Position.Y + toolButtons[0]->Size.Y > y)
+		{
+			for (auto *button : toolButtons)
 			{
-				if(button->Position.X < x && button->Position.X+button->Size.X > x)
+				if (button->Position.X < x && button->Position.X + button->Size.X > x)
 					button->OnMouseEnter(x, y);
 				else
 					button->OnMouseLeave(x, y);
@@ -1048,7 +1156,7 @@ void GameView::OnMouseMove(int x, int y, int dx, int dy)
 		{
 			isMouseDown = false;
 			drawMode = DrawPoints;
-			c->MouseUp(x, y, 0, 2);
+			c->MouseUp(x, y, 0, GameController::mouseUpDrawEnd);
 		}
 	}
 	mouseInZoom = newMouseInZoom;
@@ -1373,7 +1481,7 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 				c->SetActiveTool(0, "DEFAULT_UI_PROPERTY");
 		}
 		else
-			screenshot();
+			doScreenshot = true;
 		break;
 	case SDL_SCANCODE_F3:
 		SetDebugHUD(!GetDebugHUD());
@@ -1782,7 +1890,7 @@ void GameView::DoMouseDown(int x, int y, unsigned button)
 
 void GameView::DoMouseUp(int x, int y, unsigned button)
 {
-	if(c->MouseUp(x, y, button, 0))
+	if(c->MouseUp(x, y, button, GameController::mouseUpNormal))
 		Window::DoMouseUp(x, y, button);
 }
 
@@ -1837,7 +1945,24 @@ void GameView::DoExit()
 void GameView::DoDraw()
 {
 	Window::DoDraw();
+	constexpr std::array<int, 9> fadeout = { { // * Gamma-corrected.
+		255, 195, 145, 103, 69, 42, 23, 10, 3
+	} };
+	auto *g = GetGraphics();
+	for (auto x = 0U; x < fadeout.size(); ++x)
+	{
+		g->draw_line(x, YRES + 1, x, YRES + 18, 0, 0, 0, fadeout[x]);
+		g->draw_line(XRES - x, YRES + 1, XRES - x, YRES + 18, 0, 0, 0, fadeout[x]);
+	}
+
 	c->Tick();
+	{
+		int x = 0;
+		int y = 0;
+		int w = WINDOWW;
+		int h = WINDOWH;
+		g->SetClipRect(x, y, w, h); // reset any nonsense cliprect Lua left configured
+	}
 }
 
 void GameView::NotifyNotificationsChanged(GameModel * sender)
@@ -2078,7 +2203,6 @@ void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int *yoffs
 		alignLeft ? (xmargin + xpad) : (XRES - xmargin - textWidth - xpad),
 		3 + *yoffset, text, 255, 255, 255, int(alpha*alphamod*0.75f));
 
-#ifndef OGLI
 	if (wavelengthGfx)
 	{
 		int i, cr, cg, cb, j, h = 3;
@@ -2118,7 +2242,6 @@ void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int *yoffs
 			}
 		}
 	}
-#endif
 
 	*yoffset = *yoffset + 13;
 }
@@ -2263,15 +2386,10 @@ void GameView::OnDraw()
 
 		ren->RenderEnd();
 
-		if(doScreenshot)
+		if (doScreenshot)
 		{
-			VideoBuffer screenshot(ren->DumpFrame());
-			std::vector<char> data = format::VideoBufferToPNG(screenshot);
-
-			ByteString filename = ByteString::Build("screenshot_", Format::Width(screenshotIndex++, 6), ".png");
-
-			Client::Ref().WriteFile(data, filename);
 			doScreenshot = false;
+			TakeScreenshot(0, 0);
 		}
 
 		if (recording && recordIntervalIndex == 0)
@@ -2279,9 +2397,9 @@ void GameView::OnDraw()
 			VideoBuffer screenshot(ren->DumpFrame());
 			std::vector<char> data = format::VideoBufferToPPM(screenshot);
 
-			ByteString filename = ByteString::Build("recordings", PATH_SEP, recordingFolder, PATH_SEP, "frame_", Format::Width(screenshotIndex++, 6), ".ppm");
+			ByteString filename = ByteString::Build("recordings", PATH_SEP, recordingFolder, PATH_SEP, "frame_", Format::Width(recordingIndex++, 6), ".ppm");
 
-			Client::Ref().WriteFile(data, filename);
+			Platform::WriteFile(data, filename);
 		}
 
 		if (recording)
@@ -2331,11 +2449,11 @@ void GameView::OnDraw()
 	else if(showHud)
 	{
 		//Draw info about simulation under cursor
-		int alpha = 255;
+		int alpha = 255-introText*5;
 		if (toolTipPosition.Y < 120)
-			alpha = 255-toolTipPresence*3;
-		if (alpha < 50)
-			alpha = 50;
+			alpha -= toolTipPresence*3;
+		if (alpha < 0)
+			alpha = 0;
 		int zoomWindowBottom =
 			ren->zoomWindowPosition.Y + ren->zoomScopeSize * ren->ZFACTOR;
 		int zoomWindowLeft = ren->zoomWindowPosition.X;
@@ -2493,10 +2611,10 @@ void GameView::OnDraw()
 					else if (ctype)
 						sampleInfo << " (" << ctype << ")";
 				}
-
 				sampleInfo << ", " <<
-					(isConfiguringTemp ? plainColor : noneString) <<
-					(sparticle.temp - 273.15f) << " C" <<
+					(isConfiguringTemp ? plainColor : noneString);
+				format::RenderTemperature(sampleInfo, sparticle.temp, c->GetTemperatureScale());
+				sampleInfo <<
 					(isConfiguringTemp ? highlightColor : noneString);
 				sampleInfo << ", " <<
 					(isConfiguringLife ? plainColor : noneString) <<
@@ -2526,7 +2644,8 @@ void GameView::OnDraw()
 				// only elements that use .tmp2 show it in the debug HUD
 				if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON
 						|| type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS
-						|| type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC || type == PT_VSNS || type == PT_LITH)
+						|| type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC || type == PT_VSNS || type == PT_LITH
+						|| type == PT_CONV)
 				{
 					sampleInfo << ", " <<
 						(isConfiguringTmp2 ? plainColor : noneString) <<
@@ -2539,7 +2658,8 @@ void GameView::OnDraw()
 			else
 			{
 				sampleInfo << c->BasicParticleInfo(sparticle);
-				sampleInfo << ", Temp: " << sparticle.temp - 273.15f << " C";
+				sampleInfo << ", Temp: ";
+				format::RenderTemperature(sampleInfo, sparticle.temp, c->GetTemperatureScale());
 				sampleInfo << ", Pressure: " << sample.AirPressure;
 			}
 
@@ -2595,7 +2715,10 @@ void GameView::OnDraw()
 					sampleInfo << ", GX: " << sample.GravityVelocityX << " GY: " << sample.GravityVelocityY;
 
 				if (c->GetAHeatEnable())
-					sampleInfo << ", AHeat: " << sample.AirTemperature - 273.15f << " C";
+				{
+					sampleInfo << ", AHeat: ";
+					format::RenderTemperature(sampleInfo, sample.AirTemperature, c->GetTemperatureScale());
+				}
 				if (sample.isMouseInSim)
 					sampleInfo << ", " << sample.AirPressure << " Pa";
 			}
@@ -2664,7 +2787,7 @@ void GameView::OnDraw()
 	if(introText && showHud)
 	{
 		g->fillrect(0, 0, WINDOWW, WINDOWH, 0, 0, 0, introText>51?102:introText*2);
-		g->drawtext(16, 20, introTextMessage, 255, 255, 255, introText>51?255:introText*5);
+		g->drawtext(16, 16, introTextMessage, 255, 255, 255, introText>51?255:introText*5);
 	}
 
 	// Clear menu areas, to ensure particle graphics don't overlap

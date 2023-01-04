@@ -157,6 +157,7 @@ GameModel::GameModel():
 
 	mouseClickRequired = Client::Ref().GetPrefBool("MouseClickRequired", false);
 	includePressure = Client::Ref().GetPrefBool("Simulation.IncludePressure", true);
+	temperatureScale = Client::Ref().GetPrefInteger("Renderer.TemperatureScale", 1);
 
 	ClearSimulation();
 }
@@ -487,8 +488,8 @@ void GameModel::BuildBrushList()
 	std::vector<ByteString> brushFiles = Platform::DirectorySearch(BRUSH_DIR, "", { ".ptb" });
 	for (size_t i = 0; i < brushFiles.size(); i++)
 	{
-		std::vector<unsigned char> brushData = Client::Ref().ReadFile(BRUSH_DIR + ByteString(PATH_SEP) + brushFiles[i]);
-		if(!brushData.size())
+		std::vector<char> brushData;
+		if (!Platform::ReadFile(brushData, BRUSH_DIR + ByteString(PATH_SEP) + brushFiles[i]))
 		{
 			std::cout << "Brushes: Skipping " << brushFiles[i] << ". Could not open" << std::endl;
 			continue;
@@ -499,7 +500,7 @@ void GameModel::BuildBrushList()
 			std::cout << "Brushes: Skipping " << brushFiles[i] << ". Invalid bitmap size" << std::endl;
 			continue;
 		}
-		brushList.push_back(new BitmapBrush(brushData, ui::Point(dimension, dimension)));
+		brushList.push_back(new BitmapBrush(reinterpret_cast<unsigned char *>(&brushData[0]), ui::Point(dimension, dimension)));
 	}
 
 	if (hasStoredRadius && (size_t)currentBrush < brushList.size())
@@ -538,6 +539,11 @@ void GameModel::SetEdgeMode(int edgeMode)
 int GameModel::GetEdgeMode()
 {
 	return this->edgeMode;
+}
+
+void GameModel::SetTemperatureScale(int temperatureScale)
+{
+	this->temperatureScale = temperatureScale;
 }
 
 void GameModel::SetAmbientAirTemperature(float ambientAirTemp)
@@ -991,6 +997,8 @@ void GameModel::SetSave(SaveInfo * newSave, bool invertIncludePressure)
 		GameSave * saveData = currentSave->GetGameSave();
 		SetPaused(saveData->paused | GetPaused());
 		sim->gravityMode = saveData->gravityMode;
+		sim->customGravityX = saveData->customGravityX;
+		sim->customGravityY = saveData->customGravityY;
 		sim->air->airMode = saveData->airMode;
 		sim->air->ambientAirTemp = saveData->ambientAirTemp;
 		sim->edgeMode = saveData->edgeMode;
@@ -1053,6 +1061,8 @@ void GameModel::SetSaveFile(SaveFile * newSave, bool invertIncludePressure)
 		GameSave * saveData = newSave->GetGameSave();
 		SetPaused(saveData->paused | GetPaused());
 		sim->gravityMode = saveData->gravityMode;
+		sim->customGravityX = saveData->customGravityX;
+		sim->customGravityY = saveData->customGravityY;
 		sim->air->airMode = saveData->airMode;
 		sim->air->ambientAirTemp = saveData->ambientAirTemp;
 		sim->edgeMode = saveData->edgeMode;
@@ -1145,7 +1155,7 @@ bool GameModel::MouseInZoom(ui::Point position)
 	ui::Point zoomWindowPosition = GetZoomWindowPosition();
 	ui::Point zoomWindowSize = ui::Point(GetZoomSize()*zoomFactor, GetZoomSize()*zoomFactor);
 
-	if (position.X >= zoomWindowPosition.X && position.Y >= zoomWindowPosition.Y && position.X <= zoomWindowPosition.X+zoomWindowSize.X && position.Y <= zoomWindowPosition.Y+zoomWindowSize.Y)
+	if (position.X >= zoomWindowPosition.X && position.Y >= zoomWindowPosition.Y && position.X < zoomWindowPosition.X+zoomWindowSize.X && position.Y < zoomWindowPosition.Y+zoomWindowSize.Y)
 		return true;
 	return false;
 }
@@ -1159,7 +1169,7 @@ ui::Point GameModel::AdjustZoomCoords(ui::Point position)
 	ui::Point zoomWindowPosition = GetZoomWindowPosition();
 	ui::Point zoomWindowSize = ui::Point(GetZoomSize()*zoomFactor, GetZoomSize()*zoomFactor);
 
-	if (position.X >= zoomWindowPosition.X && position.Y >= zoomWindowPosition.Y && position.X <= zoomWindowPosition.X+zoomWindowSize.X && position.Y <= zoomWindowPosition.Y+zoomWindowSize.Y)
+	if (position.X >= zoomWindowPosition.X && position.Y >= zoomWindowPosition.Y && position.X < zoomWindowPosition.X+zoomWindowSize.X && position.Y < zoomWindowPosition.Y+zoomWindowSize.Y)
 		return ((position-zoomWindowPosition)/GetZoomFactor())+GetZoomPosition();
 	return position;
 }
@@ -1396,6 +1406,8 @@ void GameModel::ClearSimulation()
 {
 	//Load defaults
 	sim->gravityMode = 0;
+	sim->customGravityX = 0.0f;
+	sim->customGravityY = 0.0f;
 	sim->air->airMode = 0;
 	sim->legacy_enable = false;
 	sim->water_equal_test = false;

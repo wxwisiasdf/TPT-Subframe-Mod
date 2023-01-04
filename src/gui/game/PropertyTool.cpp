@@ -2,6 +2,7 @@
 
 #include "client/Client.h"
 #include "Menu.h"
+#include "Format.h"
 
 #include "gui/game/GameModel.h"
 #include "gui/Style.h"
@@ -23,27 +24,6 @@
 #include "graphics/Graphics.h"
 
 #include <iostream>
-
-void ParseFloatProperty(String value, float &out)
-{
-	if (value.EndsWith("C"))
-	{
-		float v = value.SubstrFromEnd(1).ToNumber<float>();
-		out = v + 273.15;
-	}
-	else if(value.EndsWith("F"))
-	{
-		float v = value.SubstrFromEnd(1).ToNumber<float>();
-		out = (v-32.0f)*5/9+273.15f;
-	}
-	else
-	{
-		out = value.ToNumber<float>();
-	}
-#ifdef DEBUG
-	std::cout << "Got float value " << out << std::endl;
-#endif
-}
 
 bool TryParseHexProperty(String value, int &out)
 {
@@ -280,7 +260,10 @@ void PropertyWindow::SetProperty(bool warn)
 				}
 				case StructProperty::Float:
 				{
-					ParseFloatProperty(value, tool->propValue.Float);
+					if (properties[property->GetOption().second].Name == "temp")
+						tool->propValue.Float = format::StringToTemperature(value, tool->gameModel->GetTemperatureScale());
+					else
+						tool->propValue.Float = value.ToNumber<float>();
 				}
 					break;
 				default:

@@ -104,25 +104,37 @@ public:
 	int PushToStack(lua_State * l) override;
 };
 
-class TickEvent: public Event
+class TickEvent : public Event
 {
 public:
 	int PushToStack(lua_State *l) override { return 0; }
 };
 
-class PreHudDrawEvent: public Event
+class PreHudDrawEvent : public Event
 {
 public:
 	int PushToStack(lua_State *l) override { return 0; }
 };
 
-class BlurEvent: public Event
+class BlurEvent : public Event
 {
 public:
 	int PushToStack(lua_State *l) override { return 0; }
 };
 
-class CloseEvent: public Event
+class CloseEvent : public Event
+{
+public:
+	int PushToStack(lua_State *l) override { return 0; }
+};
+
+class BeforeSimEvent : public Event
+{
+public:
+	int PushToStack(lua_State *l) override { return 0; }
+};
+
+class AfterSimEvent : public Event
 {
 public:
 	int PushToStack(lua_State *l) override { return 0; }
@@ -143,7 +155,9 @@ public:
 		tick,
 		prehuddraw,
 		blur,
-		close
+		close,
+		beforesim,
+		aftersim,
 	};
 
 	static int RegisterEventHook(lua_State *l, ByteString eventName);

@@ -1,6 +1,7 @@
 #ifndef GAMEVIEW_H
 #define GAMEVIEW_H
 
+#include <ctime>
 #include <vector>
 #include <deque>
 #include "common/String.h"
@@ -75,6 +76,8 @@ private:
 
 	bool doScreenshot;
 	int screenshotIndex;
+	time_t lastScreenshotTime;
+	int recordingIndex;
 	bool recording;
 	int recordingFolder;
 	bool recordingSubframe;
@@ -129,8 +132,6 @@ private:
 
 	void SetSaveButtonTooltips();
 
-	void screenshot();
-
 	void drawHudParticleText(Graphics *g, StringBuilder text, int *yoffset, bool alignLeft, int alpha, int wavelengthGfx = 0, int wavelengthGfxOff = 0, HudParticleTextGlowType glowType = HudParticleTextGlowType::NONE);
 
 	void enableShiftBehaviour();
@@ -166,6 +167,7 @@ public:
 	void BeginStampSelection();
 	ui::Point GetPlaceSaveOffset() { return placeSaveOffset; }
 	void SetPlaceSaveOffset(ui::Point offset) { placeSaveOffset = offset; }
+	ByteString TakeScreenshot(int captureUI, int fileType);
 	int Record(bool record, bool subframe = false);
 	bool GetRecordingSubframe(){ return recordingSubframe; }
 	int GetRecordInterval() { return recordInterval; }

@@ -71,6 +71,7 @@ public:
 
 	char can_move[PT_NUM][PT_NUM];
 	int debug_currentParticle;
+	int debug_mostRecentlyUpdated = -1; // -1 when between full update loops
 	bool debug_interestingChangeOccurred;
 	bool needReloadParticleOrder;
 	int parts_lastActiveIndex;
@@ -123,6 +124,8 @@ public:
 	//Simulation Settings
 	int edgeMode;
 	int gravityMode;
+	float customGravityX;
+	float customGravityY;
 	int legacy_enable;
 	int aheat_enable;
 	int water_equal_test;
@@ -148,10 +151,11 @@ public:
 
 	int is_blocking(int t, int x, int y);
 	int is_boundary(int pt, int x, int y);
-	int find_next_boundary(int pt, int *x, int *y, int dm, int *em);
+	int find_next_boundary(int pt, int *x, int *y, int dm, int *em, bool reverse);
 	void photoelectric_effect(int nx, int ny);
 	unsigned direction_to_map(float dx, float dy, int t);
 	int do_move(int i, int x, int y, float nxf, float nyf);
+	bool move(int i, int x, int y, float nxf, float nyf);
 	int try_move(int i, int x, int y, int nx, int ny);
 	int eval_move(int pt, int nx, int ny, unsigned *rr);
 	void init_can_move();
@@ -183,7 +187,7 @@ public:
 	void create_arc(int sx, int sy, int dx, int dy, int midpoints, int variance, int type, int flags);
 	bool AreParticlesInSubframeOrder();
 	void CompleteDebugUpdateParticles();
-	void UpdateParticles(int start, int end);
+	void UpdateParticles(int start, int end); // range inclusive on both ends
 	void SimulateGoL();
 	void RecalcFreeParticles(bool do_life_dec);
 	void FixSoapLinks(std::map<unsigned int, unsigned int> &soapList);

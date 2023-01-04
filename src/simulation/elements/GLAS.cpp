@@ -51,9 +51,14 @@ static int update(UPDATE_FUNC_ARGS)
 {
 	auto press = int(sim->pv[y/CELL][x/CELL] * 64);
 	auto diff = press - parts[i].tmp3;
-	if (diff > 16 || diff < -16)
+
+	// Determine whether the GLAS is chemically strengthened via .life setting. (250 = Max., 16 = Min.)
+	int strength = (parts[i].life / 120) + 16;
+	if (strength < 16)
+		strength = 16;
+	if (diff > strength || diff < -1 * strength)
 	{
-		sim->part_change_type(i,x,y,PT_BGLA);
+		sim->part_change_type(i, x, y, PT_BGLA);
 	}
 	parts[i].tmp3 = press;
 	return 0;

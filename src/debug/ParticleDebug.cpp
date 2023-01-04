@@ -35,7 +35,7 @@ void ParticleDebug::updateSimUpTo(int i)
 int ParticleDebug::updateSimOneParticle()
 {
 	int i = sim->debug_currentParticle;
-	while (i < NPART && !sim->parts[i].type)
+	while (i < NPART - 1 && !sim->parts[i].type)
 		i++;
 
 	updateSimUpTo(i);
@@ -74,7 +74,7 @@ void ParticleDebug::Debug(int mode, int x, int y)
 
 		i = updateSimOneParticle();
 
-		if (i == NPART)
+		if (i == NPART - 1)
 			logmessage = "End of particles reached, updated sim";
 		else
 			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
@@ -84,7 +84,7 @@ void ParticleDebug::Debug(int mode, int x, int y)
 	{
 		if (x < 0 || x >= XRES || y < 0 || y >= YRES || !sim->pmap[y][x] || (i = sim->GetStackEditParticleId(x, y)) < debug_currentParticle)
 		{
-			i = NPART;
+			i = NPART - 1;
 			logmessage = String::Build("Updated particles from #", debug_currentParticle, " to end, updated sim");
 		}
 		else

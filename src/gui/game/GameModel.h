@@ -83,6 +83,7 @@ private:
 	bool mouseClickRequired;
 	bool includePressure;
 	bool perfectCircle = true;
+	int temperatureScale;
 
 	size_t activeColourPreset;
 	std::vector<ui::Colour> colourPresets;
@@ -125,6 +126,11 @@ public:
 
 	void SetEdgeMode(int edgeMode);
 	int GetEdgeMode();
+	void SetTemperatureScale(int temperatureScale);
+	inline int GetTemperatureScale() const
+	{
+		return temperatureScale;
+	}
 	void SetAmbientAirTemperature(float ambientAirTemp);
 	float GetAmbientAirTemperature();
 	void SetDecoSpace(int decoSpace);
